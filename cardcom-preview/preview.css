@@ -3,9 +3,8 @@
   Stand-in artwork for wallet SDKs. Cardcom injects the real buttons.
   #checkout-root is the local host wrap; production uses #Content.
 
-  mock.js freezes `#Content { zoom: 0.5 }`. Zoom doubles the layout box
-  so the page (not main) scrolls and the footer sits below the fold.
-  Override zoom here so the pinned header/footer layout can work.
+  mock.js freezes `#Content { zoom: 0.5 }`. Override zoom here so
+  the local preview matches production layout size.
 */
 
 html,

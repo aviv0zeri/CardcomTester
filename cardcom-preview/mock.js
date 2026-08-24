@@ -7,10 +7,16 @@
  * data-bind names, so preview matches their demo session.
  */
 (function () {
-  const LINES = [
-    { name: "מוצר לדוגמה 1", unitPrice: "100.00 ₪", quantity: "1.00", total: "100.00 ₪" },
-    { name: "מוצר לדוגמה 2", unitPrice: "200.00 ₪", quantity: "1.00", total: "200.00 ₪" }
-  ];
+  const LINES = [];
+  for (let i = 1; i <= 20; i++) {
+    const price = (i * 10).toFixed(2) + " ₪";
+    LINES.push({
+      name: "מוצר לדוגמה " + i,
+      unitPrice: price,
+      quantity: "1.00",
+      total: price
+    });
+  }
 
   const vm = {
     IsHideInvoiceInfo: false,
@@ -34,8 +40,8 @@
     showCoinConvert: false,
     DispCaptchaReqErr: false,
     loadMode: false,
-    summaryTotalSign: "₪200.00",
-    summaryTotalText: "₪200.00 לתשלום, סה״כ ₪200.00",
+    summaryTotalSign: "₪2,100.00",
+    summaryTotalText: "₪2,100.00 לתשלום, סה״כ ₪2,100.00",
     buttonText: "לתשלום",
     lblExpiration: "תוקף",
     CardcomBitUrl: "",
