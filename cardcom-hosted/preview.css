@@ -1,0 +1,167 @@
+/*
+  Local preview only. Never paste this into Cardcom.
+
+  The preview loads paste/checkout.full.css, which is byte-for-byte what Cardcom
+  gets, so the look you see here is the real look. What is missing is the
+  runtime: Knockout and the wallet SDKs. Without them
+
+    - every data-bind is inert, so labels, the total and the footer are blank
+    - rows Cardcom would hide are visible, and vice versa
+    - Google, Apple and PayPal draw nothing at all
+
+  This file fakes just enough of that to make layout judgeable. It fakes nothing
+  about behaviour, so never conclude anything here about whether a payment
+  method is available — that is decided by the terminal config, not by CSS.
+
+  Earlier versions of this file also carried the design itself, which meant the
+  preview looked finished while the live page looked like stock Cardcom. The
+  design now lives in checkout.css. Keep this file to simulation only.
+*/
+
+body {
+  margin: 0;
+}
+
+/* Cardcom keeps #Content hidden until Knockout binds; nothing binds here. */
+#Content {
+  display: block !important;
+}
+
+/*
+  ---------------------------------------------------------------------------
+  Stand-in artwork.
+
+  On the live page Google's SDK, Safari's native Apple Pay control and
+  Cardcom's own PayPal <img> draw these. Each URL below is the provider's or
+  Cardcom's official asset — never hand-draw a brand mark, not even in a
+  preview, or it stops being a preview of anything.
+  ---------------------------------------------------------------------------
+*/
+.paymentDetails .GooglePayDiv {
+  background-color: #000;
+  background-image: url("https://www.gstatic.com/instantbuy/svg/dark_gpay.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: auto 22px;
+}
+
+.paymentDetails .paypalDiv {
+  background-image: url("https://secure.cardcom.solutions/Images/PayPal/PayPalHe.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.paymentDetails #apple-pay-button-start {
+  background-color: #000;
+  background-image: url("assets/apple-pay-wordmark-white.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: auto 20px;
+}
+
+/*
+  ---------------------------------------------------------------------------
+  Stand-in text.
+
+  Every string on this page arrives through a Knockout `text:` binding, so
+  without Knockout the titles collapse to zero height and the form loses its
+  structure. These are the labels Cardcom would supply, in Hebrew, so the
+  preview shows real line lengths and real heights.
+  ---------------------------------------------------------------------------
+*/
+[data-bind="text: labels.InvoiceInfo"]::after {
+  content: "פרטי הזמנה";
+}
+
+[data-bind="text: labels.MethodsOfPayment"]::after {
+  content: "אמצעי תשלום";
+}
+
+[data-bind="text: labels.PayByCreditCard"]::after {
+  content: "תשלום בכרטיס אשראי";
+}
+
+[data-bind="text:order.name"]::after { content: "תאור"; }
+[data-bind="text:order.unitPrice"]::after { content: "מחיר יחידה"; }
+[data-bind="text:order.quantity"]::after { content: "כמות"; }
+[data-bind="text:order.total"]::after { content: "סה\"כ"; }
+[data-bind="text: labels.Summary"]::after { content: "סה\"כ"; }
+.creditTitleTotal::after {
+  content: "₪149.00";
+}
+
+[data-bind="text:lblExpiration"]::after {
+  content: "תוקף";
+}
+
+/*
+  Field labels. Matched on a substring of the binding rather than the whole
+  attribute, because most of these carry a `hide:` clause alongside the `text:`
+  and the exact string differs from row to row.
+*/
+[data-bind*="order.custName.label"]::after { content: "שם מלא"; }
+[data-bind*="order.compID.label"]::after { content: "ת.ז. / ח.פ."; }
+[data-bind*="order.custCity.label"]::after { content: "עיר"; }
+[data-bind*="order.custAddresLine1.label"]::after { content: "כתובת"; }
+[data-bind*="order.custAddresLine2.label"]::after { content: "מיקוד"; }
+[data-bind*="order.custMobilePH.label"]::after { content: "טלפון נייד"; }
+[data-bind*="order.custLinePH.label"]::after { content: "טלפון"; }
+[data-bind*="order.email.label"]::after { content: "דוא\"ל"; }
+[data-bind*="cardNumber.label"]::after { content: "מספר כרטיס אשראי"; }
+[data-bind*="cvv.label"]::after { content: "CVV"; }
+[data-bind*="cardOwnerID.label"]::after { content: "ת.ז. של בעל הכרטיס"; }
+[data-bind*="cardOwnerName.label"]::after { content: "שם בעל הכרטיס"; }
+[data-bind*="cardOwnerPhone.label"]::after { content: "טלפון נייד"; }
+[data-bind*="cardOwnerEmail.label"]::after { content: "דוא\"ל"; }
+[data-bind*="openSum.label"]::after { content: "סכום לתשלום"; }
+
+[data-bind="text:numberOfPayments.label, hide:numberOfPayments.hide"]::after {
+  content: "מספר תשלומים";
+}
+
+[data-bind="text:labels.IHaveReadTheAgreement, hide:condition.hide"]::after {
+  content: "קראתי ואני מסכים";
+}
+
+[data-bind="text: condition.label"]::after {
+  content: "לתקנון";
+}
+
+[data-bind="html: labels.FooterTextTop"]::after {
+  content: "הסליקה מתבצעת דרך קארדקום";
+}
+
+/*
+  ---------------------------------------------------------------------------
+  Nodes Knockout would resolve, hide or de-duplicate.
+  ---------------------------------------------------------------------------
+*/
+
+/*
+  The card number field is two inputs sharing one id, swapped by `visible:
+  IsMobile`. That duplicate id is Cardcom's, not ours, and it is why this has to
+  be selected by data-testid: #txtCardNumber matches whichever comes first.
+*/
+[data-testid="credit-card-number-field"],
+.WhatIsCvvLightBox,
+#apple-pay-button-setup,
+#apple-pay-button-popup,
+#apple-pay-notices,
+#PayMeBitDiv,
+#CardcomBitDiv,
+.masterPassDiv,
+#captcha_div,
+#privacy-policy-popup,
+#cookies-banner,
+.white-popup,
+.htmlCommentsDiv,
+.customDetails,
+.footerIn.centered {
+  display: none !important;
+}
+
+/* Empty <br> spacers the wallet divs carry for the stacked stock layout. */
+.paymentOptionsRow br {
+  display: none;
+}

@@ -1,0 +1,158 @@
+/*
+  ==========================================================================
+  LOCAL PREVIEW ONLY — NEVER PASTE THIS INTO CARDCOM.
+
+  test.css is the real design. This file adds no design of its own; it only
+  substitutes the things Cardcom's runtime supplies that a bare local page
+  cannot, so the preview shows what customers will actually see:
+
+    1. Knockout text. Every data-bind="text: ..." is an empty string here,
+       yet test.css still reserves 34px type + 28px padding for section
+       titles — which is where the large empty gaps come from.
+    2. Cardcom's own images. test.css references them root-relative, e.g.
+       url(/Images/Bit/bit_button.svg), which resolves on
+       secure.cardcom.solutions and 404s on localhost. Re-pointed absolute.
+    3. One Bit provider. The markup ships uPay, PayMe and Cardcom Bit; the
+       live page renders whichever the terminal uses, all three appear here.
+    4. Magnific Popup's stylesheet, without which .mfp-hide popups render
+       inline at the bottom of the page.
+    5. The #Content / .page column wrapper that Cardcom puts around the
+       markup, which is why fields stretch edge to edge locally.
+    6. Conditional fields (AVS, open sum, mobile card input) that Knockout
+       normally collapses.
+
+  If something still looks wrong with this file loaded, it is wrong in
+  test.css and worth fixing there.
+
+  Known limitation: the pay button reads "Go" because its label comes from
+  `value: buttonText`, and CSS cannot set an input's value.
+  ==========================================================================
+*/
+
+/* ---------- 1. The content column Cardcom's .page wrapper provides ---------- */
+
+body {
+    margin: 0;
+}
+
+/*
+  Do NOT constrain .blockDetails here. Cardcom's stock CSS already centres the
+  content column with `.blockDetailsIn { width: 979px; margin: 0 auto }`, and
+  imposing a narrower max-width on the ancestor does not shrink that fixed
+  width — it just makes .paymentOptionsRow overflow its parent and wrap at the
+  wrong point. Only the header and footer need centring to the same column.
+*/
+.header .headerIn,
+.footer .footerIn {
+    max-width: 979px;
+    margin-inline: auto;
+}
+
+/* ---------- 2. Cardcom's images, re-pointed from root-relative ---------- */
+
+#bit-payment-button {
+    background-image: url(https://secure.cardcom.solutions/Images/Bit/bit_button.svg);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+#bit-payment-button:hover {
+    background-image: url(https://secure.cardcom.solutions/Images/Bit/bit_button_hover.svg);
+}
+
+/*
+  PayPal's <img> has no src locally (Cardcom binds attr: { src: images.paypal }),
+  so paint the official artwork on the container and drop the broken image.
+
+  The explicit size is needed because test.css only sizes .paypalDiv inside
+  @media (max-width: 767px); above that it relies entirely on the natural size
+  of the injected image, so with no image the box collapses to 0x0.
+*/
+/*
+  Sizing and artwork only — deliberately no border or background colour. Those
+  belong to test.css, which adds them to .paypalDiv only below 768px. Painting
+  them here at every width made the desktop preview look like the mobile
+  layout and invented an outline the live desktop page does not draw.
+*/
+.paymentOptionsRow .paypalDiv,
+.paymentOptionsRow #GooglePayDiv {
+    display: block !important;
+    width: min(328px, 100%);
+    min-height: 46px;
+    background-repeat: no-repeat;
+    background-position: center;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+}
+
+.paymentOptionsRow .paypalDiv {
+    background-image: url(https://secure.cardcom.solutions/Images/PayPal/PayPalHe.png);
+    background-size: auto 26px;
+}
+
+/* Google's SDK injects the button, so the div is empty and test.css correctly
+   collapses it via :empty. This stand-in shows the row's real proportions. */
+.paymentOptionsRow #GooglePayDiv {
+    background-image: url(https://www.gstatic.com/instantbuy/svg/dark_gpay.svg);
+    background-size: auto 20px;
+}
+
+/* Every remaining src-less <img> is a Knockout-bound Cardcom asset. */
+img:not([src]),
+img[src=""],
+#qrBarcode {
+    display: none !important;
+}
+
+/* ---------- 3. One Bit provider, as the terminal would render ---------- */
+
+#PayMeBitDiv,
+#CardcomBitDiv,
+.masterPassDiv {
+    display: none !important;
+}
+
+/* ---------- 4. Popups: Magnific Popup's CSS is absent locally ---------- */
+
+.white-popup,
+.mfp-hide,
+#cookies-banner,
+#privacy-policy-popup {
+    display: none !important;
+}
+
+/* ---------- 5. Conditional fields Knockout would collapse ---------- */
+
+/* Mobile-only duplicate of the card number (visible: IsMobile == true). */
+#txtCardNumber-number,
+/* Shown only when the terminal enables an open sum or AVS. */
+.formRow:has(#txtopenSum),
+.formRow:has(#txtAvsCity),
+.formRow:has(#txtAvsAddress),
+.formRow:has(#txtAvsZip),
+/* Empty because there are no custom fields and no shop-owner HTML. */
+.customDetails,
+.blockDetails:has(.htmlCommentsDiv) {
+    display: none !important;
+}
+
+/* ---------- 6. Stand-in Knockout text ---------- */
+/*
+  Rendered through ::after so the real data-bind targets stay untouched.
+  These strings only approximate Cardcom's Hebrew labels; they exist to give
+  the empty title boxes their true height so the spacing can be judged.
+*/
+
+[data-bind="text: labels.InvoiceInfo"]::after { content: 'פרטי חשבונית'; }
+[data-bind="text: labels.MoreDetails"]::after { content: 'פרטים נוספים'; }
+[data-bind="text: labels.MethodsOfPayment"]::after { content: 'אמצעי תשלום'; }
+[data-bind="text: labels.PayByCreditCard"]::after { content: 'לתשלום בכרטיס אשראי'; }
+.creditTitleTotal::after { content: '₪348.00'; }
+
+[data-bind="text:labels.IHaveReadTheAgreement"]::after { content: 'קראתי ואני מסכים ל'; }
+[data-bind="text: condition.label"]::after { content: 'תקנון האתר'; }
+
+[data-bind="html: labels.FooterTextTop"]::after { content: 'הסליקה מתבצעת דרך קארדקום'; }
+
+/* The expiry and payments legends already come from test.css ::before rules. */

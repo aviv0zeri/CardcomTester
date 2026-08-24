@@ -1,0 +1,9 @@
+---
+description: cardcom-preview/mock.js is frozen. Do not edit it.
+globs: cardcom-preview/mock.js
+alwaysApply: false
+---
+
+# mock.js is frozen
+
+Do not edit `cardcom-preview/mock.js`. Further checkout work is HTML/CSS only in `cardcom-production/`.

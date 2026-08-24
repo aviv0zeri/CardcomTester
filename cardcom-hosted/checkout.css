@@ -1,0 +1,836 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+body {
+    direction: rtl;
+    text-align: right;
+    background: #f5f7fb;
+    color: #182033;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.directionLTR {
+    direction: ltr;
+}
+
+
+/* =========================
+   PAGE
+   ========================= */
+
+.checkout-page {
+    width: min(1240px, calc(100% - 40px));
+    margin: 30px auto;
+}
+
+.checkout-header {
+    min-height: 74px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 20px;
+    padding: 0 28px;
+
+    background: #fff;
+
+    border: 1px solid #e4e8ef;
+    border-radius: 16px;
+
+    box-shadow: 0 8px 30px rgba(30, 50, 80, 0.05);
+}
+
+.checkout-header-title {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.checkout-header-lock {
+    color: #697386;
+    font-size: 14px;
+}
+
+
+/* =========================
+   SUMMARY
+   ========================= */
+
+.checkout-summary {
+    margin-bottom: 20px;
+
+    background: #fff;
+
+    border: 1px solid #e4e8ef;
+    border-radius: 16px;
+
+    padding: 22px 26px;
+
+    box-shadow: 0 8px 30px rgba(30, 50, 80, 0.05);
+}
+
+.productsTbl {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.productsTbl th {
+    padding: 10px 12px;
+
+    color: #6b7280;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    text-align: center;
+}
+
+.productsTbl th.align {
+    text-align: right;
+}
+
+.productsTbl td {
+    padding: 12px;
+
+    border-top: 1px solid #edf0f4;
+
+    color: #252c3a;
+
+    background: transparent;
+
+    text-align: center;
+}
+
+.productsTbl td.align {
+    text-align: right;
+}
+
+.checkout-total {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+    gap: 8px;
+
+    padding-top: 18px;
+
+    font-size: 18px;
+}
+
+.checkout-total .num {
+    color: #155eef;
+    font-size: 24px;
+}
+
+
+/* =========================
+   MAIN GRID
+   ========================= */
+
+.checkout-grid {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1.05fr)
+        minmax(0, 0.95fr);
+
+    gap: 22px;
+
+    align-items: start;
+}
+
+.checkout-card {
+    background: #fff;
+
+    border: 1px solid #e4e8ef;
+    border-radius: 18px;
+
+    padding: 30px;
+
+    box-shadow: 0 8px 35px rgba(30, 50, 80, 0.06);
+}
+
+
+/* remove old Cardcom backgrounds */
+
+.paymentDetails .blockDetailsIn,
+.OrderDetails .blockDetailsIn {
+    background: none !important;
+    background-image: none !important;
+}
+
+
+/* =========================
+   HEADINGS
+   ========================= */
+
+.section-heading {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 26px;
+}
+
+.section-heading h2 {
+    margin: 0 0 4px;
+
+    color: #151b28;
+
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.section-heading p {
+    margin: 0;
+
+    color: #7a8495;
+
+    font-size: 13px;
+}
+
+.section-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 30px;
+    height: 30px;
+
+    border-radius: 50%;
+
+    background: #155eef;
+
+    color: #fff;
+
+    font-size: 14px;
+    font-weight: bold;
+}
+
+
+/* =========================
+   PAYMENT METHODS
+   ========================= */
+
+.payment-methods-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 12px;
+
+    margin-bottom: 22px;
+}
+
+.paypalDiv,
+.ApplePayDiv,
+.GooglePayDiv,
+#uPayBitDiv,
+#PayMeBitDiv,
+#CardcomBitDiv {
+    width: 100%;
+
+    margin: 0;
+}
+
+.paypalDiv a {
+    display: block;
+
+    width: 100%;
+}
+
+.paypalDiv img {
+    display: block;
+
+    width: 100% !important;
+    max-width: none !important;
+
+    height: 52px !important;
+
+    border-radius: 10px;
+
+    object-fit: cover;
+}
+
+
+/* BIT */
+
+#bit-payment-button {
+    width: 100%;
+
+    height: 52px;
+
+    border: 0;
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    background-image:
+        url("/Images/Bit/bit_button.svg");
+
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+}
+
+
+/* APPLE */
+
+.apple-pay-button {
+    width: 100% !important;
+
+    height: 52px !important;
+
+    border-radius: 10px !important;
+}
+
+
+/* GOOGLE */
+
+.GooglePayDiv {
+    min-height: 52px;
+}
+
+
+/* =========================
+   OR DIVIDER
+   ========================= */
+
+.payment-divider {
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+
+    margin: 25px 0;
+}
+
+.payment-divider::before,
+.payment-divider::after {
+    content: "";
+
+    flex: 1;
+
+    height: 1px;
+
+    background: #e1e5eb;
+}
+
+.payment-divider span {
+    color: #8c95a3;
+
+    font-size: 13px;
+}
+
+
+/* =========================
+   CREDIT CARD TITLE
+   ========================= */
+
+.card-payment-title {
+    margin-bottom: 20px;
+
+    color: #161d2b;
+
+    font-size: 19px;
+    font-weight: 700;
+}
+
+
+/* =========================
+   FORM
+   ========================= */
+
+.formRow {
+    margin-bottom: 17px;
+}
+
+.fieldName {
+    display: block !important;
+
+    width: auto !important;
+
+    margin: 0 0 7px !important;
+    padding: 0 !important;
+
+    color: #596273;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.fieldInput {
+    display: block !important;
+
+    width: 100% !important;
+}
+
+
+/* inputs */
+
+.fieldInput input,
+.fieldInput select {
+    width: 100% !important;
+
+    min-height: 48px;
+
+    margin: 0 !important;
+
+    padding: 0 14px !important;
+
+    border: 1px solid #d8dde5 !important;
+    border-radius: 10px !important;
+
+    background: #fff !important;
+
+    color: #182033 !important;
+
+    font-size: 15px !important;
+
+    transition:
+        border-color .2s,
+        box-shadow .2s;
+}
+
+
+/* focus */
+
+.fieldInput input:focus,
+.fieldInput select:focus {
+    outline: none;
+
+    border-color: #155eef !important;
+
+    box-shadow:
+        0 0 0 3px rgba(21, 94, 239, .10);
+}
+
+
+/* placeholder */
+
+.fieldInput input::placeholder {
+    color: #a5adba;
+}
+
+
+/* =========================
+   CARD NUMBER
+   ========================= */
+
+#txtCardNumber {
+    direction: ltr;
+
+    font-size: 17px !important;
+
+    letter-spacing: .5px;
+}
+
+
+/* Cardcom brand icons */
+
+.formRow.cardRow
+.fieldInput
+input#txtCardNumber.card-mastercard {
+    background-image:
+        url("/Images/LowProfile5/mastercard.png") !important;
+}
+
+.formRow.cardRow
+.fieldInput
+input#txtCardNumber.card-visa {
+    background-image:
+        url("/Images/LowProfile5/visa.png") !important;
+}
+
+.formRow.cardRow
+.fieldInput
+input#txtCardNumber.card-amex {
+    background-image:
+        url("/Images/LowProfile5/amex.png") !important;
+}
+
+.formRow.cardRow
+.fieldInput
+input#txtCardNumber.card-diners {
+    background-image:
+        url("/Images/LowProfile5/diners.png") !important;
+}
+
+.formRow.cardRow
+.fieldInput
+input#txtCardNumber {
+    background-repeat: no-repeat !important;
+
+    background-position:
+        left 12px center !important;
+
+    background-size: 38px !important;
+}
+
+
+/* =========================
+   EXPIRY / CVV
+   ========================= */
+
+.card-small-fields {
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 12px;
+}
+
+.validityDate {
+    display: grid !important;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 8px;
+
+    width: 100% !important;
+}
+
+.validityDate select.mini,
+.validityDate select.tiny {
+    width: 100% !important;
+}
+
+
+/* =========================
+   AGREEMENT
+   ========================= */
+
+.agreement-row .fieldInput {
+    display: flex !important;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+.agreement-row input.checkbox {
+    width: 18px !important;
+    height: 18px;
+
+    min-height: auto;
+
+    margin: 0 !important;
+}
+
+.agreement-row a {
+    color: #155eef;
+
+    text-decoration: none;
+
+    font-size: 13px;
+}
+
+
+/* =========================
+   CAPTCHA
+   ========================= */
+
+#captcha_div {
+    width: 100%;
+
+    max-width: none;
+
+    padding: 5px 0 15px;
+
+    background: transparent;
+
+    justify-content: center;
+}
+
+
+/* =========================
+   SUBMIT
+   ========================= */
+
+.submitDiv {
+    display: flex;
+
+    width: 100%;
+
+    max-width: none;
+
+    min-height: auto;
+
+    padding: 10px 0 0;
+
+    background: transparent;
+
+    align-items: center;
+
+    justify-content: space-between;
+}
+
+.submitDiv .buttonDiv {
+    width: 100%;
+
+    margin: 0 !important;
+}
+
+.submitDiv .buttonDiv input {
+    width: 100%;
+
+    min-height: 54px;
+
+    padding: 0 20px;
+
+    border: 0;
+
+    border-radius: 10px;
+
+    background: #155eef;
+
+    color: #fff;
+
+    font-size: 17px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background .2s,
+        transform .1s;
+}
+
+.submitDiv .buttonDiv input:hover {
+    background: #0e4bd8;
+}
+
+.submitDiv .buttonDiv input:active {
+    transform: translateY(1px);
+}
+
+
+/* Back link */
+
+.submitDiv .homeLink {
+    margin-left: 14px;
+}
+
+.submitDiv .homeLink a {
+    color: #687385;
+
+    font-size: 13px;
+
+    text-decoration: none;
+}
+
+
+/* =========================
+   ERRORS
+   ========================= */
+
+.errorDiv {
+    width: 100%;
+
+    margin-top: 12px;
+
+    padding: 10px 14px;
+
+    border-radius: 9px;
+
+    background: #fff0f0;
+
+    color: #c62828;
+
+    font-size: 14px;
+}
+
+.errorDiv ul {
+    margin: 0;
+    padding: 0 18px;
+}
+
+
+/* Cardcom error validation */
+
+.formRow.errorRow input,
+.formRow.errorRow select {
+    border-color: #e5484d !important;
+}
+
+.formRow.success input,
+.formRow.success select {
+    border-color: #30a46c !important;
+}
+
+
+/* =========================
+   ORDER PANEL
+   ========================= */
+
+.checkout-order .formRow {
+    margin-bottom: 16px;
+}
+
+
+/* =========================
+   FOOTER
+   ========================= */
+
+.footer {
+    margin-top: 22px;
+
+    padding: 20px 0;
+
+    background: transparent;
+
+    border: 0;
+}
+
+.footer .footerIn {
+    display: flex;
+
+    width: 100%;
+
+    margin: 0 auto;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+}
+
+.footer-logo img {
+    max-height: 25px;
+}
+
+.footer-text {
+    color: #8b94a3;
+
+    font-size: 12px;
+}
+
+
+/* =========================
+   COOKIES
+   ========================= */
+
+#cookies-banner {
+    position: fixed;
+
+    right: 20px;
+    left: 20px;
+    bottom: 20px;
+
+    width: auto;
+
+    padding: 14px 18px;
+
+    border: 1px solid #e1e5eb;
+    border-radius: 12px;
+
+    background: #fff;
+
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, .12);
+
+    z-index: 999999;
+}
+
+#btn-cookies-accept {
+    padding: 7px 14px;
+
+    border: 0;
+
+    border-radius: 7px;
+
+    background: #155eef;
+
+    color: white;
+
+    cursor: pointer;
+}
+
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 900px) {
+
+    .checkout-page {
+        width:
+            min(100% - 24px, 700px);
+
+        margin: 12px auto;
+    }
+
+    .checkout-header {
+        padding: 0 18px;
+    }
+
+    .checkout-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-payment {
+        order: 2;
+    }
+
+    .checkout-order {
+        order: 1;
+    }
+
+    .checkout-card {
+        padding: 22px;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .checkout-header {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        justify-content: center;
+
+        gap: 4px;
+    }
+
+    .payment-methods-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .card-small-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-card {
+        padding: 18px;
+
+        border-radius: 14px;
+    }
+
+    .section-heading h2 {
+        font-size: 21px;
+    }
+
+    .checkout-summary {
+        padding: 18px;
+    }
+
+    .showProductsTables {
+        overflow-x: auto;
+    }
+
+}

@@ -1,0 +1,30 @@
+---
+description: Cardcom Low Profile checkout is hosted by Cardcom. Edit production HTML/CSS only; keep mocks out of the paste files.
+alwaysApply: true
+---
+
+# Cardcom checkout
+
+This is not a React checkout. Cardcom hosts the Low Profile page and supplies Knockout, wallets, validation, and payment.
+
+## Where to edit
+
+- `cardcom-production/iframe.html` and `cardcom-production/checkout.css` — paste into Cardcom. Static HTML + CSS only.
+- `cardcom-preview/` — localhost visual sandbox. Mock labels and stand-in wallet assets. Never paste this folder.
+- **`cardcom-preview/mock.js` is frozen.** Do not edit it. Further work is HTML/CSS only (`cardcom-production/`). The mock already wraps `#Content`, forces Tahoma, and scales to `zoom: 0.5`.
+
+The React app (`cardcom-tester/`) is a shell: create a session, iframe Cardcom's URL. Do not touch the iframe DOM.
+
+## Production constraints
+
+- Do not add JavaScript to `cardcom-production/`.
+- Do not rewrite `data-bind` attributes or rename Cardcom IDs.
+- Do not use `embed`, `object`, `frameset`, `frame`, `iframe`, `meta`, `link`, or `style` elements in production HTML.
+- Do not hide both `#txtCardOwnerPhone` and `#txtCardOwnerEmail` (3DS).
+- Do not `display:none` live wallet injection stubs (`#ApplePayDivContainer`, `#BitDivContainer`, `#GooglePayDiv`) unless empty.
+- Wallet availability is terminal + Knockout, not CSS.
+- Footer wording comes from Cardcom labels. Do not replace it.
+
+## Submit
+
+`cardcom_html` then `cardcom_css`. Do not F5 Cardcom's preview window.

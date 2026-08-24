@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cardcom checkout — local preview</title>
+  <!-- Cardcom always loads their stock CSS first, then the pasted file. -->
+  <link rel="stylesheet" href="../cardcom-hosted/templates/cardcom-stock.css">
+  <!-- Production CSS. This is the file that gets pasted into Cardcom. -->
+  <link rel="stylesheet" href="../cardcom-production/checkout.css?v=pin34">
+  <!-- Preview-only. Never paste this into Cardcom. -->
+  <link rel="stylesheet" href="preview.css?v=pin9">
+</head>
+<body>
+  <div id="checkout-root">Loading production HTML…</div>
+  <script src="mock.js?v=6"></script>
+</body>
+</html>
