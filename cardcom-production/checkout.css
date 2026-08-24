@@ -604,7 +604,7 @@ body {
     min-height: 40px;
     margin: 0 !important;
     padding: 0 12px !important;
-    border: 1px solid #cdd6e4 !important;
+    border: 1px solid #111 !important;
     border-radius: 4px !important;
     background-color: #fff !important;
     color: #0f172a !important;
@@ -626,8 +626,8 @@ body {
 .fieldInput input:focus,
 .fieldInput select:focus {
     outline: none;
-    border-color: #1d4ed8 !important;
-    box-shadow: 0 0 0 3px rgba(29, 78, 216, .16);
+    border-color: #000 !important;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, .16);
 }
 
 .fieldInput input::placeholder {
