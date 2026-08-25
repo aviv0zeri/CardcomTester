@@ -24,6 +24,10 @@ app.use(
   '/templates',
   express.static(path.join(__dirname, '..', 'templates'))
 );
+app.use(
+  '/Images/Bit',
+  express.static(path.join(__dirname, '..', 'cardcom-preview', 'assets'))
+);
 
 app.get('/', (req, res) => {
   res.redirect('/cardcom-hosted/');
@@ -36,14 +40,16 @@ app.get('/test', (req, res) => {
 app.post('/payment', async (req, res) => {
   try {
     const amount = req.body.amount;
+    const language = req.body.language;
     const profile = getProfile(req.body.profileId);
-    const payload = buildLowProfileBody(profile, amount);
+    const payload = buildLowProfileBody(profile, amount, language);
 
     console.log({
       profileId: profile.id,
       TerminalNumber: payload.TerminalNumber,
       ApiName: payload.ApiName,
       Amount: payload.Amount,
+      Language: payload.Language,
       Operation: payload.Operation,
     });
 

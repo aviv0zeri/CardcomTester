@@ -1,13 +1,14 @@
 # Cardcom production template
 
-Paste-ready files now live under **`../templates/cardcom/`**.
+Paste-ready files live under **`../templates/cardcom/low-profile/`**.
 
-- Redirect (full page): `templates/cardcom/redirect-normal/{hebrew,english}/`
-- Iframe only (compact): `templates/cardcom/iframe-normal/{hebrew,english}/`
+- HTML (both slots): `templates/cardcom/low-profile/checkout.html`
+- RTL CSS: `templates/cardcom/low-profile/rtl/checkout.css`
+- LTR CSS: `templates/cardcom/low-profile/ltr/checkout.css`
 
 ```bash
 source scripts/cardcom-clipboard.zsh
 cardcom_export    # fzf menu — HTML first, then CSS
 ```
 
-Do not add JavaScript. Do not paste `cardcom-preview/`. See the repo root README for how each version is used on Cardcom.
+Do not add JavaScript. Do not paste `cardcom-preview/`.

@@ -43,6 +43,7 @@
     summaryTotalSign: "₪2,100.00",
     summaryTotalText: "Total ₪2,100.00",
     buttonText: "Pay",
+    lph1: "Secure Payment",
     lblExpiration: "Expiry",
     CardcomBitUrl: "",
     PayMePaymentText: "",
@@ -226,6 +227,11 @@
             const v = get(src[1]);
             if (v) el.setAttribute("src", v);
           }
+          const lang = p.expr.match(/lang\s*:\s*([^}\s,]+)/);
+          if (lang) {
+            const v = get(lang[1]);
+            if (v) el.setAttribute("lang", String(v));
+          }
         }
         if (p.type === "options") {
           const list = get(p.expr);
@@ -255,10 +261,8 @@
   }
 
   function applyCardcomHost(root) {
-    // Cardcom wraps pasted HTML in #Content and puts stock CSS in <style id="conCss">.
-    // Stock starts with `body * { font-family: Tahoma }`. Local often falls back to
-    // Arial from checkout.css, which reads larger at the same px. Mirror the host
-    // here — preview only, never paste.
+    // Cardcom wraps pasted HTML in #Content. Live Low Profile computed Arial
+    // on our paste, not stock Tahoma. Do not force Tahoma. Preview-only.
     if (!document.getElementById("Content")) {
       const content = document.createElement("div");
       content.id = "Content";
@@ -270,9 +274,9 @@
     const style = document.createElement("style");
     style.id = "cardcom-host-mock";
     style.textContent = [
-      "body, body * { font-family: Tahoma, Helvetica, sans-serif !important; }",
-      /* Preview-only. Frozen. Half-size type vs the production px values. */
-      "#Content { zoom: 0.5; }"
+      "html, body { font-size: 16px; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }",
+      "body, body * { font-family: Arial, Helvetica, sans-serif !important; }",
+      "#Content { zoom: 1; }"
     ].join("\n");
     document.head.appendChild(style);
   }
@@ -293,7 +297,7 @@
     if (month) month.value = vm.expirationMonth.value;
   }
 
-  fetch("../../templates/cardcom/redirect-normal/english/iframe.html")
+  fetch("../../templates/cardcom/low-profile/checkout.html?v=lph1")
     .then(function (res) {
       if (!res.ok) throw new Error(res.statusText);
       return res.text();
@@ -309,7 +313,7 @@
     })
     .catch(function (err) {
       document.getElementById("checkout-root").textContent =
-        "Could not load templates/cardcom/redirect-normal/english/iframe.html. Serve the repo root so the fetch path works. " +
+        "Could not load templates/cardcom/low-profile/checkout.html. Serve the repo root so the fetch path works. " +
         err;
     });
 })();

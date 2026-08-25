@@ -43,6 +43,7 @@
     summaryTotalSign: "₪2,100.00",
     summaryTotalText: "₪2,100.00 לתשלום, סה״כ ₪2,100.00",
     buttonText: "לתשלום",
+    lph1: "תשלום מאובטח",
     lblExpiration: "תוקף",
     CardcomBitUrl: "",
     PayMePaymentText: "",
@@ -79,14 +80,14 @@
       total: "סה״כ",
       showInvoiceHead: true,
       lines: LINES,
-      custName: { hide: false, label: "לכבוד", value: "לקוח לדוגמה" },
-      compID: { hide: false, label: "ת.ז. / ח.פ.", value: "" },
-      custCity: { hide: false, label: "יישוב", value: "" },
+      custName: { hide: false, label: "לכבוד *", value: "לקוח לדוגמה" },
+      compID: { hide: false, label: "ת.ז / ח.פ", value: "" },
+      custCity: { hide: false, label: "ישוב", value: "" },
       custAddresLine1: { hide: false, label: "רחוב", value: "" },
-      custAddresLine2: { hide: false, label: "מיקוד / ת.ד.", value: "" },
+      custAddresLine2: { hide: false, label: "מיקוד / ת.ד", value: "" },
       custMobilePH: { hide: false, label: "טלפון נייד", value: "" },
       custLinePH: { hide: false, label: "טלפון נוסף", value: "" },
-      email: { hide: false, label: "דוא״ל", value: "" }
+      email: { hide: false, label: "מייל הלקוח", value: "" }
     },
     cardNumber: { hide: false, label: "מספר כרטיס אשראי", value: "", disabled: false },
     cvv: { hide: false, label: "3 ספרות בגב הכרטיס", value: "" },
@@ -226,6 +227,11 @@
             const v = get(src[1]);
             if (v) el.setAttribute("src", v);
           }
+          const lang = p.expr.match(/lang\s*:\s*([^}\s,]+)/);
+          if (lang) {
+            const v = get(lang[1]);
+            if (v) el.setAttribute("lang", String(v));
+          }
         }
         if (p.type === "options") {
           const list = get(p.expr);
@@ -255,10 +261,8 @@
   }
 
   function applyCardcomHost(root) {
-    // Cardcom wraps pasted HTML in #Content and puts stock CSS in <style id="conCss">.
-    // Stock starts with `body * { font-family: Tahoma }`. Local often falls back to
-    // Arial from checkout.css, which reads larger at the same px. Mirror the host
-    // here — preview only, never paste.
+    // Cardcom wraps pasted HTML in #Content. Live Low Profile computed Arial
+    // on our paste, not stock Tahoma. Do not force Tahoma. Preview-only.
     if (!document.getElementById("Content")) {
       const content = document.createElement("div");
       content.id = "Content";
@@ -270,9 +274,9 @@
     const style = document.createElement("style");
     style.id = "cardcom-host-mock";
     style.textContent = [
-      "body, body * { font-family: Tahoma, Helvetica, sans-serif !important; }",
-      /* Preview-only. Frozen. Half-size type vs the production px values. */
-      "#Content { zoom: 0.5; }"
+      "html, body { font-size: 16px; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }",
+      "body, body * { font-family: Arial, Helvetica, sans-serif !important; }",
+      "#Content { zoom: 1; }"
     ].join("\n");
     document.head.appendChild(style);
   }
@@ -293,7 +297,7 @@
     if (month) month.value = vm.expirationMonth.value;
   }
 
-  fetch("../cardcom-production/iframe.html")
+  fetch("../templates/cardcom/low-profile/checkout.html?v=lph1")
     .then(function (res) {
       if (!res.ok) throw new Error(res.statusText);
       return res.text();
@@ -309,7 +313,7 @@
     })
     .catch(function (err) {
       document.getElementById("checkout-root").textContent =
-        "Could not load cardcom-production/iframe.html. Serve the repo root (not cardcom-preview/) so the fetch path works. " +
+        "Could not load templates/cardcom/low-profile/checkout.html. Serve the repo root (not cardcom-preview/) so the fetch path works. " +
         err;
     });
 })();

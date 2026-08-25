@@ -90,6 +90,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px 12px;
     padding: 0 20px;
     background: #0f1f3d;
     border: 0;
@@ -117,6 +118,19 @@ body {
 .checkout-header-lock {
     color: #9db4d8;
     font-size: 12px;
+}
+
+.checkout-header-version {
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #0f1f3d;
+    background: #fbbf24;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
 }
 
 .checkout-summary {
@@ -636,7 +650,7 @@ body {
 }
 
 .fieldInput select {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%23697386' d='M1 1.5L6 6.5L11 1.5'/></svg>") !important;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMicgaGVpZ2h0PSc4JyB2aWV3Qm94PScwIDAgMTIgOCc+PHBhdGggZmlsbD0nIzY5NzM4NicgZD0nTTEgMS41TDYgNi41TDExIDEuNScvPjwvc3ZnPg==") !important;
     background-repeat: no-repeat !important;
     background-position: left 12px center !important;
     background-size: 12px 8px !important;

@@ -9,10 +9,10 @@ This is not a React checkout. Cardcom hosts the Low Profile page and supplies Kn
 
 ## Where to edit
 
-- **`templates/cardcom/redirect-normal/`** — full-page redirect (Hebrew / English). Paste into Cardcom when checkout is the whole window.
-- **`templates/cardcom/iframe-normal/`** — compact iframe-only (Hebrew / English). Paste into Cardcom when checkout sits in a shop iframe.
-- `cardcom-preview/` — localhost visual sandbox. Mock labels and stand-in wallet assets. Never paste this folder. `html.checkout-embed` is preview-only.
-- **`cardcom-preview/mock.js` is frozen.** Do not edit it.
+- **`templates/cardcom/low-profile/checkout.html`** plus **`rtl/checkout.css`** and **`ltr/checkout.css`** — canonical Low Profile paste. Cardcom stores **two** custom designs by direction, not four languages: RTL is Hebrew+Arabic, LTR is English+Russian. Same HTML for both slots. Same files for redirect and iframe. Do not hardcode customer-visible sentences; Knockout `labels.*` / `lph1` follow Create `Language`.
+- `templates/cardcom/low-profile/_archive/` — non-production snapshots (do not paste).
+- `cardcom-preview/` — localhost visual sandbox. Mock labels and stand-in wallet assets. Never paste this folder.
+- Compact iframe is the same paste CSS: `html.checkout-embed` on localhost preview, and `@media (min-width: 600px) and (max-width: 1280px)` on live Cardcom iframe. Fit everything in the frame with no scrollbar — shrink internals, do not scroll columns. Wide redirect (wider than 1280px) stays page-scrollable. Recovered from `_archive/old-separate-iframe/`.
 
 The React app (`cardcom-tester/`) is a shell: three sections (redirect page, iframe-only, either). Do not touch the iframe DOM.
 
@@ -21,10 +21,19 @@ The React app (`cardcom-tester/`) is a shell: three sections (redirect page, ifr
 - Do not add JavaScript to paste files.
 - Do not rewrite `data-bind` attributes or rename Cardcom IDs.
 - Do not use `embed`, `object`, `frameset`, `frame`, `iframe`, `meta`, `link`, or `style` elements in production HTML.
-- Do not hide both `#txtCardOwnerPhone` and `#txtCardOwnerEmail` (3DS).
+- Do not CSS-hide `#txtCardOwnerPhone`. When 3DS is enabled, Cardcom makes phone mandatory even if `IsCardOwnerPhoneRequired` is off. Do not CSS-hide `#txtCardOwnerEmail`; that flag is separate. Field presence is Low Profile config/API, not CSS.
 - Do not `display:none` live wallet injection stubs (`#ApplePayDivContainer`, `#BitDivContainer`, `#GooglePayDiv`) unless empty.
-- Wallet availability is terminal + Knockout, not CSS.
-- Footer wording comes from Cardcom labels. Do not replace it.
+- **Never hide empty `#GooglePayDiv`.** Cardcom/Google inject into that node; CSS `:empty` / `:not(:has(*))` on it blocks the real button (including saved-card / last-4). Empty `#ApplePayDivContainer` / `#BitDivContainer` may be hidden so they do not occupy a grid cell.
+- Layout wallet **outer** containers with a 2-column CSS grid (auto-reflow when Knockout hides a method). Size the slot; do not rebuild or restyle injected internals. Do not `display:flex`, `max-height`, or `overflow:hidden` on `#GooglePayDiv`.
+- **Google Pay** — keep empty `#GooglePayDiv` (`hide: hideGooglePay`). Face/click are Cardcom/Google. Documented design is `UIDefinition.GooglePayBtnDesign` (color/type/width/height), not our inner CSS. Parent iframe needs `allow="payment"` and `allowpaymentrequest`.
+- **Apple Pay** — keep Cardcom IDs/`data-bind`. Terminal + Safari; iframe needs the embedding domain registered. No `ApplePayBtnDesign`. Do not fake the Apple button.
+- **PayPal** — keep Cardcom PayPal markup/bindings. No PayPal design API. Do not redraw it.
+- **Bit** — keep empty `#bit-payment-button` and `click: sendData_CardcomBit` (uPay/PayMe variants too). SVG + hover SVG are Cardcom template CSS (`/Images/Bit/bit_button.svg`), not a Bit design API. We may size the outer button; do not add custom Bit JS.
+- Hover on our outer wallet wrapper is fine. Do not add filter/transform/box-shadow on Google/Apple/PayPal injected nodes. Bit `:hover` may swap Cardcom’s hover SVG only.
+- Wallet availability is terminal + Knockout, not CSS. Production Cardcom/provider runtime is authoritative; `cardcom-preview/` only simulates it.
+- Footer wording comes from Cardcom labels (`html: labels.FooterTextTop` / `FooterTextBottom`). Do not replace it or change `html:` to `text:`.
+- Header title is `text: lph1` (הגדרות לפי שפה / Cardcom). Cardcom’s default is English/Hebrew dashboard copy, not “Secure Payment”. CSS `:lang(he|ar|en|ru)` on `.checkout-header-title` (via `attr: { lang: ApplePay.language }`) supplies תשלום מאובטח / دفع آمن / Secure Payment / Безопасная оплата. Card divider is `text: labels.PayByCreditCard`; CSS `:lang(ar|ru|pt)` fills that the same way. Do not hardcode one language into the shared HTML.
+- Merchant privacy URL is a Cardcom Low Profile dashboard setting (הגדרות לפי שפה → כתובת דף מדיניות פרטיות). Do not hardcode it in paste HTML. Do not CSS-hide `#privacy-policy-container` or `#privacy-policy-popup`. Footer `<a>` tags must stay visibly links.
 
 ## Submit
 

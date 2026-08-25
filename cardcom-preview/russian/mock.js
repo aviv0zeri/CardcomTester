@@ -11,7 +11,7 @@
   for (let i = 1; i <= 20; i++) {
     const price = (i * 10).toFixed(2) + " ₪";
     LINES.push({
-      name: "Sample product " + i,
+      name: "Пример товара " + i,
       unitPrice: price,
       quantity: "1.00",
       total: price
@@ -41,9 +41,10 @@
     DispCaptchaReqErr: false,
     loadMode: false,
     summaryTotalSign: "₪2,100.00",
-    summaryTotalText: "Total ₪2,100.00",
-    buttonText: "Pay",
-    lblExpiration: "Expiry",
+    summaryTotalText: "Итого ₪2,100.00",
+    buttonText: "Оплатить",
+    lph1: "Безопасная оплата",
+    lblExpiration: "Срок",
     CardcomBitUrl: "",
     PayMePaymentText: "",
     PayMePaymentError: "",
@@ -61,43 +62,43 @@
     },
     labels: {
       HtmlComments: "",
-      Summary: "Total",
-      MethodsOfPayment: "Payment methods",
-      PayByCreditCard: "Pay by credit card",
-      InvoiceInfo: "Invoice details",
-      MoreDetails: "More details",
-      LinkBackToSite: "Back to site",
+      Summary: "Итого",
+      MethodsOfPayment: "Способы оплаты",
+      PayByCreditCard: "PAY BY CREDIT CARD",
+      InvoiceInfo: "Данные счёта",
+      MoreDetails: "Дополнительно",
+      LinkBackToSite: "Вернуться на сайт",
       FooterTextTop:
-        'Payment is processed by Cardcom - <a href="https://www.cardcom.co.il/" target="_blank">credit card clearing for businesses</a> to the strictest security standard and according to the <a href="#">privacy policy</a>',
+        'Оплата проходит через Cardcom — <a href="https://www.cardcom.co.il/" target="_blank">эквайринг для бизнеса</a> по строгим стандартам безопасности и согласно <a href="#">политике конфиденциальности</a>',
       FooterTextBottom: "",
-      PaymentDoneWithTheStrictestSecurityStandards: "Payment is secured to PCI standards"
+      PaymentDoneWithTheStrictestSecurityStandards: "Оплата защищена по стандартам PCI"
     },
     order: {
-      name: "Description",
-      unitPrice: "Unit price",
-      quantity: "Qty",
-      total: "Total",
+      name: "Описание",
+      unitPrice: "Цена",
+      quantity: "Кол-во",
+      total: "Итого",
       showInvoiceHead: true,
       lines: LINES,
-      custName: { hide: false, label: "To", value: "Sample customer" },
-      compID: { hide: false, label: "ID / Company no.", value: "" },
-      custCity: { hide: false, label: "City", value: "" },
-      custAddresLine1: { hide: false, label: "Street", value: "" },
-      custAddresLine2: { hide: false, label: "ZIP / P.O.B", value: "" },
-      custMobilePH: { hide: false, label: "Mobile", value: "" },
-      custLinePH: { hide: false, label: "Additional phone", value: "" },
-      email: { hide: false, label: "Email", value: "" }
+      custName: { hide: false, label: "Кому", value: "Тестовый клиент" },
+      compID: { hide: false, label: "ID / номер компании", value: "" },
+      custCity: { hide: false, label: "Город", value: "" },
+      custAddresLine1: { hide: false, label: "Улица", value: "" },
+      custAddresLine2: { hide: false, label: "Индекс / а/я", value: "" },
+      custMobilePH: { hide: false, label: "Мобильный", value: "" },
+      custLinePH: { hide: false, label: "Доп. телефон", value: "" },
+      email: { hide: false, label: "Эл. почта", value: "" }
     },
-    cardNumber: { hide: false, label: "Card number", value: "", disabled: false },
-    cvv: { hide: false, label: "3 digits on the back of the card", value: "" },
-    cardOwnerID: { hide: false, label: "Cardholder ID", value: "" },
-    cardOwnerName: { hide: false, label: "Cardholder name", value: "" },
-    cardOwnerPhone: { hide: true, label: "Mobile", value: "" },
-    cardOwnerEmail: { hide: true, label: "Email", value: "" },
-    openSum: { hide: true, label: "Amount to pay", value: "" },
+    cardNumber: { hide: false, label: "Номер карты", value: "", disabled: false },
+    cvv: { hide: false, label: "3 цифры на обороте карты", value: "" },
+    cardOwnerID: { hide: false, label: "ID владельца карты", value: "" },
+    cardOwnerName: { hide: false, label: "Имя на карте", value: "" },
+    cardOwnerPhone: { hide: true, label: "Мобильный", value: "" },
+    cardOwnerEmail: { hide: true, label: "Эл. почта", value: "" },
+    openSum: { hide: true, label: "Сумма к оплате", value: "" },
     numberOfPayments: {
       hide: false,
-      label: "Number of payments",
+      label: "Количество платежей",
       value: "1",
       selectValues: ["1", "2", "3", "4", "6", "12"]
     },
@@ -110,14 +111,14 @@
     expirationMonth: { label: "Month", value: "1", disabled: false },
     condition: {
       hide: false,
-      label: "I have read and agree to the terms of use",
+      label: "Я прочитал(а) и принимаю условия использования",
       value: "#",
       booleanValue: false
     },
     customFields: [],
     error: { hasMessages: false, messages: [] },
     ApplePay: {
-      language: "en",
+      language: "ru",
       isApplePayExt: false,
       AddPaddingBelowComponent: false,
       applePayInstance: {
@@ -296,7 +297,7 @@
     if (month) month.value = vm.expirationMonth.value;
   }
 
-  fetch("../../templates/cardcom/low-profile/_archive/english-full-snapshot/iframe.html")
+  fetch("../../templates/cardcom/low-profile/checkout.html?v=lph1")
     .then(function (res) {
       if (!res.ok) throw new Error(res.statusText);
       return res.text();
@@ -312,7 +313,7 @@
     })
     .catch(function (err) {
       document.getElementById("checkout-root").textContent =
-        "Could not load templates/cardcom/low-profile/_archive/english-full-snapshot/iframe.html. Serve the repo root so the fetch path works. " +
+        "Could not load templates/cardcom/low-profile/checkout.html. Serve the repo root so the fetch path works. " +
         err;
     });
 })();

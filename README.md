@@ -10,53 +10,38 @@ Test harness for Cardcom Low Profile payments.
 - **Mobile Cardcom** — separate native/direct integration, to be researched later. Do not reuse the web Low Profile page as the mobile UI.
 - **Payment methods** — shown or hidden by Cardcom terminal / template / API config, not by React and not by CSS `display: none` on real methods.
 
-## Three checkout versions (what to paste into Cardcom)
+## Checkout versions (what to paste into Cardcom)
 
-Paste **only** from `templates/cardcom/`. Never paste `cardcom-preview/` (mocks, wrappers, `html.checkout-embed`).
+Paste **only** from `templates/cardcom/low-profile/`. Never paste `cardcom-preview/` (mocks, wrappers, `html.checkout-embed`).
 
 HTML first, then CSS. Loading HTML in Cardcom’s editor resets the CSS pane. Do not F5 their preview window — close it and reopen it.
 
-### 1. Redirect — full page
+Cardcom stores **two** custom designs by editor direction, not four languages. Paste the **same HTML** into both slots. Create `Language` (`he` / `en` / `ar` / `ru`) only fills Knockout labels.
 
-Use when the shop **sends the customer to Cardcom’s page** (the checkout is the whole window and may scroll).
+| Cardcom slot | Direction | HTML | CSS |
+| --- | --- | --- | --- |
+| עברית וערבית | RTL | `templates/cardcom/low-profile/checkout.html` | `templates/cardcom/low-profile/rtl/checkout.css` |
+| אנגלית ושפות נוספות | LTR | `templates/cardcom/low-profile/checkout.html` | `templates/cardcom/low-profile/ltr/checkout.css` |
 
-| Language | HTML | CSS |
-| --- | --- | --- |
-| Hebrew | `templates/cardcom/redirect-normal/hebrew/iframe.html` | `templates/cardcom/redirect-normal/hebrew/checkout.css` |
-| English | `templates/cardcom/redirect-normal/english/iframe.html` | `templates/cardcom/redirect-normal/english/checkout.css` |
+Field presence is Cardcom Low Profile config/API (`UIDefinition` and הגדרות לפי שפה), not CSS. Header wording per language is `lph1` / הגדרות לפי שפה, not hardcoded HTML. `labels.PayByCreditCard` is English in Cardcom’s Arabic/Russian/Portuguese packs; paste CSS fills those via `:lang()`.
 
-Local tester: **Redirect — full page** (leaves the React app).
+`html.checkout-embed` is localhost preview. Live Cardcom iframe uses the same compact rules at `@media (min-width: 600px) and (max-width: 980px)` (no page scrollbar). Wide redirect still scrolls.
 
-### 2. Iframe only
-
-Use when the shop **embeds Cardcom in an iframe**. Compact layout, no nested page scrollbar. The order table may still scroll internally.
-
-| Language | HTML | CSS |
-| --- | --- | --- |
-| Hebrew | `templates/cardcom/iframe-normal/hebrew/iframe.html` | `templates/cardcom/iframe-normal/hebrew/checkout.css` |
-| English | `templates/cardcom/iframe-normal/english/iframe.html` | `templates/cardcom/iframe-normal/english/checkout.css` |
-
-Local tester: **Iframe only**.
-
-### 3. Either — same HTML/CSS
-
-Hebrew and English **redirect-normal** files also include compact iframe rules, switched on locally by wrapping the preview in `html.checkout-embed` (React **Either** section). That class is **preview-only**.
-
-On Cardcom you cannot set `html.checkout-embed`. For a live iframe, paste **iframe-only** (section 2). For a live redirect page, paste **redirect** (section 1).
-
-A frozen copy of English redirect (before dual-mode CSS) is `templates/cardcom/redirect-normal/english-full/`.
+Former iframe-specific CSS is parked at `templates/cardcom/low-profile/_archive/old-separate-iframe/` until we confirm Cardcom’s stored design slot. A frozen English snapshot is `_archive/english-full-snapshot/`. Do not paste archives.
 
 ## Export to clipboard
 
 ```bash
 source scripts/cardcom-clipboard.zsh
 
-cardcom_export    # fzf: any version, HTML or CSS
-cardcom_html      # fzf: HTML only (paste first)
-cardcom_css       # fzf: CSS only (paste second)
+cardcom_export    # fzf: Enter copies and stays in the list, Esc quits
+cardcom_html      # same, HTML only (paste first)
+cardcom_css       # same, CSS only (paste second)
+cardcom_open      # fzf: open that version's HTML+CSS on localhost (not React)
+cardcom_tester    # start Express + Vite if needed, open the React tester
 ```
 
-Needs [fzf](https://github.com/junegunn/fzf).
+Needs [fzf](https://github.com/junegunn/fzf). `cardcom_open` uses the API server on port 3000 if it is running, otherwise it starts `python3 -m http.server 8080` at the repo root. `cardcom_tester` needs Express on :3000 (not a python preview) and Vite on :5173.
 
 ## Local preview
 
@@ -76,9 +61,16 @@ Older files under `cardcom-hosted/` are leftover from earlier experiments. Do no
 
 ## Wallet buttons
 
-The hosted template keeps Bit, Apple Pay, Google Pay, and PayPal.
+The CSS only places and sizes the outer slots (2-column grid; leftover methods reflow).
 
-Apple Pay is gated by Cardcom (typically Safari + an Apple Wallet). Wallet availability is terminal + Knockout, not CSS.
+| Method | What we keep | Design |
+| --- | --- | --- |
+| Google Pay | `#GooglePayDiv` | `GooglePayBtnDesign` on Create (`server/profiles.js`). Iframe parent: `allow="payment"` + `allowpaymentrequest`. |
+| Apple Pay | Cardcom Apple Pay IDs / `data-bind` | Terminal + Safari. Iframe needs the embedding domain registered. No `ApplePayBtnDesign`. |
+| PayPal | Cardcom PayPal markup | No PayPal design API. |
+| Bit | empty `#bit-payment-button` + `sendData_CardcomBit` | `/Images/Bit/bit_button.svg` and hover SVG from Cardcom’s template CSS, not an API. |
+
+Wallet availability is terminal + Knockout, not CSS. Localhost preview simulates layout; a real Cardcom Low Profile session is what shows saved cards, native Apple Pay, and Bit clicks.
 
 ## How to run
 
@@ -93,7 +85,7 @@ After any CSS change, start a **new** payment. Old Low Profile URLs keep the old
 
 ## Layout
 
-- `templates/cardcom/` — paste-ready HTML/CSS (redirect-normal, iframe-normal)
+- `templates/cardcom/low-profile/` — paste-ready Low Profile HTML + RTL/LTR CSS
 - `cardcom-preview/` — localhost mock wrappers (never paste)
 - `server/` — shared payment API and `profiles.js`
 - `cardcom-tester/` — React test harness

@@ -2,8 +2,9 @@
 <div class="checkout-page">
 
     <div class="checkout-header">
-        <div class="checkout-header-title">Secure Payment</div>
-        <div class="checkout-header-lock">🔒 Secured by Cardcom</div>
+        <div class="checkout-header-title">תשלום מאובטח</div>
+                    <div class="checkout-header-version">full · iframe · he</div>
+        <div class="checkout-header-lock">🔒 מאובטח באמצעות Cardcom</div>
     </div>
 
     <main class="checkout-body">
@@ -29,7 +30,7 @@
             <tbody>
                 <!-- ko template: { foreach: order.lines } -->
                 <tr>
-                    <td class="align"><span data-bind="text:name"></span></td>
+                    <td class="align"><span class="line-name" data-bind="text:name"></span></td>
                     <td><span class="directionLTR" data-bind="text:unitPrice"></span></td>
                     <td><span class="directionLTR" data-bind="text:quantity"></span></td>
                     <td><span class="directionLTR" data-bind="text:total"></span></td>
@@ -75,26 +76,24 @@
                 <span class="section-number">2</span>
                 <div>
                     <h2 data-bind="text:labels.MethodsOfPayment"></h2>
-                    <p>Choose a payment method and complete the purchase</p>
+                    <p>בחר אמצעי תשלום והשלם את העסקה</p>
                 </div>
             </div>
 
             <div class="payment-split">
             <div class="payment-wallets">
             <div class="payment-methods-grid">
+                <div class="GooglePayDiv" id="GooglePayDiv" data-bind="hide: hideGooglePay"></div>
+
                 <div class="paypalDiv" data-bind="hide: hidePayPal">
                     <a href="#">
                         <img data-bind="attr: { src: images.paypal }, click: sendPayPalData" border="0" alt="PayPal">
                     </a>
                 </div>
 
-                <div class="masterPassDiv" data-bind="hide: hideMasterPass">
-                    <a href="#">
-                        <img data-bind="attr: { src: images.masterPass }, click: sendMasterPassData" border="0" alt="MasterPass">
-                    </a>
+                <div id="ApplePayDivContainer">
+                    <!-- place this div anywhere for manual placement (if `applePayDiv` not already present on page) -->
                 </div>
-
-                <div id="ApplePayDivContainer"></div>
 
                 <div class="ApplePayDiv" data-bind="if: IsApplePayActive">
                     <div id="apple-pay-button-setup"
@@ -103,7 +102,7 @@
 
                     <div id="apple-pay-button-start"
                          class="apple-pay apple-pay-button button-with-text button-color-black"
-                         data-bind="attr: { lang : ApplePay.language }, click: ApplePay.startApplePay, visible: ApplePay.applePayInstance.flagsComputed._PaymentBtn">
+                         data-bind="attr: { lang : ApplePay.language }, click: ApplePay.startApplePay, visible: ApplePay.applePayInstance.flagsComputed._PaymentBtn //hide: hideApplePayButton">
                         <span class="logo logo-color-white"></span>
                     </div>
 
@@ -126,9 +125,9 @@
                     </div>
                 </div>
 
-                <div class="GooglePayDiv" id="GooglePayDiv"></div>
-
-                <div id="BitDivContainer"></div>
+                <div id="BitDivContainer">
+                    <!-- place this div anywhere for manual placement (if `uPayBitDiv` or `PayMeBitDiv` not already present on page) -->
+                </div>
 
                 <div id="uPayBitDiv" data-bind="ifnot: hideUpayBitBtn">
                     <div class="uPayBitContainer">
@@ -166,13 +165,19 @@
                         <img id="qrBarcode" data-bind="if:CardcomBitQrBarcodeUrl, attr: {src:CardcomBitQrBarcodeUrl}" width="200">
                     </div>
                 </div>
+
+                <div class="masterPassDiv" data-bind="hide: hideMasterPass">
+                    <a href="#">
+                        <img data-bind="attr: { src: images.masterPass }, click: sendMasterPassData" border="0" alt="MasterPass">
+                    </a>
+                </div>
             </div>
             </div>
 
             <div class="payment-card-col">
             <div class="card-payment-title"
                  data-bind="hide: (hideCreditCardInputs || hidePayPal && hideMasterPass && hideApplePay)">
-                <span>Or pay with a credit card</span>
+                <span>או תשלום בכרטיס אשראי</span>
             </div>
 
             <div id="CreditCardDiv" data-bind="ifnot: hideCreditCardInputs">
@@ -361,7 +366,7 @@
                 <span class="section-number">1</span>
                 <div>
                     <h2 data-bind="text: labels.InvoiceInfo"></h2>
-                    <p>Customer and invoice details</p>
+                    <p>פרטי הלקוח והחשבונית</p>
                 </div>
             </div>
 

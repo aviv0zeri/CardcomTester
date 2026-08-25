@@ -9,7 +9,6 @@ const profiles = {
   tester: {
     terminalNumber: Number(process.env.CARDCOM_TERMINAL),
     apiName: process.env.CARDCOM_USERNAME,
-    language: 'he',
     successRedirectUrl:
       process.env.CARDCOM_SUCCESS_URL || 'https://www.google.com',
     failedRedirectUrl:
@@ -18,7 +17,10 @@ const profiles = {
     // Optional HTTPS stylesheet. Production branding belongs in Cardcom's CSS editor.
     // Localhost CSS is blocked as mixed content on Cardcom's HTTPS page.
     cssUrl: process.env.CARDCOM_CSS_URL || '',
+    // Cardcom UIDefinition.GooglePayBtnDesign — documented GPay face (not CSS internals).
     googlePayBtnDesign: {
+      ButtonColor: 0,
+      ButtonType: 0,
       ButtonWidth: '100%',
       ButtonHeight: '40',
     },
@@ -38,7 +40,15 @@ function getProfile(profileId) {
   return { id, ...profile };
 }
 
-function buildLowProfileBody(profile, amount) {
+const LANGUAGES = ['he', 'en', 'ru', 'ar'];
+
+function buildLowProfileBody(profile, amount, language) {
+  if (!LANGUAGES.includes(language)) {
+    const error = new Error('language must be he, en, ru, or ar');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const uiDefinition = {};
 
   if (profile.cssUrl) {
@@ -53,7 +63,7 @@ function buildLowProfileBody(profile, amount) {
     TerminalNumber: profile.terminalNumber,
     ApiName: profile.apiName,
     Amount: amount,
-    Language: profile.language || 'he',
+    Language: language,
     Operation: profile.operation || 'ChargeOnly',
     SuccessRedirectUrl: profile.successRedirectUrl,
     FailedRedirectUrl: profile.failedRedirectUrl,
@@ -67,6 +77,7 @@ function buildLowProfileBody(profile, amount) {
 }
 
 module.exports = {
+  LANGUAGES,
   getProfile,
   buildLowProfileBody,
 };

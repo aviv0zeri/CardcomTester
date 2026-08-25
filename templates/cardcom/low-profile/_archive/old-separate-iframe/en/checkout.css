@@ -1,3 +1,5 @@
+/* iframe-normal: compact checkout that fills the host iframe.
+   No page scrollbar. The order table may still scroll internally. */
 * {
     box-sizing: border-box;
 }
@@ -8,11 +10,10 @@ body {
     padding: 0;
     width: 100%;
     height: 100%;
-    max-height: 100dvh;
-    overflow: hidden !important;
+    max-height: 100%;
+    overflow: hidden;
     overscroll-behavior: none;
-    position: fixed;
-    inset: 0;
+    position: relative;
     background-color: #e8eaef;
     background-image:
         radial-gradient(ellipse 70% 80% at 50% 20%, #f7f8fa 0%, rgba(247, 248, 250, 0.7) 42%, transparent 78%),
@@ -27,7 +28,7 @@ body {
     width: 100%;
     height: 100%;
     max-height: 100%;
-    overflow: hidden !important;
+    overflow: hidden;
     background: transparent !important;
 }
 
@@ -50,45 +51,26 @@ body {
     height: 100%;
     max-height: 100%;
     margin: 0;
-    padding: 8px 0 0;
-    overflow-x: hidden;
-    overflow-y: scroll;
+    padding: 6px 0 0;
+    overflow: hidden;
     overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-    scrollbar-width: auto;
-    scrollbar-color: #5c6578 #c5cedb;
+    scrollbar-width: none;
 }
 
 .checkout-page::-webkit-scrollbar {
-    -webkit-appearance: none;
-    width: 12px;
-    height: 12px;
-    background: #c5cedb;
-}
-
-.checkout-page::-webkit-scrollbar-track {
-    background: #c5cedb;
-}
-
-.checkout-page::-webkit-scrollbar-thumb {
-    background: #5c6578;
-    border-radius: 6px;
-    border: 2px solid #c5cedb;
-    min-height: 32px;
-}
-
-.checkout-page::-webkit-scrollbar-thumb:hover {
-    background: #3f4654;
+    width: 0;
+    height: 0;
 }
 
 .checkout-header {
     flex: 0 0 auto;
     width: min(782px, calc(100% - 24px));
     margin: 0 auto 8px;
-    min-height: 52px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px 12px;
     padding: 0 20px;
     background: #0f1f3d;
     border: 0;
@@ -98,13 +80,15 @@ body {
 }
 
 .checkout-body {
-    flex: 1 0 auto;
+    flex: 1 1 auto;
     width: min(782px, calc(100% - 24px));
     margin: 0 auto;
     min-height: 0;
-    overflow: visible;
-    padding-bottom: 8px;
-    direction: rtl;
+    overflow: hidden;
+    padding-bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    direction: ltr;
 }
 
 .checkout-header-title {
@@ -118,10 +102,23 @@ body {
     font-size: 12px;
 }
 
+.checkout-header-version {
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #0f1f3d;
+    background: #fbbf24;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
 .checkout-summary {
     display: flex;
     flex-direction: column;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     background: color-mix(in srgb, #1d4ed8 4%, #e8eaef);
     border: 1px solid color-mix(in srgb, #1d4ed8 4%, #d5d8e0);
     border-radius: 6px;
@@ -136,10 +133,10 @@ body {
 }
 
 .checkout-summary-table {
-    display: block;
+    display: block !important;
     flex: 0 0 auto;
-    height: 132px;
-    max-height: 132px;
+    height: 88px !important;
+    max-height: 88px !important;
     overflow-x: auto !important;
     overflow-y: scroll !important;
     overscroll-behavior: contain;
@@ -220,6 +217,60 @@ body {
     background: color-mix(in srgb, #1d4ed8 4%, #fff) !important;
 }
 
+.productsTbl td.align {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.productsTbl td.align .line-name {
+    display: block;
+    max-height: 2.8em;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.productsTbl tbody tr:last-child td {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+}
+
+.productsTbl tbody tr.invoice-line-remark td {
+    background: color-mix(in srgb, #1d4ed8 4%, #f4f5f8) !important;
+    color: #64748b;
+    font-size: 11px !important;
+    text-align: inherit;
+    padding: 6px 8px;
+}
+
+.invoice-line-remark-box {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 4.6em;
+}
+
+.invoice-line-remark-title {
+    flex: 0 0 auto;
+    font-weight: 700;
+    color: #252c3a;
+    font-size: 11px;
+    line-height: 1.3;
+    margin: 0 0 2px;
+}
+
+.invoice-line-remark-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 3.2em;
+    overflow-x: hidden;
+    overflow-y: auto;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.35;
+}
+
 .checkout-total {
     display: flex;
     flex-shrink: 0;
@@ -265,11 +316,13 @@ body {
 }
 
 .checkout-grid {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     width: 100%;
     margin: 0 auto;
     gap: 0;
+    flex: 1 1 auto;
+    min-height: 0;
     background: #fff;
     border: 1px solid rgba(213, 222, 234, 0.4);
     border-radius: 6px;
@@ -279,17 +332,20 @@ body {
 
 .checkout-grid .checkout-order {
     order: 1;
+    min-width: 0;
 }
 
 .checkout-grid .checkout-payment {
     order: 2;
+    min-width: 0;
+    border-inline-start: 1px solid rgba(213, 222, 234, 0.7);
 }
 
 .checkout-card {
     background: transparent;
     border: 0;
     border-radius: 0;
-    padding: 16px 18px;
+    padding: 10px 12px;
     box-shadow: none;
     width: 100%;
     min-width: 0;
@@ -301,16 +357,16 @@ body {
 }
 
 .checkout-card.checkout-order {
-    min-height: calc(100dvh - 320px);
-    padding: 20px 22px 20px;
+    min-height: 0;
+    padding: 10px 12px 8px;
     align-content: start;
 }
 
 .checkout-order {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    column-gap: 28px;
-    row-gap: 4px;
+    column-gap: 12px;
+    row-gap: 0;
     width: 100%;
     min-width: 0;
     align-content: start;
@@ -318,15 +374,15 @@ body {
 }
 
 .checkout-order .section-heading {
-    margin-bottom: 22px;
+    margin-bottom: 8px;
 }
 
 .checkout-order .formRow {
-    margin-bottom: 16px;
+    margin-bottom: 8px;
 }
 
 .checkout-order .fieldInput input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]) {
-    min-height: 44px;
+    min-height: 36px;
 }
 
 .checkout-order .section-heading,
@@ -339,7 +395,7 @@ body {
     grid-template-columns: 1fr 1fr;
     column-gap: 14px;
     width: 100%;
-    max-width: 520px;
+    max-width: none;
     margin: 0 auto;
 }
 
@@ -398,8 +454,8 @@ body {
 
 .payment-wallets {
     direction: rtl;
-    margin: 4px 0 10px;
-    padding: 18px 22px;
+    margin: 0 0 4px;
+    padding: 8px 10px;
     border-radius: 8px;
     background: transparent;
     box-shadow: none;
@@ -419,133 +475,179 @@ body {
 
 .payment-card-col {
     width: 100%;
-    max-width: 520px;
+    max-width: none;
     margin: 0 auto;
 }
 
 .payment-methods-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    direction: ltr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    gap: 12px;
     align-items: stretch;
     justify-items: stretch;
     width: 100%;
-    max-width: 520px;
+    max-width: none;
     margin: 0 auto;
 }
 
-.payment-methods-grid > :empty,
-#ApplePayDivContainer:empty,
-#BitDivContainer:empty {
-    display: none;
-}
-
 .paypalDiv,
 .masterPassDiv,
 .ApplePayDiv,
-.GooglePayDiv,
+#ApplePayDivContainer,
+#BitDivContainer,
 #uPayBitDiv,
 #PayMeBitDiv,
 #CardcomBitDiv {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
     width: 100%;
     min-width: 0;
+    min-height: 40px;
     margin: 0;
+    overflow: visible;
 }
 
-.uPayBitContainer,
-.BitContainer {
+.GooglePayDiv {
+    box-sizing: border-box;
+    display: block;
     width: 100%;
-    height: 80px;
+    min-width: 0;
+    min-height: 40px;
     margin: 0;
-    padding: 0;
-    line-height: 0;
+    overflow: visible;
 }
 
-.paypalDiv,
-.masterPassDiv,
-.ApplePayDiv,
-.GooglePayDiv,
-#uPayBitDiv,
-#PayMeBitDiv,
-#CardcomBitDiv,
-.paypalDiv a,
-.masterPassDiv a,
-.paypalDiv img,
-.masterPassDiv img,
-.apple-pay-button,
-#bit-payment-button {
-    cursor: pointer;
+#ApplePayDivContainer:not(:has(*)),
+#BitDivContainer:not(:has(*)),
+.ApplePayDiv:empty {
+    display: none;
 }
 
 .paypalDiv a,
 .masterPassDiv a {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
-    height: 80px;
+    min-height: 40px;
+    margin: 0;
 }
 
 .paypalDiv img,
 .masterPassDiv img {
     display: block;
-    width: 100% !important;
-    max-width: none !important;
-    height: 80px !important;
-    border-radius: 6px;
+    width: 100%;
+    max-width: 100%;
+    height: 40px;
     object-fit: contain;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22) inset, 0 2px 4px rgba(15, 31, 61, 0.2), 0 10px 18px rgba(15, 31, 61, 0.16);
 }
 
-#bit-payment-button {
+.paypalDiv .paypal-buttons,
+.paypalDiv iframe {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+}
+
+.ApplePayDiv .apple-pay-button[style*="display: none"] {
+    display: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+}
+
+.ApplePayDiv .apple-pay-notices {
+    display: none;
+}
+
+.ApplePayDiv #apple-pay-button-start,
+.ApplePayDiv #apple-pay-button-popup,
+.ApplePayDiv #apple-pay-button-setup,
+#ApplePayDivContainer .apple-pay-button,
+#ApplePayDivContainer apple-pay-button {
+    box-sizing: border-box;
     width: 100%;
-    height: 80px;
+    max-width: 100%;
+    min-width: 0;
+    height: 40px;
+    min-height: 40px;
+    border-radius: 6px;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+@supports (-webkit-appearance: -apple-pay-button) {
+    .ApplePayDiv #apple-pay-button-start,
+    .ApplePayDiv #apple-pay-button-popup,
+    #ApplePayDivContainer .apple-pay-button,
+    #ApplePayDivContainer apple-pay-button {
+        -webkit-appearance: -apple-pay-button;
+        -apple-pay-button-style: black;
+        -apple-pay-button-type: plain;
+        --apple-pay-button-width: 100%;
+        --apple-pay-button-height: 40px;
+        --apple-pay-button-border-radius: 6px;
+        background: none;
+    }
+
+    .ApplePayDiv #apple-pay-button-start .logo,
+    .ApplePayDiv #apple-pay-button-popup .logo {
+        display: none;
+    }
+}
+
+.uPayBitContainer,
+.BitContainer {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    height: 40px;
+    margin: 0;
+    padding: 0;
+    line-height: 0;
+}
+
+#uPayBitDiv #bit-payment-button,
+#PayMeBitDiv #bit-payment-button,
+#CardcomBitDiv #bit-payment-button {
+    display: block;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: none !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    margin: 0;
+    padding: 0;
     border: 0;
     border-radius: 6px;
     cursor: pointer;
+    pointer-events: auto;
+    background-color: transparent;
     background-image: url("/Images/Bit/bit_button.svg");
     background-repeat: no-repeat;
     background-position: center;
-    background-size: auto 22px;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22) inset, 0 2px 4px rgba(15, 31, 61, 0.2), 0 10px 18px rgba(15, 31, 61, 0.16);
+    background-size: cover;
 }
 
-.apple-pay-button {
-    width: 100% !important;
-    height: 80px !important;
-    border-radius: 6px !important;
-    cursor: pointer;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22) inset, 0 2px 4px rgba(15, 31, 61, 0.2), 0 10px 18px rgba(15, 31, 61, 0.16);
+#uPayBitDiv #bit-payment-button:hover,
+#PayMeBitDiv #bit-payment-button:hover,
+#CardcomBitDiv #bit-payment-button:hover {
+    background-image: url("/Images/Bit/bit_button_hover.svg");
 }
 
-.GooglePayDiv,
-.GooglePayDiv > * {
-    width: 100%;
-    min-height: 80px;
-    height: 80px;
-    cursor: pointer;
-    border-radius: 6px;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22) inset, 0 2px 4px rgba(15, 31, 61, 0.2), 0 10px 18px rgba(15, 31, 61, 0.16);
+#cardcom-bit-container-div,
+#payme-container-div {
+    pointer-events: none;
 }
 
-.paypalDiv img,
-.masterPassDiv img,
-.apple-pay-button,
-#bit-payment-button,
-.GooglePayDiv > * {
-    transition: transform .16s ease, box-shadow .16s ease, outline-color .16s ease;
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-}
-
-.paypalDiv:hover img,
-.masterPassDiv:hover img,
-.ApplePayDiv:hover .apple-pay-button,
-#uPayBitDiv:hover #bit-payment-button,
-#PayMeBitDiv:hover #bit-payment-button,
-#CardcomBitDiv:hover #bit-payment-button,
-.GooglePayDiv:hover > * {
-    transform: translateY(2px);
-    box-shadow: inset 0 4px 10px rgba(15, 31, 61, 0.32), 0 1px 2px rgba(15, 31, 61, 0.12);
-    outline-color: #1d4ed8;
+#cardcom-bit-container-div a,
+#cardcom-bit-container-div img,
+#payme-container-div a {
+    pointer-events: auto;
 }
 
 .payment-divider {
@@ -588,7 +690,7 @@ body {
 }
 
 .card-payment-title {
-    margin: 22px 0 14px;
+    margin: 6px 0 8px;
     color: #64748b;
     font-size: 13px;
     font-weight: 600;
@@ -620,7 +722,7 @@ body {
 .fieldInput input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
 .fieldInput select {
     width: 100% !important;
-    min-height: 40px;
+    min-height: 36px;
     margin: 0 !important;
     padding: 0 12px !important;
     border: 1px solid #111 !important;
@@ -635,7 +737,7 @@ body {
 }
 
 .fieldInput select {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%23697386' d='M1 1.5L6 6.5L11 1.5'/></svg>") !important;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMicgaGVpZ2h0PSc4JyB2aWV3Qm94PScwIDAgMTIgOCc+PHBhdGggZmlsbD0nIzY5NzM4NicgZD0nTTEgMS41TDYgNi41TDExIDEuNScvPjwvc3ZnPg==") !important;
     background-repeat: no-repeat !important;
     background-position: left 12px center !important;
     background-size: 12px 8px !important;
@@ -734,7 +836,7 @@ body {
     gap: 6px;
     width: 100% !important;
     max-width: none !important;
-    margin: 10px 0 4px !important;
+    margin: 4px 0 2px !important;
     padding: 0 !important;
     text-align: center !important;
     color: #334155;
@@ -779,7 +881,7 @@ body {
     width: 100%;
     max-width: none;
     min-height: auto;
-    padding: 16px 0 4px;
+    padding: 8px 0 0;
     background: transparent;
     align-items: center;
     justify-content: center;
@@ -902,12 +1004,35 @@ body {
 }
 
 .footerIfIframe .footer-text,
-.footerIfIframe .footer-text span,
-.footerIfIframe .footer-text span a {
+.footerIfIframe .footer-text span {
     color: #7a8494;
     font-size: 10px !important;
     line-height: 1.25;
     margin: 0 !important;
+}
+
+.footerIfIframe .footer-text a,
+.footerIfIframe .footer-text span a,
+#privacy-policy-container a {
+    color: #337ab7;
+    font-size: 10px !important;
+    line-height: 1.25;
+    margin: 0 !important;
+    text-decoration: underline;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.footerIfIframe .footer-text a:hover,
+.footerIfIframe .footer-text span a:hover,
+#privacy-policy-container a:hover {
+    color: #23527c;
+}
+
+#privacy-policy-container {
+    text-align: center;
+    max-width: none;
+    padding: 4px 16px 0;
 }
 
 .footerIfIframe .footer-text span {
@@ -941,43 +1066,26 @@ body {
     .checkout-page {
         width: 100%;
         margin: 0;
-        padding: 8px 0 0;
+        padding: 6px 0 0;
     }
 
     .checkout-header {
         width: min(100% - 24px, 782px);
-        padding: 0 18px;
+        padding: 0 16px;
     }
 
+    .checkout-card {
+        padding: 10px 12px;
+    }
+}
+
+@media (max-width: 640px) {
     .checkout-grid,
     .checkout-order,
     #CreditCardDiv {
         grid-template-columns: 1fr;
     }
 
-    .checkout-grid {
-        width: 100%;
-    }
-
-    .checkout-payment {
-        order: 2;
-    }
-
-    .checkout-order {
-        order: 1;
-    }
-
-    .checkout-card {
-        padding: 16px;
-    }
-
-    .checkout-summary-table {
-        height: 160px;
-        max-height: 160px;
-    }
-}
-
-@media (max-width: 600px) {
     .checkout-header {
         flex-direction: column;
         align-items: flex-start;
@@ -990,7 +1098,7 @@ body {
     }
 
     .checkout-card {
-        padding: 14px;
+        padding: 10px;
         border-radius: 6px;
     }
 
@@ -1003,124 +1111,70 @@ body {
     }
 
     .checkout-summary-table {
-        height: 180px;
-        max-height: 180px;
+        height: 88px !important;
+        max-height: 88px !important;
         overflow: auto !important;
         direction: ltr;
     }
 }
 
-/* Compact iframe layout. Preview wrappers set html.checkout-embed.
-   Redirect (no class) is unchanged. No JavaScript. */
-html.checkout-embed .checkout-page {
-    overflow: hidden;
-    scrollbar-width: none;
+/* English LTR mirror of the Hebrew checkout. Same layout, flipped direction. */
+body {
+    direction: ltr;
+    text-align: left;
 }
 
-html.checkout-embed .checkout-page::-webkit-scrollbar {
-    width: 0;
-    height: 0;
+.checkout-body,
+.checkout-summary > *,
+.checkout-summary-table > * {
+    direction: ltr;
 }
 
-html.checkout-embed .checkout-header {
-    min-height: 44px;
-    margin-bottom: 6px;
+.productsTbl th.align,
+.productsTbl td.align {
+    text-align: left;
 }
 
-html.checkout-embed .checkout-body {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
-    padding-bottom: 4px;
+.payment-wallets,
+.payment-card-col,
+.payment-divider {
+    direction: ltr;
 }
 
-html.checkout-embed .checkout-summary {
-    margin-bottom: 6px;
+.fieldInput select {
+    background-position: right 12px center !important;
+    padding-left: 12px !important;
+    padding-right: 32px !important;
 }
 
-html.checkout-embed .checkout-summary-table {
-    height: 88px;
-    max-height: 88px;
+#txtCardNumber {
+    background-position: right 12px center !important;
 }
 
-html.checkout-embed .checkout-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
+
+/* iframe-normal: compact wallets, and keep terms + pay on screen. */
+.uPayBitContainer,
+.BitContainer,
+.paypalDiv a,
+.paypalDiv img,
+.masterPassDiv img,
+.apple-pay-button,
+#bit-payment-button {
+    height: 40px !important;
+    min-height: 40px !important;
 }
 
-html.checkout-embed .checkout-grid .checkout-order,
-html.checkout-embed .checkout-grid .checkout-payment {
-    min-width: 0;
-}
-
-html.checkout-embed .checkout-grid .checkout-payment {
-    border-inline-start: 1px solid rgba(213, 222, 234, 0.7);
-}
-
-html.checkout-embed .checkout-card {
-    padding: 10px 12px;
-}
-
-html.checkout-embed .checkout-card.checkout-order {
-    min-height: 0;
-    padding: 10px 12px 8px;
-}
-
-html.checkout-embed .checkout-order {
-    column-gap: 12px;
-    row-gap: 0;
-}
-
-html.checkout-embed .checkout-order .section-heading {
-    margin-bottom: 8px;
-}
-
-html.checkout-embed .checkout-order .formRow {
-    margin-bottom: 8px;
-}
-
-html.checkout-embed .checkout-order .fieldInput input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
-html.checkout-embed .fieldInput input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
-html.checkout-embed .fieldInput select {
-    min-height: 36px;
-}
-
-html.checkout-embed #CreditCardDiv,
-html.checkout-embed .payment-card-col,
-html.checkout-embed .payment-methods-grid {
-    max-width: none;
-}
-
-html.checkout-embed .payment-wallets {
-    margin: 0 0 4px;
-    padding: 8px 10px;
-}
-
-html.checkout-embed .card-payment-title {
-    margin: 6px 0 8px;
-}
-
-html.checkout-embed .summaryTotal {
-    margin: 4px 0 2px !important;
-}
-
-html.checkout-embed .checkout-grid .checkout-payment,
-html.checkout-embed .checkout-card.checkout-payment {
+.checkout-grid .checkout-payment,
+.checkout-card.checkout-payment {
     display: flex;
     flex-direction: column;
     height: 100%;
     min-height: 0;
     overflow: hidden;
-    padding-top: 8px;
 }
 
-html.checkout-embed .payment-split,
-html.checkout-embed .payment-card-col {
+.payment-split,
+.payment-card-col {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
@@ -1128,14 +1182,14 @@ html.checkout-embed .payment-card-col {
     overflow: hidden;
 }
 
-html.checkout-embed #CreditCardDiv {
+#CreditCardDiv {
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
     align-content: start;
 }
 
-html.checkout-embed .agreement-row {
+.agreement-row {
     position: sticky;
     bottom: 0;
     z-index: 4;
@@ -1144,54 +1198,12 @@ html.checkout-embed .agreement-row {
     background: #fff;
 }
 
-html.checkout-embed .submitDiv {
+.submitDiv {
     flex: 0 0 auto;
     padding: 4px 0 6px;
     background: #fff;
 }
 
-html.checkout-embed .submitDiv .buttonDiv input {
+.submitDiv .buttonDiv input {
     min-height: 42px;
-}
-
-html.checkout-embed .uPayBitContainer,
-html.checkout-embed .BitContainer,
-html.checkout-embed .paypalDiv a,
-html.checkout-embed .paypalDiv img,
-html.checkout-embed .masterPassDiv img,
-html.checkout-embed .apple-pay-button,
-html.checkout-embed #bit-payment-button,
-html.checkout-embed .GooglePayDiv,
-html.checkout-embed .GooglePayDiv > * {
-    height: 40px !important;
-    min-height: 40px !important;
-}
-
-@media (max-width: 900px) {
-    html.checkout-embed .checkout-grid,
-    html.checkout-embed .checkout-order {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    html.checkout-embed .checkout-summary-table {
-        height: 88px;
-        max-height: 88px;
-    }
-
-    html.checkout-embed .checkout-card {
-        padding: 10px 12px;
-    }
-}
-
-@media (max-width: 640px) {
-    html.checkout-embed .checkout-grid,
-    html.checkout-embed .checkout-order,
-    html.checkout-embed #CreditCardDiv {
-        grid-template-columns: 1fr;
-    }
-
-    html.checkout-embed .checkout-summary-table {
-        height: 88px;
-        max-height: 88px;
-    }
 }

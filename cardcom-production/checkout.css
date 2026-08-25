@@ -7,12 +7,10 @@ body {
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%;
-    max-height: 100dvh;
-    overflow: hidden !important;
-    overscroll-behavior: none;
-    position: fixed;
-    inset: 0;
+    min-height: 100dvh;
+    overflow-x: clip;
+    overflow-y: auto;
+    overscroll-behavior: auto;
     background-color: #e8eaef;
     background-image:
         radial-gradient(ellipse 70% 80% at 50% 20%, #f7f8fa 0%, rgba(247, 248, 250, 0.7) 42%, transparent 78%),
@@ -25,9 +23,8 @@ body {
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%;
-    max-height: 100%;
-    overflow: hidden !important;
+    height: auto;
+    overflow: visible !important;
     background: transparent !important;
 }
 
@@ -47,16 +44,10 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100%;
-    max-height: 100%;
+    min-height: 100dvh;
     margin: 0;
     padding: 8px 0 0;
-    overflow-x: hidden;
-    overflow-y: scroll;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-    scrollbar-width: auto;
-    scrollbar-color: #5c6578 #c5cedb;
+    overflow: visible;
 }
 
 .checkout-page::-webkit-scrollbar {
@@ -89,6 +80,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px 12px;
     padding: 0 20px;
     background: #0f1f3d;
     border: 0;
@@ -118,6 +110,19 @@ body {
     font-size: 12px;
 }
 
+.checkout-header-version {
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #0f1f3d;
+    background: #fbbf24;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
 .checkout-summary {
     display: flex;
     flex-direction: column;
@@ -136,10 +141,10 @@ body {
 }
 
 .checkout-summary-table {
-    display: block;
+    display: block !important;
     flex: 0 0 auto;
-    height: 132px;
-    max-height: 132px;
+    height: 132px !important;
+    max-height: 132px !important;
     overflow-x: auto !important;
     overflow-y: scroll !important;
     overscroll-behavior: contain;
@@ -635,7 +640,7 @@ body {
 }
 
 .fieldInput select {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%23697386' d='M1 1.5L6 6.5L11 1.5'/></svg>") !important;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMicgaGVpZ2h0PSc4JyB2aWV3Qm94PScwIDAgMTIgOCc+PHBhdGggZmlsbD0nIzY5NzM4NicgZD0nTTEgMS41TDYgNi41TDExIDEuNScvPjwvc3ZnPg==") !important;
     background-repeat: no-repeat !important;
     background-position: left 12px center !important;
     background-size: 12px 8px !important;
@@ -972,8 +977,8 @@ body {
     }
 
     .checkout-summary-table {
-        height: 160px;
-        max-height: 160px;
+        height: 160px !important;
+        max-height: 160px !important;
     }
 }
 
@@ -1003,9 +1008,213 @@ body {
     }
 
     .checkout-summary-table {
-        height: 180px;
-        max-height: 180px;
+        height: 180px !important;
+        max-height: 180px !important;
         overflow: auto !important;
         direction: ltr;
+    }
+}
+
+/* Compact iframe layout. Preview wrappers set html.checkout-embed.
+   Redirect (no class) is unchanged. No JavaScript. */
+html.checkout-embed,
+html.checkout-embed body {
+    height: 100%;
+    max-height: 100dvh;
+    overflow: hidden !important;
+    position: fixed;
+    inset: 0;
+}
+
+html.checkout-embed #Content,
+html.checkout-embed #checkout-root {
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden !important;
+}
+
+html.checkout-embed .checkout-page {
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    scrollbar-width: none;
+}
+
+html.checkout-embed .checkout-page::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+html.checkout-embed .checkout-header {
+    min-height: 44px;
+    margin-bottom: 6px;
+}
+
+html.checkout-embed .checkout-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: 4px;
+}
+
+html.checkout-embed .checkout-summary {
+    margin-bottom: 6px;
+}
+
+html.checkout-embed .checkout-summary-table {
+    height: 88px !important;
+    max-height: 88px !important;
+}
+
+html.checkout-embed .checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+html.checkout-embed .checkout-grid .checkout-order,
+html.checkout-embed .checkout-grid .checkout-payment {
+    min-width: 0;
+}
+
+html.checkout-embed .checkout-grid .checkout-payment {
+    border-inline-start: 1px solid rgba(213, 222, 234, 0.7);
+}
+
+html.checkout-embed .checkout-card {
+    padding: 10px 12px;
+}
+
+html.checkout-embed .checkout-card.checkout-order {
+    min-height: 0;
+    padding: 10px 12px 8px;
+}
+
+html.checkout-embed .checkout-order {
+    column-gap: 12px;
+    row-gap: 0;
+}
+
+html.checkout-embed .checkout-order .section-heading {
+    margin-bottom: 8px;
+}
+
+html.checkout-embed .checkout-order .formRow {
+    margin-bottom: 8px;
+}
+
+html.checkout-embed .checkout-order .fieldInput input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+html.checkout-embed .fieldInput input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+html.checkout-embed .fieldInput select {
+    min-height: 36px;
+}
+
+html.checkout-embed #CreditCardDiv,
+html.checkout-embed .payment-card-col,
+html.checkout-embed .payment-methods-grid {
+    max-width: none;
+}
+
+html.checkout-embed .payment-wallets {
+    margin: 0 0 4px;
+    padding: 8px 10px;
+}
+
+html.checkout-embed .card-payment-title {
+    margin: 6px 0 8px;
+}
+
+html.checkout-embed .summaryTotal {
+    margin: 4px 0 2px !important;
+}
+
+html.checkout-embed .checkout-grid .checkout-payment,
+html.checkout-embed .checkout-card.checkout-payment {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding-top: 8px;
+}
+
+html.checkout-embed .payment-split,
+html.checkout-embed .payment-card-col {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+html.checkout-embed #CreditCardDiv {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    align-content: start;
+}
+
+html.checkout-embed .agreement-row {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0 !important;
+    padding: 8px 0 4px !important;
+    background: #fff;
+}
+
+html.checkout-embed .submitDiv {
+    flex: 0 0 auto;
+    padding: 4px 0 6px;
+    background: #fff;
+}
+
+html.checkout-embed .submitDiv .buttonDiv input {
+    min-height: 42px;
+}
+
+html.checkout-embed .uPayBitContainer,
+html.checkout-embed .BitContainer,
+html.checkout-embed .paypalDiv a,
+html.checkout-embed .paypalDiv img,
+html.checkout-embed .masterPassDiv img,
+html.checkout-embed .apple-pay-button,
+html.checkout-embed #bit-payment-button,
+html.checkout-embed .GooglePayDiv,
+html.checkout-embed .GooglePayDiv > * {
+    height: 40px !important;
+    min-height: 40px !important;
+}
+
+@media (max-width: 900px) {
+    html.checkout-embed .checkout-grid,
+    html.checkout-embed .checkout-order {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    html.checkout-embed .checkout-summary-table {
+        height: 88px !important;
+        max-height: 88px !important;
+    }
+
+    html.checkout-embed .checkout-card {
+        padding: 10px 12px;
+    }
+}
+
+@media (max-width: 640px) {
+    html.checkout-embed .checkout-grid,
+    html.checkout-embed .checkout-order,
+    html.checkout-embed #CreditCardDiv {
+        grid-template-columns: 1fr;
+    }
+
+    html.checkout-embed .checkout-summary-table {
+        height: 88px !important;
+        max-height: 88px !important;
     }
 }
