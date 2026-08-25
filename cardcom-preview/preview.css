@@ -16,6 +16,25 @@ body {
   overscroll-behavior: none;
   position: fixed;
   inset: 0;
+  background: #fff !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.checkout-page {
+  padding-top: 0;
+}
+
+.checkout-header {
+  width: 100%;
+  margin: 0 0 8px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.footerIfIframe {
+  background: #fff !important;
+  background-image: none !important;
 }
 
 #checkout-root {

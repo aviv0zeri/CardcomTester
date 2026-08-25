@@ -12,6 +12,18 @@ app.use(
   '/cardcom-hosted',
   express.static(path.join(__dirname, '..', 'cardcom-hosted'))
 );
+app.use(
+  '/cardcom-preview',
+  express.static(path.join(__dirname, '..', 'cardcom-preview'))
+);
+app.use(
+  '/cardcom-production',
+  express.static(path.join(__dirname, '..', 'cardcom-production'))
+);
+app.use(
+  '/templates',
+  express.static(path.join(__dirname, '..', 'templates'))
+);
 
 app.get('/', (req, res) => {
   res.redirect('/cardcom-hosted/');

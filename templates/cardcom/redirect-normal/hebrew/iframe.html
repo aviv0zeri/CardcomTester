@@ -1,0 +1,482 @@
+<!-- Cardcom Low Profile static HTML template. split-v15 -->
+<div class="checkout-page">
+
+    <div class="checkout-header">
+        <div class="checkout-header-title">תשלום מאובטח</div>
+        <div class="checkout-header-lock">🔒 מאובטח באמצעות Cardcom</div>
+    </div>
+
+    <main class="checkout-body">
+
+    <div class="blockDetails html-comments" data-bind="visible : labels.HtmlComments">
+        <div class="blockDetailsIn">
+            <div class="htmlCommentsDiv" data-bind="html: labels.HtmlComments"></div>
+        </div>
+    </div>
+
+    <!-- ko if: !IsHideInvoiceInfo -->
+    <div class="checkout-summary showProductsTables">
+        <div class="checkout-summary-table">
+        <table class="productsTbl">
+            <thead>
+                <tr class="title">
+                    <th class="align"><span data-bind="text:order.name"></span></th>
+                    <th><span data-bind="text:order.unitPrice"></span></th>
+                    <th><span data-bind="text:order.quantity"></span></th>
+                    <th><span data-bind="text:order.total"></span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- ko template: { foreach: order.lines } -->
+                <tr>
+                    <td class="align"><span data-bind="text:name"></span></td>
+                    <td><span class="directionLTR" data-bind="text:unitPrice"></span></td>
+                    <td><span class="directionLTR" data-bind="text:quantity"></span></td>
+                    <td><span class="directionLTR" data-bind="text:total"></span></td>
+                </tr>
+                <!-- /ko -->
+            </tbody>
+        </table>
+        </div>
+
+        <div class="checkout-total">
+            <span data-bind="text:labels.Summary"></span>
+            <strong class="num" data-bind="text:summaryTotalSign"></strong>
+        </div>
+
+        <div class="checkout-total-extra" data-bind="visible: showCommissionSummery">
+            <div>
+                <span data-bind="text: labels.PaymentsCommission"></span>
+                <span class="num" data-bind="text: totalCommissionSign"></span>
+            </div>
+            <div>
+                <span data-bind="text: labels.TotalIncludePaymentsCommission"></span>
+                <span class="num" data-bind="text: summeryTotalIncludeCommissionSign"></span>
+            </div>
+        </div>
+
+        <div class="checkout-total-extra" data-bind="visible: showOriginalSum">
+            <span data-bind="text: labels.OriginalSummary"></span>
+            <span class="num" data-bind="text: originalSum"></span>
+        </div>
+
+        <div class="checkout-total-extra" data-bind="visible: showCoinConvert">
+            <span data-bind="text: labels.TotalInfo"></span>
+            <select data-bind="options: currencyRates, optionsText: 'AlphabeticCode', value: selectedCurrencyRate"></select>
+            <span class="num" data-bind="text: currencyRateTotalSign"></span>
+        </div>
+    </div>
+    <!-- /ko -->
+
+    <div class="checkout-grid">
+
+        <section class="checkout-card checkout-payment paymentDetails">
+            <div class="section-heading">
+                <span class="section-number">2</span>
+                <div>
+                    <h2 data-bind="text:labels.MethodsOfPayment"></h2>
+                    <p>בחר אמצעי תשלום והשלם את העסקה</p>
+                </div>
+            </div>
+
+            <div class="payment-split">
+            <div class="payment-wallets">
+            <div class="payment-methods-grid">
+                <div class="paypalDiv" data-bind="hide: hidePayPal">
+                    <a href="#">
+                        <img data-bind="attr: { src: images.paypal }, click: sendPayPalData" border="0" alt="PayPal">
+                    </a>
+                </div>
+
+                <div class="masterPassDiv" data-bind="hide: hideMasterPass">
+                    <a href="#">
+                        <img data-bind="attr: { src: images.masterPass }, click: sendMasterPassData" border="0" alt="MasterPass">
+                    </a>
+                </div>
+
+                <div id="ApplePayDivContainer"></div>
+
+                <div class="ApplePayDiv" data-bind="if: IsApplePayActive">
+                    <div id="apple-pay-button-setup"
+                         class="apple-pay apple-pay-button button-with-text button-text-setup"
+                         data-bind="attr: { lang : ApplePay.language }, click:ApplePay.attemptApplePaySetup, visible: ApplePay.applePayInstance.flagsComputed._SetupBtn"></div>
+
+                    <div id="apple-pay-button-start"
+                         class="apple-pay apple-pay-button button-with-text button-color-black"
+                         data-bind="attr: { lang : ApplePay.language }, click: ApplePay.startApplePay, visible: ApplePay.applePayInstance.flagsComputed._PaymentBtn">
+                        <span class="logo logo-color-white"></span>
+                    </div>
+
+                    <div id="apple-pay-button-popup"
+                         class="apple-pay apple-pay-button button-color-black"
+                         data-bind="attr: { lang : ApplePay.language }, click: ApplePay.applePayPopup, visible: ApplePay.applePayInstance.flagsComputed._PopupBtn">
+                        <span class="logo logo-color-white"></span>
+                    </div>
+
+                    <div id="apple-pay-notices" class="apple-pay apple-pay-notices">
+                        <span id="apple-pay-button-popup-notice"
+                              data-bind="attr: { lang : ApplePay.language }, visible: ApplePay.applePayInstance.flagsComputed._PopupBtn">
+                            <small><span data-bind="text: labels.ApplePay_mightOpenPopupWindow"></span></small>
+                        </span>
+
+                        <span id="apple-pay-button-focus-notice"
+                              data-bind="attr: { lang : ApplePay.language }, visible: ApplePay.isApplePayExt">
+                            <small><span data-bind="text: labels.ApplePay_extPopup_keepOpen"></span></small>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="GooglePayDiv" id="GooglePayDiv"></div>
+
+                <div id="BitDivContainer"></div>
+
+                <div id="uPayBitDiv" data-bind="ifnot: hideUpayBitBtn">
+                    <div class="uPayBitContainer">
+                        <button id="bit-payment-button" type="button" data-bind="click: sendData_uPayBit"></button>
+                    </div>
+                </div>
+
+                <div id="PayMeBitDiv" data-bind="ifnot: hidePayMeBitBtn">
+                    <div class="BitContainer">
+                        <button id="bit-payment-button" type="button" data-bind="click: sendData_PayMeBit"></button>
+                    </div>
+
+                    <div id="payme-container-div">
+                        <label class="payme-payment-txt" data-bind="text: PayMePaymentText"></label>
+                        <label class="payme-payment-txt error" data-bind="text: PayMePaymentError"></label>
+                        <div id="payme-countdown" data-bind="visible: ShowPayMeCountdown"></div>
+                        <div id="payme-window-container"></div>
+                    </div>
+                </div>
+
+                <div id="CardcomBitDiv" data-bind="ifnot: hideCardcomBitBtn">
+                    <div class="BitContainer">
+                        <button id="bit-payment-button" type="button" data-bind="click: sendData_CardcomBit"></button>
+                    </div>
+
+                    <div id="cardcom-bit-container-div">
+                        <!-- ko if: CardcomBitUrl-->
+                        <a id="cardcom-bit-ref"
+                           data-bind="text: CardcomBitUrlText, attr: {href:CardcomBitUrl, target:'_blank'}"></a>
+                        <!-- /ko -->
+
+                        <label class="cardcom-bit-payment-txt" data-bind="text: CardcomBitPaymentText"></label>
+                        <label class="cardcom-bit-payment-txt error" data-bind="text: CardcomBitPaymentError"></label>
+                        <div id="cardcom-bit-countdown" data-bind="visible: ShowCardcomBitCountdown"></div>
+                        <img id="qrBarcode" data-bind="if:CardcomBitQrBarcodeUrl, attr: {src:CardcomBitQrBarcodeUrl}" width="200">
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="payment-card-col">
+            <div class="card-payment-title"
+                 data-bind="hide: (hideCreditCardInputs || hidePayPal && hideMasterPass && hideApplePay)">
+                <span>או תשלום בכרטיס אשראי</span>
+            </div>
+
+            <div id="CreditCardDiv" data-bind="ifnot: hideCreditCardInputs">
+                <div class="formRow cardRow form-span" data-bind="hide:cardNumber.hide, css:cardNumber.CssValid">
+                    <label class="fieldName"
+                           data-bind="text:cardNumber.label, hide:cardNumber.hide"
+                           for="txtCardNumber"></label>
+                    <span class="fieldInput">
+                        <input type="text"
+                               data-bind="value:cardNumber.value, disable:cardNumber.disabled , visible:IsMobile==false || IsToken, event: { keyup: checkCreditCardBrand }, class: CardBrandClass"
+                               data-testid="credit-card-number-text-field"
+                               id="txtCardNumber">
+                        <input type="number"
+                               data-bind="value:cardNumber.value, disable:cardNumber.disabled , visible:IsMobile==true && !IsToken, event: { keyup: checkCreditCardBrand }, class: CardBrandClass"
+                               data-testid="credit-card-number-field"
+                               id="txtCardNumber">
+                    </span>
+                </div>
+
+                <div class="card-small-fields">
+                    <div class="formRow validityRow">
+                        <label class="fieldName" data-bind="text:lblExpiration"></label>
+                        <span class="fieldInput validityDate">
+                            <select id="validityYear"
+                                    class="mini"
+                                    name="validityYear"
+                                    data-testid="credit-card-years-field"
+                                    data-bind="options: expirationYear.selectValues, value: expirationYear.value, disable: expirationYear.disabled,att:{'aria-label':expirationYear.label}">
+                            </select>
+
+                            <select id="validityMonth"
+                                    class="tiny"
+                                    name="validityMonth"
+                                    data-testid="credit-card-months-field"
+                                    data-bind="value: expirationMonth.value, disable: expirationMonth.disabled, att:{'aria-label':expirationMonth.label}">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                            </select>
+                        </span>
+                    </div>
+
+                    <div class="formRow cvvRow" data-bind="hide:cvv.hide, css:cvv.CssValid">
+                        <span class="fieldName" data-bind="hide:cvv.hide">
+                            <label data-bind="text:cvv.label" for="txtCvv"></label>
+                        </span>
+                        <span class="fieldInput">
+                            <input maxlength="4"
+                                   data-bind="hide:cvv.hide,value:cvv.value"
+                                   data-testid="credit-card-cvv-field"
+                                   id="txtCvv">
+                        </span>
+                    </div>
+                </div>
+
+                <div class="formRow cardRow" data-bind="hide:cardOwnerID.hide, css:cardOwnerID.CssValid">
+                    <label class="fieldName"
+                           data-bind="text:cardOwnerID.label, hide:cardOwnerID.hide"
+                           for="txtTZ"></label>
+                    <span class="fieldInput">
+                        <input type="text" maxlength="20" data-bind="value:cardOwnerID.value" id="txtTZ">
+                    </span>
+                </div>
+
+                <div class="formRow cardRow" data-bind="hide:cardOwnerName.hide, css:cardOwnerName.CssValid">
+                    <label class="fieldName"
+                           data-bind="text:cardOwnerName.label, hide:cardOwnerName.hide"
+                           for="txtCardOwnerName"></label>
+                    <span class="fieldInput">
+                        <input type="text" maxlength="50" data-bind="value:cardOwnerName.value" id="txtCardOwnerName">
+                    </span>
+                </div>
+
+                <div class="formRow cardRow" data-bind="hide:cardOwnerPhone.hide, css:cardOwnerPhone.CssValid">
+                    <label class="fieldName"
+                           data-bind="text:cardOwnerPhone.label, hide:cardOwnerPhone.hide"
+                           for="txtCardOwnerPhone"></label>
+                    <span class="fieldInput">
+                        <input type="tel" maxlength="20" data-bind="value:cardOwnerPhone.value" id="txtCardOwnerPhone">
+                    </span>
+                </div>
+
+                <div class="formRow cardRow" data-bind="hide:cardOwnerEmail.hide, css:cardOwnerEmail.CssValid">
+                    <label class="fieldName"
+                           data-bind="text:cardOwnerEmail.label, hide:cardOwnerEmail.hide"
+                           for="txtCardOwnerEmail"></label>
+                    <span class="fieldInput">
+                        <input type="email" maxlength="150" data-bind="value:cardOwnerEmail.value" id="txtCardOwnerEmail">
+                    </span>
+                </div>
+
+                <div class="formRow cardRow" data-bind="hide:openSum.hide, css:openSum.CssValid">
+                    <label class="fieldName" data-bind="text:openSum.label" for="txtopenSum"></label>
+                    <span class="fieldInput">
+                        <input type="number"
+                               class="directionLTR"
+                               maxlength="15"
+                               data-bind="value:openSum.value"
+                               id="txtopenSum">
+                    </span>
+                </div>
+
+                <div class="formRow cardRow form-span" data-bind="hide:numberOfPayments.hide, css:numberOfPayments.CssValid">
+                    <label class="fieldName"
+                           data-bind="text:numberOfPayments.label, hide:numberOfPayments.hide"
+                           for="numberOfPaymentsselect"></label>
+                    <span class="fieldInput">
+                        <select data-bind="options: numberOfPayments.selectValues, value: numberOfPayments.value"
+                                id="numberOfPaymentsselect"></select>
+                    </span>
+
+                    <span class="fieldName summaryTotal" data-bind="hide: hideNumberOfPayments">
+                        <span data-bind="text: labels.Summary"></span>
+                        <strong class="num" data-bind="text: summaryTotalSign"></strong>
+                    </span>
+                </div>
+
+                <div class="formRow cardRow agreement-row form-span" data-bind="hide: condition.hide, css:condition.CssValid">
+                    <span class="fieldInput">
+                        <input class="checkbox"
+                               type="checkbox"
+                               data-bind="checked: condition.booleanValue">
+                        <a target="_blank" data-bind="attr: { href : condition.value }">
+                            <span data-bind="text: condition.label"></span>
+                        </a>
+                    </span>
+                </div>
+            </div>
+
+            <div class="formRow cardRow"
+                 id="captcha_div"
+                 data-bind="visible: IsRecaptchaActive"
+                 render="explicit">
+                <span class="fieldInput">
+                    <div class="googleCaptchaBox">
+                        <div class="tightContainer googleCaptchaRequiredErr"
+                             data-bind="style: { 'opacity': DispCaptchaReqErr() ? 1 : 0 }"></div>
+                        <div id="captcha_container"
+                             render="explicit"
+                             data-callback="DispCaptchaReqErr_Clear"
+                             data-expired-callback="DispCaptchaReqErr_Set"></div>
+                    </div>
+                </span>
+            </div>
+
+            <div class="submitDiv">
+                <div data-bind="visible:showCancelURL" class="homeLink">
+                    <a href="#" data-bind="attr: { href : cancelURL }">
+                        <span data-bind="text: labels.LinkBackToSite"></span>
+                    </a>
+                </div>
+
+                <div class="buttonDiv">
+                    <input type="button"
+                           value="Go"
+                           role="button"
+                           data-bind="value: buttonText, click: sendData, hide: hideCreditCardInputs, enable: !loadMode()">
+                </div>
+            </div>
+
+            <div class="errorDiv" data-bind="visible: error.hasMessages()">
+                <div class="errorDivIn">
+                    <ul>
+                        <!-- ko template: { foreach: error.messages } -->
+                        <li><span class="message" data-bind="text: message"></span></li>
+                        <!-- /ko -->
+                    </ul>
+                </div>
+            </div>
+            </div>
+            </div>
+        </section>
+
+        <section class="checkout-card checkout-order OrderDetails"
+                 data-bind="visible: order.showInvoiceHead">
+            <div class="section-heading">
+                <span class="section-number">1</span>
+                <div>
+                    <h2 data-bind="text: labels.InvoiceInfo"></h2>
+                    <p>פרטי הלקוח והחשבונית</p>
+                </div>
+            </div>
+
+            <div class="formRow cardRow" data-bind="hide:order.custName.hide, css:order.custName.CssValid">
+                <label class="fieldName" data-bind="text:order.custName.label" for="txtCustName"></label>
+                <span class="fieldInput"><input type="text" data-bind="value:order.custName.value" id="txtCustName"></span>
+            </div>
+
+            <div class="formRow cardRow" data-bind="hide:order.compID.hide, css:order.compID.CssValid">
+                <label class="fieldName" data-bind="text:order.compID.label" for="txtCompID"></label>
+                <span class="fieldInput"><input type="text" data-bind="value:order.compID.value" id="txtCompID"></span>
+            </div>
+
+            <div class="formRow cardRow" data-bind="hide:order.custCity.hide, css:order.custCity.CssValid">
+                <label class="fieldName" data-bind="text:order.custCity.label" for="txtCustCity"></label>
+                <span class="fieldInput"><input type="text" data-bind="value:order.custCity.value" id="txtCustCity"></span>
+            </div>
+
+            <div class="formRow cardRow" data-bind="hide:order.custAddresLine1.hide, css:order.custAddresLine1.CssValid">
+                <label class="fieldName" data-bind="text:order.custAddresLine1.label" for="txtCustAddresLine1"></label>
+                <span class="fieldInput"><input type="text" data-bind="value:order.custAddresLine1.value" id="txtCustAddresLine1"></span>
+            </div>
+
+            <div class="formRow cardRow" data-bind="hide:order.custAddresLine2.hide, css:order.custAddresLine2.CssValid">
+                <label class="fieldName" data-bind="text:order.custAddresLine2.label" for="txtCustAddresLine2"></label>
+                <span class="fieldInput"><input type="text" data-bind="value:order.custAddresLine2.value" id="txtCustAddresLine2"></span>
+            </div>
+
+            <div class="formRow cardRow" data-bind="hide:order.custMobilePH.hide, css:order.custMobilePH.CssValid">
+                <label class="fieldName" data-bind="text:order.custMobilePH.label" for="txtCustMobilePH"></label>
+                <span class="fieldInput"><input type="tel" data-bind="value:order.custMobilePH.value" id="txtCustMobilePH"></span>
+            </div>
+
+            <div class="formRow cardRow" data-bind="hide:order.custLinePH.hide, css:order.custLinePH.CssValid">
+                <label class="fieldName" data-bind="text:order.custLinePH.label" for="txtCustLinePH"></label>
+                <span class="fieldInput"><input type="tel" data-bind="value:order.custLinePH.value" id="txtCustLinePH"></span>
+            </div>
+
+            <div class="formRow cardRow" data-bind="hide:order.email.hide, css:order.email.CssValid">
+                <label class="fieldName" data-bind="text:order.email.label" for="txtEmail"></label>
+                <span class="fieldInput">
+                    <input type="email"
+                           class="directionLTR"
+                           data-bind="value:order.email.value"
+                           id="txtEmail">
+                </span>
+            </div>
+
+            <div class="customDetails" data-bind="visible: customFields.length > 0">
+                <div class="title"><span data-bind="text: labels.MoreDetails"></span></div>
+                <!-- ko template: { name:customDisplayMode , foreach: customFields} -->
+                <!-- /ko -->
+                <script type="text/html" id="customFieldText">
+                    <div class="formRow nameRow" data-bind="hide: hide, css: CssValid">
+                        <label class="fieldName" data-bind="text: label, hide: hide"></label>
+                        <span class="fieldInput"><input type="text" autocomplete="chrome-off" name="name" data-bind="value: value, attr: { id: 'custom_' + $index() }"></span>
+                    </div>
+                </script>
+                <script type="text/html" id="customFieldSelect">
+                    <div class="formRow nameRow" data-bind="hide: hide, css: CssValid">
+                        <span class="fieldName" data-bind="text: label, hide: hide"></span>
+                        <span class="fieldInput"><select data-bind="options: selectValues, value: value, optionsCaption: optionsCaption"></select></span>
+                    </div>
+                </script>
+            </div>
+        </section>
+    </div>
+
+    </main>
+
+    <div class="footerIfIframe">
+        <div class="footer" data-bind="visible: !HideFooter()">
+            <div class="footerIn">
+                <div class="footer-logo">
+                    <img alt="Cardcom logo"
+                         data-bind="attr: { src: images.cardcomLogoEn }"
+                         border="0">
+                </div>
+                <div class="footer-text">
+                    <span data-bind="html: labels.FooterTextTop"></span>
+                    <span data-bind="html: labels.FooterTextBottom"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footerIn centered" data-bind="visible: HideFooter()">
+            <div class="footer-text">
+                <span data-bind="html: labels.PaymentDoneWithTheStrictestSecurityStandards"></span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div id="privacy-policy-popup" style="display:none;"></div>
+
+<div data-bind="if: ShowCookiesBanner">
+    <div id="cookies-banner">
+        <span data-bind="text:labels.CookiesBannerMessage"></span>
+        <input type="button"
+               id="btn-cookies-accept"
+               data-bind="click:acceptCookies,value:labels.CookiesBannerAccept">
+    </div>
+</div>
+
+<div id="PopUpRTL" class="white-popup white-popup-rtl mfp-hide">
+    <h2 data-bind="html: PopUpDealWasSuccessfulResult"></h2>
+    <span data-bind="html: labels.PopUpRedirectTo"></span>
+    <span style="color:red" data-bind="html: labels.PopUpYouClickThis"></span>
+    <a data-bind="attr: { href: PopUpRedirectTo}, hide: hideApplePay"><span data-bind="html: labels.PopUpThis"></span></a>
+    <img src="/Images/2015/ajax-loader.gif" alt="">
+</div>
+
+<div id="PopUpLTR" class="white-popup mfp-hide">
+    <h2 data-bind="html: PopUpDealWasSuccessfulResult"></h2>
+    <span data-bind="html: labels.PopUpRedirectTo"></span>
+    <img src="/Images/2015/ajax-loader.gif" alt="">
+</div>

@@ -9,17 +9,15 @@ const profiles = {
   tester: {
     terminalNumber: Number(process.env.CARDCOM_TERMINAL),
     apiName: process.env.CARDCOM_USERNAME,
+    language: 'he',
     successRedirectUrl:
-      process.env.CARDCOM_SUCCESS_URL || 'http://localhost:5173/success',
+      process.env.CARDCOM_SUCCESS_URL || 'https://www.google.com',
     failedRedirectUrl:
-      process.env.CARDCOM_FAILED_URL || 'http://localhost:5173/failed',
+      process.env.CARDCOM_FAILED_URL || 'https://www.yahoo.com',
     operation: 'ChargeOnly',
-    // Optional HTTPS stylesheet. Production branding belongs in Cardcom's CSS editor;
-    // omit CSSUrl (leave CARDCOM_CSS_URL empty) once checkout.css is pasted there.
+    // Optional HTTPS stylesheet. Production branding belongs in Cardcom's CSS editor.
     // Localhost CSS is blocked as mixed content on Cardcom's HTTPS page.
-    cssUrl:
-      process.env.CARDCOM_CSS_URL ||
-      'https://cdn.statically.io/gist/aviv0zeri/52ddff9d6c3423bab3703cfd33dc86fe/raw/cardcom-stack-v16.css',
+    cssUrl: process.env.CARDCOM_CSS_URL || '',
     googlePayBtnDesign: {
       ButtonWidth: '100%',
       ButtonHeight: '40',
@@ -55,6 +53,7 @@ function buildLowProfileBody(profile, amount) {
     TerminalNumber: profile.terminalNumber,
     ApiName: profile.apiName,
     Amount: amount,
+    Language: profile.language || 'he',
     Operation: profile.operation || 'ChargeOnly',
     SuccessRedirectUrl: profile.successRedirectUrl,
     FailedRedirectUrl: profile.failedRedirectUrl,

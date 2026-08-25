@@ -6,7 +6,7 @@
 # Order matters: loading HTML in Cardcom's editor resets the CSS pane.
 # Do not F5 Cardcom's preview window; close it and reopen.
 
-CARDCOM_DIR="/Users/aviv0zeri/work/personal/CardcomTester/cardcom-production"
+CARDCOM_DIR="/Users/aviv0zeri/work/personal/CardcomTester/templates/cardcom/redirect-normal/hebrew"
 
 _cardcom_copy() {
     local file="$1" label="$2" check_tags="$3"

@@ -1,18 +1,16 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" class="checkout-embed">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cardcom checkout — local preview</title>
-  <!-- Cardcom always loads their stock CSS first, then the pasted file. -->
+  <title>Cardcom checkout — Hebrew iframe</title>
   <link rel="stylesheet" href="../cardcom-hosted/templates/cardcom-stock.css">
-  <!-- Production CSS. This is the file that gets pasted into Cardcom. -->
   <link rel="stylesheet" href="../templates/cardcom/redirect-normal/hebrew/checkout.css?v=dual1">
-  <!-- Preview-only. Never paste this into Cardcom. -->
   <link rel="stylesheet" href="preview.css?v=pin10">
+  <link rel="stylesheet" href="preview-iframe.css?v=dual1">
 </head>
 <body>
-  <div id="checkout-root">Loading production HTML…</div>
+  <div id="checkout-root">Loading iframe HTML…</div>
   <script src="mock.js?v=8"></script>
 </body>
 </html>

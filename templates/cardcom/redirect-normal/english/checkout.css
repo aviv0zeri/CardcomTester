@@ -1009,3 +1009,222 @@ body {
         direction: ltr;
     }
 }
+
+/* English LTR mirror of the Hebrew checkout. Same layout, flipped direction. */
+body {
+    direction: ltr;
+    text-align: left;
+}
+
+.checkout-body,
+.checkout-summary > *,
+.checkout-summary-table > * {
+    direction: ltr;
+}
+
+.productsTbl th.align,
+.productsTbl td.align {
+    text-align: left;
+}
+
+.payment-wallets,
+.payment-card-col,
+.payment-divider {
+    direction: ltr;
+}
+
+.fieldInput select {
+    background-position: right 12px center !important;
+    padding-left: 12px !important;
+    padding-right: 32px !important;
+}
+
+#txtCardNumber {
+    background-position: right 12px center !important;
+}
+
+/* Compact iframe layout. Preview wrappers set html.checkout-embed.
+   Redirect (no class) is unchanged. No JavaScript. */
+html.checkout-embed .checkout-page {
+    overflow: hidden;
+    scrollbar-width: none;
+}
+
+html.checkout-embed .checkout-page::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+html.checkout-embed .checkout-header {
+    min-height: 44px;
+    margin-bottom: 6px;
+}
+
+html.checkout-embed .checkout-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: 4px;
+}
+
+html.checkout-embed .checkout-summary {
+    margin-bottom: 6px;
+}
+
+html.checkout-embed .checkout-summary-table {
+    height: 88px;
+    max-height: 88px;
+}
+
+html.checkout-embed .checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+html.checkout-embed .checkout-grid .checkout-order,
+html.checkout-embed .checkout-grid .checkout-payment {
+    min-width: 0;
+}
+
+html.checkout-embed .checkout-grid .checkout-payment {
+    border-inline-start: 1px solid rgba(213, 222, 234, 0.7);
+}
+
+html.checkout-embed .checkout-card {
+    padding: 10px 12px;
+}
+
+html.checkout-embed .checkout-card.checkout-order {
+    min-height: 0;
+    padding: 10px 12px 8px;
+}
+
+html.checkout-embed .checkout-order {
+    column-gap: 12px;
+    row-gap: 0;
+}
+
+html.checkout-embed .checkout-order .section-heading {
+    margin-bottom: 8px;
+}
+
+html.checkout-embed .checkout-order .formRow {
+    margin-bottom: 8px;
+}
+
+html.checkout-embed .checkout-order .fieldInput input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+html.checkout-embed .fieldInput input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+html.checkout-embed .fieldInput select {
+    min-height: 36px;
+}
+
+html.checkout-embed #CreditCardDiv,
+html.checkout-embed .payment-card-col,
+html.checkout-embed .payment-methods-grid {
+    max-width: none;
+}
+
+html.checkout-embed .payment-wallets {
+    margin: 0 0 4px;
+    padding: 8px 10px;
+}
+
+html.checkout-embed .card-payment-title {
+    margin: 6px 0 8px;
+}
+
+html.checkout-embed .summaryTotal {
+    margin: 4px 0 2px !important;
+}
+
+html.checkout-embed .checkout-grid .checkout-payment,
+html.checkout-embed .checkout-card.checkout-payment {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding-top: 8px;
+}
+
+html.checkout-embed .payment-split,
+html.checkout-embed .payment-card-col {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+html.checkout-embed #CreditCardDiv {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    align-content: start;
+}
+
+html.checkout-embed .agreement-row {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0 !important;
+    padding: 8px 0 4px !important;
+    background: #fff;
+}
+
+html.checkout-embed .submitDiv {
+    flex: 0 0 auto;
+    padding: 4px 0 6px;
+    background: #fff;
+}
+
+html.checkout-embed .submitDiv .buttonDiv input {
+    min-height: 42px;
+}
+
+html.checkout-embed .uPayBitContainer,
+html.checkout-embed .BitContainer,
+html.checkout-embed .paypalDiv a,
+html.checkout-embed .paypalDiv img,
+html.checkout-embed .masterPassDiv img,
+html.checkout-embed .apple-pay-button,
+html.checkout-embed #bit-payment-button,
+html.checkout-embed .GooglePayDiv,
+html.checkout-embed .GooglePayDiv > * {
+    height: 40px !important;
+    min-height: 40px !important;
+}
+
+@media (max-width: 900px) {
+    html.checkout-embed .checkout-grid,
+    html.checkout-embed .checkout-order {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    html.checkout-embed .checkout-summary-table {
+        height: 88px;
+        max-height: 88px;
+    }
+
+    html.checkout-embed .checkout-card {
+        padding: 10px 12px;
+    }
+}
+
+@media (max-width: 640px) {
+    html.checkout-embed .checkout-grid,
+    html.checkout-embed .checkout-order,
+    html.checkout-embed #CreditCardDiv {
+        grid-template-columns: 1fr;
+    }
+
+    html.checkout-embed .checkout-summary-table {
+        height: 88px;
+        max-height: 88px;
+    }
+}
