@@ -9,15 +9,16 @@ This is not a React checkout. Cardcom hosts the Low Profile page and supplies Kn
 
 ## Where to edit
 
-- `cardcom-production/iframe.html` and `cardcom-production/checkout.css` — paste into Cardcom. Static HTML + CSS only.
-- `cardcom-preview/` — localhost visual sandbox. Mock labels and stand-in wallet assets. Never paste this folder.
-- **`cardcom-preview/mock.js` is frozen.** Do not edit it. Further work is HTML/CSS only (`cardcom-production/`). The mock already wraps `#Content`, forces Tahoma, and scales to `zoom: 0.5`.
+- **`templates/cardcom/redirect-normal/`** — full-page redirect (Hebrew / English). Paste into Cardcom when checkout is the whole window.
+- **`templates/cardcom/iframe-normal/`** — compact iframe-only (Hebrew / English). Paste into Cardcom when checkout sits in a shop iframe.
+- `cardcom-preview/` — localhost visual sandbox. Mock labels and stand-in wallet assets. Never paste this folder. `html.checkout-embed` is preview-only.
+- **`cardcom-preview/mock.js` is frozen.** Do not edit it.
 
-The React app (`cardcom-tester/`) is a shell: create a session, iframe Cardcom's URL. Do not touch the iframe DOM.
+The React app (`cardcom-tester/`) is a shell: three sections (redirect page, iframe-only, either). Do not touch the iframe DOM.
 
 ## Production constraints
 
-- Do not add JavaScript to `cardcom-production/`.
+- Do not add JavaScript to paste files.
 - Do not rewrite `data-bind` attributes or rename Cardcom IDs.
 - Do not use `embed`, `object`, `frameset`, `frame`, `iframe`, `meta`, `link`, or `style` elements in production HTML.
 - Do not hide both `#txtCardOwnerPhone` and `#txtCardOwnerEmail` (3DS).
@@ -27,4 +28,4 @@ The React app (`cardcom-tester/`) is a shell: create a session, iframe Cardcom's
 
 ## Submit
 
-`cardcom_html` then `cardcom_css`. Do not F5 Cardcom's preview window.
+`cardcom_export` (or `cardcom_html` then `cardcom_css`). Do not F5 Cardcom's preview window.

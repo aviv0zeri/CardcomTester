@@ -2,9 +2,9 @@
 
 React + Vite app that creates a Cardcom Low Profile session and embeds the hosted payment page.
 
-This is **not** the Cardcom checkout UI. Static HTML + CSS for Cardcom live in [`../cardcom-hosted/`](../cardcom-hosted/).
+This is **not** the Cardcom checkout UI. Paste-ready HTML + CSS live in [`../templates/cardcom/`](../templates/cardcom/).
 
 - Run the shell: `npm run dev` → http://localhost:5173
-- Hosted files (via API): http://localhost:3000/cardcom-hosted/
+- Three sections: redirect (full page), iframe-only, either (same files, redirect or iframe overlay)
 
 Do not add JavaScript that reaches into the payment iframe.

@@ -1,6 +1,6 @@
 # Cardcom local preview
 
-Visual sandbox for `../cardcom-production/`.
+Visual sandbox for `../templates/cardcom/`.
 
 This folder may use mock JS, mock labels, and stand-in wallet assets because Cardcom’s runtime does not exist on localhost.
 
@@ -14,6 +14,6 @@ From the repo root:
 python3 -m http.server 8080
 ```
 
-Open http://127.0.0.1:8080/cardcom-preview/
+Or use the React tester at http://localhost:5173 (three sections: redirect page, iframe-only, either).
 
-The page loads Cardcom stock CSS, then `cardcom-production/checkout.css` (same order as their platform). It fetches `cardcom-production/iframe.html`, and `mock.js` fills demo labels, line items, and wallet stand-ins.
+The wrappers load Cardcom stock CSS, then a file from `templates/cardcom/`. `mock.js` fills demo labels, line items, and wallet stand-ins. `html.checkout-embed` is local-only and must not be pasted.

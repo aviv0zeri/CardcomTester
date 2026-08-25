@@ -10,21 +10,57 @@ Test harness for Cardcom Low Profile payments.
 - **Mobile Cardcom** — separate native/direct integration, to be researched later. Do not reuse the web Low Profile page as the mobile UI.
 - **Payment methods** — shown or hidden by Cardcom terminal / template / API config, not by React and not by CSS `display: none` on real methods.
 
-## Static checkout files
+## Three checkout versions (what to paste into Cardcom)
 
-Edit and paste from **`cardcom-production/`**. Local visual development is **`cardcom-preview/`**.
+Paste **only** from `templates/cardcom/`. Never paste `cardcom-preview/` (mocks, wrappers, `html.checkout-embed`).
 
-```
-cardcom-production/iframe.html   ← paste into Cardcom iframe HTML
-cardcom-production/checkout.css  ← paste into Cardcom CSS
-```
+HTML first, then CSS. Loading HTML in Cardcom’s editor resets the CSS pane. Do not F5 their preview window — close it and reopen it.
+
+### 1. Redirect — full page
+
+Use when the shop **sends the customer to Cardcom’s page** (the checkout is the whole window and may scroll).
+
+| Language | HTML | CSS |
+| --- | --- | --- |
+| Hebrew | `templates/cardcom/redirect-normal/hebrew/iframe.html` | `templates/cardcom/redirect-normal/hebrew/checkout.css` |
+| English | `templates/cardcom/redirect-normal/english/iframe.html` | `templates/cardcom/redirect-normal/english/checkout.css` |
+
+Local tester: **Redirect — full page** (leaves the React app).
+
+### 2. Iframe only
+
+Use when the shop **embeds Cardcom in an iframe**. Compact layout, no nested page scrollbar. The order table may still scroll internally.
+
+| Language | HTML | CSS |
+| --- | --- | --- |
+| Hebrew | `templates/cardcom/iframe-normal/hebrew/iframe.html` | `templates/cardcom/iframe-normal/hebrew/checkout.css` |
+| English | `templates/cardcom/iframe-normal/english/iframe.html` | `templates/cardcom/iframe-normal/english/checkout.css` |
+
+Local tester: **Iframe only**.
+
+### 3. Either — same HTML/CSS
+
+Hebrew and English **redirect-normal** files also include compact iframe rules, switched on locally by wrapping the preview in `html.checkout-embed` (React **Either** section). That class is **preview-only**.
+
+On Cardcom you cannot set `html.checkout-embed`. For a live iframe, paste **iframe-only** (section 2). For a live redirect page, paste **redirect** (section 1).
+
+A frozen copy of English redirect (before dual-mode CSS) is `templates/cardcom/redirect-normal/english-full/`.
+
+## Export to clipboard
 
 ```bash
-cardcom_html    # HTML pane first
-cardcom_css     # CSS pane second
+source scripts/cardcom-clipboard.zsh
+
+cardcom_export    # fzf: any version, HTML or CSS
+cardcom_html      # fzf: HTML only (paste first)
+cardcom_css       # fzf: CSS only (paste second)
 ```
 
-Preview (serve the repo root, not a subfolder):
+Needs [fzf](https://github.com/junegunn/fzf).
+
+## Local preview
+
+`cardcom-preview/` is a visual sandbox. **Never paste that folder into Cardcom.**
 
 ```bash
 python3 -m http.server 8080
@@ -32,9 +68,9 @@ python3 -m http.server 8080
 
 http://127.0.0.1:8080/cardcom-preview/
 
-`cardcom-preview/` uses mock JS and stand-in assets because Cardcom's runtime is not on localhost. **Never paste that folder into Cardcom.**
+Or the React tester: API `cd server && node index.js`, then `cd cardcom-tester && npm run dev` → http://localhost:5173
 
-The React app (`cardcom-tester/`) only creates a session and embeds Cardcom. It must not touch the iframe DOM.
+The tester has the same three sections as above. Redirect full-page buttons navigate away; iframe and Either open an overlay. Do not touch the iframe DOM.
 
 Older files under `cardcom-hosted/` are leftover from earlier experiments. Do not edit them for new work.
 
@@ -42,16 +78,12 @@ Older files under `cardcom-hosted/` are leftover from earlier experiments. Do no
 
 The hosted template keeps Bit, Apple Pay, Google Pay, and PayPal.
 
-Apple Pay is gated by Cardcom (typically Safari + an Apple Wallet). In Chrome the Apple Pay node is often still in the page but hidden, which used to leave a hole in a 4-column row. The CSS now collapses that empty slot so the visible buttons share the row.
-
-Safari with Apple Pay active still shows four equal buttons.
+Apple Pay is gated by Cardcom (typically Safari + an Apple Wallet). Wallet availability is terminal + Knockout, not CSS.
 
 ## How to run
 
 1. API: `cd server && node index.js` → http://localhost:3000
 2. Shell: `cd cardcom-tester && npm run dev` → http://localhost:5173
-
-Click **Test Payment** on 5173 to create a new Cardcom session and embed the hosted page.
 
 Credentials stay in `server/.env` (`CARDCOM_USERNAME`, `CARDCOM_TERMINAL`). Do not commit that file.
 
@@ -61,6 +93,7 @@ After any CSS change, start a **new** payment. Old Low Profile URLs keep the old
 
 ## Layout
 
-- `cardcom-hosted/` — portable Cardcom HTML/CSS (web checkout source of truth)
+- `templates/cardcom/` — paste-ready HTML/CSS (redirect-normal, iframe-normal)
+- `cardcom-preview/` — localhost mock wrappers (never paste)
 - `server/` — shared payment API and `profiles.js`
-- `cardcom-tester/` — React test harness / design-prototype shell
+- `cardcom-tester/` — React test harness

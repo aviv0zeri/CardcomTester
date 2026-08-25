@@ -1,7 +1,7 @@
 /*
   Local preview only. Never paste this into Cardcom.
-  Used when the wrapper html has class="checkout-embed".
 */
-html.checkout-embed .preview-wallet {
+html.checkout-embed .preview-wallet,
+.preview-wallet {
   height: 40px;
 }
