@@ -5,6 +5,10 @@ Paste-ready **static HTML + CSS**. Cardcom stores **two** custom designs, by dir
 - RTL — Hebrew and Arabic share one HTML/CSS slot
 - LTR — English and Russian share one HTML/CSS slot
 
+## Compact iframe redesign
+
+See **[COMPACT-IFRAME-HANDOFF.md](COMPACT-IFRAME-HANDOFF.md)** for the 600–1280px iframe layout overhaul (three viewport shapes, one HTML+CSS paste, bug-fixed and ready to verify & promote).
+
 Create `Language` only switches Knockout labels (`labels.*`, `lph1`, field labels). It does not pick a fourth HTML file.
 
 ```

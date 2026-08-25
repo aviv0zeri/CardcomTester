@@ -30,14 +30,14 @@ h1 {
 .start {
   min-height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 24px;
+  padding: 32px 24px;
 }
 
 .cta {
   width: 100%;
-  max-width: 560px;
+  max-width: 640px;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -126,6 +126,77 @@ h1 {
   grid-template-columns: 1fr;
 }
 
+.cta-group--claude {
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cta-group--claude .cta-hint {
+  margin: 0 0 12px;
+}
+
+.cta-group--claude h3 {
+  margin: 14px 0 8px;
+  color: #4b5563;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cta-actions--sizes {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.cta-actions--unified {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.cta-group--unified {
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cta-group--unified .cta-hint {
+  margin: 0 0 12px;
+}
+
+.cta-group--unified h3 {
+  margin: 14px 0 8px;
+  color: #4b5563;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 720px) {
+  .cta-actions--unified {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .cta {
+    max-width: 880px;
+  }
+}
+
+.cta-button--stack {
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 8px;
+  line-height: 1.2;
+}
+
+.cta-button-note {
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 0.85;
+}
+
 .cta-dual {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -165,6 +236,10 @@ h1 {
 
 .status--muted {
   color: #6b7280;
+}
+
+.status--error {
+  color: #b91c1c;
 }
 
 .checkout-overlay {
@@ -295,6 +370,16 @@ h1 {
   max-height: 1080px;
 }
 
+.checkout-stage--sized {
+  width: min(var(--overlay-w), 98%);
+  height: min(var(--overlay-h), calc(100dvh - 24px));
+  max-height: none;
+}
+
+.checkout-stage--scroll .payment-frame {
+  overflow: auto;
+}
+
 .checkout-stage--iframe .payment-frame {
   overflow: hidden;
 }
@@ -338,6 +423,12 @@ h1 {
     width: min(1180px, 98%);
     height: calc(100dvh - 24px);
     max-height: 1080px;
+  }
+
+  .checkout-stage--sized {
+    width: min(var(--overlay-w), 98%);
+    height: min(var(--overlay-h), calc(100dvh - 24px));
+    max-height: none;
   }
 
   .checkout-overlay--iframe,

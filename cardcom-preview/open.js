@@ -173,6 +173,27 @@
     key = key + "/embed";
   }
   var spec = VERSIONS[key];
+
+  // &all=1 previews the unified mobile/tablet/desktop working copy.
+  // &wip=1 previews Claude's compact-iframe scratch copy.
+  // Both live under templates/cardcom/low-profile/_all/ and _wip/ (never pasted).
+  if (spec && (params.get("all") === "1" || params.get("wip") === "1")) {
+    var folder = params.get("all") === "1" ? "_all" : "_wip";
+    var toCopy = function (p) {
+      return p.replace(
+        "/templates/cardcom/low-profile/",
+        "/templates/cardcom/low-profile/" + folder + "/"
+      );
+    };
+    spec = {
+      dir: spec.dir,
+      lang: spec.lang,
+      mock: spec.mock,
+      base: spec.base,
+      html: toCopy(spec.html),
+      css: spec.css.map(toCopy)
+    };
+  }
   var root = document.getElementById("checkout-root");
   if (!spec) {
     root.textContent = "Unknown version: " + key;

@@ -5,7 +5,24 @@ import {
   type Mode,
 } from './components/CheckoutControls'
 import { CheckoutButton } from './components/CheckoutButton'
+import {
+  ClaudeTester,
+  claudePreviewUrl,
+  type ClaudeFrame,
+} from './components/ClaudeTester'
+import {
+  UnifiedTester,
+  unifiedPreviewUrl,
+  type UnifiedPreset,
+} from './components/UnifiedTester'
 import { PaymentOverlay } from './components/PaymentOverlay'
+
+type Overlay = {
+  src: string
+  width?: number
+  height?: number
+  scroll?: boolean
+}
 
 /**
  * Live Cardcom Low Profile tester.
@@ -14,8 +31,9 @@ import { PaymentOverlay } from './components/PaymentOverlay'
 function App() {
   const [language, setLanguage] = useState<Language>('he')
   const [mode, setMode] = useState<Mode>('redirect')
-  const [overlaySrc, setOverlaySrc] = useState<string | null>(null)
+  const [overlay, setOverlay] = useState<Overlay | null>(null)
   const [status, setStatus] = useState('ready')
+  const overlayOpen = Boolean(overlay)
 
   const handleUrl = (url: string) => {
     if (mode === 'redirect') {
@@ -24,8 +42,31 @@ function App() {
       return
     }
 
-    setOverlaySrc(url)
+    setOverlay({ src: url })
     setStatus('open')
+  }
+
+  const handleUnifiedPreset = (preset: UnifiedPreset) => {
+    setOverlay({
+      src: unifiedPreviewUrl(language, preset),
+      width: preset.width,
+      height: preset.height,
+      scroll: preset.scroll,
+    })
+    setStatus(`all ${preset.note}`)
+  }
+
+  const handleClaudeFrame = (frame: ClaudeFrame, hideInvoice: boolean) => {
+    setOverlay({
+      src: claudePreviewUrl(language, hideInvoice),
+      width: frame.width,
+      height: frame.height,
+    })
+    setStatus(
+      hideInvoice
+        ? `claude ${frame.label} ${frame.width}×${frame.height}, no invoice`
+        : `claude ${frame.label} ${frame.width}×${frame.height}`,
+    )
   }
 
   return (
@@ -38,27 +79,57 @@ function App() {
           <CheckoutControls
             language={language}
             mode={mode}
-            disabled={Boolean(overlaySrc)}
+            disabled={overlayOpen}
             onLanguageChange={setLanguage}
             onModeChange={setMode}
           />
 
           <CheckoutButton
             language={language}
-            disabled={Boolean(overlaySrc)}
+            disabled={overlayOpen}
             onUrl={handleUrl}
             onError={(message) => setStatus(message)}
           />
 
-          <p className="status status--muted">Status: {status}</p>
+          <p
+            className={`status${
+              status === 'ready' ||
+              status === 'open' ||
+              status.startsWith('claude') ||
+              status.startsWith('all ') ||
+              status.startsWith('opened')
+                ? ' status--muted'
+                : ' status--error'
+            }`}
+          >
+            Status: {status}
+          </p>
+
+          <UnifiedTester
+            language={language}
+            disabled={overlayOpen}
+            onOpen={handleUnifiedPreset}
+          />
+
+          <ClaudeTester
+            language={language}
+            disabled={overlayOpen}
+            onOpen={handleClaudeFrame}
+          />
         </div>
       </section>
 
-      {overlaySrc ? (
-        <PaymentOverlay src={overlaySrc} onClose={() => {
-          setOverlaySrc(null)
-          setStatus('ready')
-        }} />
+      {overlay ? (
+        <PaymentOverlay
+          src={overlay.src}
+          width={overlay.width}
+          height={overlay.height}
+          scroll={overlay.scroll}
+          onClose={() => {
+            setOverlay(null)
+            setStatus('ready')
+          }}
+        />
       ) : null}
     </main>
   )

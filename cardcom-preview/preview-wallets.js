@@ -38,8 +38,19 @@
     return PRESETS[n] ? n : 4;
   }
 
+  function showApplePayStandIn() {
+    // mock.js's binding parser trips on Cardcom's "//hide:" comment inside the
+    // apple-pay-button-start binding and hides the button. Live Safari shows it.
+    // Restore the stand-in here (mock.js is frozen).
+    var btn = document.querySelector("#apple-pay-button-start");
+    if (!btn) return;
+    btn.style.display = "";
+    btn.classList.add("preview-wallet", "apple");
+  }
+
   function apply(count) {
     current = PRESETS[count] ? count : 4;
+    showApplePayStandIn();
     document.querySelectorAll(".preview-wallet-off").forEach(function (el) {
       el.classList.remove("preview-wallet-off");
     });
@@ -80,10 +91,19 @@
     document.body.appendChild(bar);
   }
 
+  function applyBillingParam() {
+    // ?billing=0 simulates order.showInvoiceHead === false (Knockout would
+    // write inline display:none on .checkout-order). Preview only.
+    if (new URLSearchParams(location.search).get("billing") !== "0") return;
+    var order = document.querySelector(".checkout-order");
+    if (order) order.style.display = "none";
+  }
+
   function sync() {
     if (!document.querySelector(".payment-methods-grid")) return false;
     mountBar();
     apply(requestedCount());
+    applyBillingParam();
     return true;
   }
 

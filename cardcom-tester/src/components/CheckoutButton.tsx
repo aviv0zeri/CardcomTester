@@ -58,6 +58,13 @@ export function CheckoutButton({
       }
 
       const description = data.Description || data.message || 'no description'
+      if (Number(data.ResponseCode) === 605) {
+        onError(
+          'Cardcom API user is locked (605). Reset the password in Cardcom (שכחתי סיסמה), then try Open checkout again.',
+        )
+        setBusy(false)
+        return
+      }
       onError(`Cardcom error: ${data.ResponseCode} — ${description}`)
     } catch (error) {
       const description = error instanceof Error ? error.message : 'request failed'
