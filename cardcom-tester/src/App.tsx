@@ -12,7 +12,7 @@ import { ApiLab } from './components/ApiLab'
 import { VersionMenu } from './components/VersionMenu'
 import { PaymentOverlay } from './components/PaymentOverlay'
 import { createCardcomSession } from './components/createSession'
-import { localPreviewUrl, type PreviewVersion } from './components/previewVersions'
+import { isRealPhone, localPreviewUrl, type PreviewVersion } from './components/previewVersions'
 
 type Overlay = {
   src: string
@@ -22,6 +22,7 @@ type Overlay = {
 }
 
 type Tab = 'lab' | 'design'
+type DeviceError = 'needs-computer' | 'needs-phone'
 
 function App() {
   const [tab, setTab] = useState<Tab>('lab')
@@ -30,6 +31,7 @@ function App() {
   const [device, setDevice] = useState<Device>('desktop')
   const [mode, setMode] = useState<Mode>('redirect')
   const [overlay, setOverlay] = useState<Overlay | null>(null)
+  const [deviceError, setDeviceError] = useState<DeviceError | null>(null)
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState('ready')
   const [statusUrl, setStatusUrl] = useState<string | null>(null)
@@ -48,6 +50,19 @@ function App() {
     setMode(mapped.mode)
   }
 
+  const guardDevice = (): boolean => {
+    const phone = isRealPhone()
+    if (device === 'mobile' && !phone) {
+      setDeviceError('needs-phone')
+      return false
+    }
+    if (device === 'desktop' && phone) {
+      setDeviceError('needs-computer')
+      return false
+    }
+    return true
+  }
+
   const openFrame = (src: string, version: PreviewVersion, label: string) => {
     setOverlay({
       src,
@@ -60,9 +75,14 @@ function App() {
   }
 
   const openLocal = (version?: PreviewVersion) => {
+    if (!guardDevice()) return
     const embed = Boolean(version?.embed)
     const src = localPreviewUrl(language, embed, design)
-    if (version) {
+    // The guard above already confirmed device matches reality, so on mobile
+    // this is a real phone — show the real page, not a scaled-down box.
+    // Boxing is only useful as a desktop-side simulation of the Iframe mode.
+    const realTab = device === 'mobile' || !version
+    if (!realTab && version) {
       openFrame(src, version, 'local')
       return
     }
@@ -73,6 +93,9 @@ function App() {
 
   const openCardcom = async (version?: PreviewVersion) => {
     if (busy) return
+    if (!guardDevice()) return
+    const realTab = device === 'mobile' || !version
+    if (realTab) version = undefined
     const tabWindow = version ? null : window.open('', '_blank')
     setBusy(true)
     setStatus('creating session…')
@@ -185,6 +208,24 @@ function App() {
           )}
         </div>
       </section>
+
+      {deviceError ? (
+        <div className="device-modal" role="alertdialog" aria-modal="true" aria-label="Wrong device">
+          <div className="device-modal-card">
+            <p className="device-modal-title">
+              {deviceError === 'needs-phone' ? 'Try this on a phone' : 'Try this on a computer'}
+            </p>
+            <p className="device-modal-text">
+              {deviceError === 'needs-phone'
+                ? 'Phone mode tests the real mobile experience — open cardcom-tester.vercel.app on your phone. On a computer, use Page or Iframe.'
+                : 'Page and Iframe are desktop modes — open this tester on a computer. On your phone, use Phone mode.'}
+            </p>
+            <button type="button" className="cta-button" onClick={() => setDeviceError(null)}>
+              Got it
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {overlay ? (
         <PaymentOverlay

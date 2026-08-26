@@ -25,10 +25,15 @@ export function localPreviewUrl(
 }
 
 const MOBILE_REDIRECT: PreviewVersion[] = [
-  { id: 'm-redir', label: 'Phone', note: '390×844', width: 390, height: 844, scroll: true, embed: false },
-  { id: 'lp-redir', label: 'Large phone', note: '430×932', width: 430, height: 932, scroll: true, embed: false },
-  { id: 'tp-redir', label: 'Tablet', note: '768×1024', width: 768, height: 1024, scroll: true, embed: false },
-  { id: 'tl-redir', label: 'Tablet wide', note: '1024×768', width: 1024, height: 768, scroll: true, embed: false },
+  { id: 'm-redir', label: 'Phone page', note: '390×844', width: 390, height: 844, scroll: true, embed: false },
+  { id: 'lp-redir', label: 'Large phone page', note: '430×932', width: 430, height: 932, scroll: true, embed: false },
+  { id: 'tp-redir', label: 'Tablet page', note: '768×1024', width: 768, height: 1024, scroll: true, embed: false },
+  { id: 'tl-redir', label: 'Tablet wide page', note: '1024×768', width: 1024, height: 768, scroll: true, embed: false },
+]
+
+const MOBILE_IFRAME: PreviewVersion[] = [
+  { id: 'm-frame', label: 'Phone iframe', note: '390×700', width: 390, height: 700, scroll: true, embed: true },
+  { id: 'lp-frame', label: 'Large phone iframe', note: '430×780', width: 430, height: 780, scroll: true, embed: true },
 ]
 
 const DESKTOP_IFRAME: PreviewVersion[] = [
@@ -43,7 +48,15 @@ const NEW_DESKTOP_IFRAME: PreviewVersion[] = [
 ]
 
 export function versionsFor(device: Device, mode: Mode, design: 'old' | 'new' = 'old'): PreviewVersion[] {
-  if (device === 'mobile' || mode === 'redirect') return MOBILE_REDIRECT
+  if (device === 'mobile') return [...MOBILE_REDIRECT, ...MOBILE_IFRAME]
+  if (mode === 'redirect') return MOBILE_REDIRECT
   if (design === 'new') return NEW_DESKTOP_IFRAME
   return DESKTOP_IFRAME
+}
+
+export function isRealPhone(): boolean {
+  if (typeof window === 'undefined') return false
+  const coarse = window.matchMedia('(pointer: coarse)').matches
+  const small = Math.min(window.screen.width, window.screen.height) < 820
+  return coarse && small
 }
