@@ -10,10 +10,12 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/payment': 'http://localhost:3000',
+      '/lab': 'http://localhost:3000',
       '/templates': 'http://localhost:3000',
       '/cardcom-preview': 'http://localhost:3000',
       '/cardcom-production': 'http://localhost:3000',
       '/cardcom-hosted': 'http://localhost:3000',
+      '/competition-template': 'http://localhost:3000',
     },
   },
 })

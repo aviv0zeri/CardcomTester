@@ -6,16 +6,17 @@ type PaymentOverlayProps = {
   width?: number
   height?: number
   scroll?: boolean
+  rtl?: boolean
 }
 
-export function PaymentOverlay({ src, onClose, width, height, scroll }: PaymentOverlayProps) {
+export function PaymentOverlay({ src, onClose, width, height, scroll, rtl }: PaymentOverlayProps) {
   const [frameReady, setFrameReady] = useState(false)
   const sized = Boolean(width && height)
 
   return (
     <div className="checkout-overlay checkout-overlay--iframe">
       <div
-        className={`checkout-stage checkout-stage--iframe${sized ? ' checkout-stage--sized' : ''}${scroll ? ' checkout-stage--scroll' : ''}`}
+        className={`checkout-stage checkout-stage--iframe${sized ? ' checkout-stage--sized' : ''}${scroll ? ' checkout-stage--scroll' : ''}${rtl ? '' : ' checkout-stage--ltr'}`}
         style={
           sized
             ? {
@@ -47,7 +48,7 @@ export function PaymentOverlay({ src, onClose, width, height, scroll }: PaymentO
             src={src}
             title="CardCom payment"
             allow="payment"
-            allowPaymentRequest
+            {...{ allowpaymentrequest: 'true' }}
             onLoad={() => setFrameReady(true)}
           />
         </div>

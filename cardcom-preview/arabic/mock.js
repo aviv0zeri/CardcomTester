@@ -93,7 +93,11 @@
     cvv: { hide: false, label: "3 أرقام على ظهر البطاقة", value: "" },
     cardOwnerID: { hide: false, label: "هوية حامل البطاقة", value: "" },
     cardOwnerName: { hide: false, label: "اسم حامل البطاقة", value: "" },
-    cardOwnerPhone: { hide: true, label: "الجوال", value: "" },
+    cardOwnerPhone: {
+      hide: new URLSearchParams(location.search).get("brand") !== "1",
+      label: "رقم الهاتف",
+      value: ""
+    },
     cardOwnerEmail: { hide: true, label: "البريد الإلكتروني", value: "" },
     openSum: { hide: true, label: "المبلغ للدفع", value: "" },
     numberOfPayments: {

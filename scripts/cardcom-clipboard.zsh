@@ -1,10 +1,11 @@
 # Copy Cardcom Low Profile HTML or CSS to the clipboard, or open a local preview.
 #
-#   cardcom_export     fzf: pick any version, then HTML or CSS
-#   cardcom_html       fzf: pick a version's HTML (paste first)
-#   cardcom_css        fzf: pick a version's CSS  (paste second)
+#   cardcom export     new version (Aviv brand) HTML/CSS to clipboard
+#   cardcom tester     start Express + Vite if needed, open the React tester
+#   cardcom_export     old version: fzf pick canonical HTML or CSS
+#   cardcom_html       old version, HTML only (paste first)
+#   cardcom_css        old version, CSS only (paste second)
 #   cardcom_open       fzf: open that version's HTML+CSS on localhost (not React)
-#   cardcom_tester     start Express + Vite if needed, open the React tester
 #
 # Enter copies (or opens) and stays in the list. Esc quits.
 # Order matters: loading HTML in Cardcom's editor resets the CSS pane.
@@ -148,6 +149,139 @@ cardcom_html() {
 
 cardcom_css() {
     cardcom_export css
+}
+
+_cardcom_brand_catalog() {
+    print "new	both	html	low-profile/_brand/checkout.html	New version HTML (both slots)"
+    print "new	rtl	css	low-profile/rtl/checkout.css	New version CSS · RTL (he+ar)"
+    print "new	ltr	css	low-profile/ltr/checkout.css	New version CSS · LTR (en+ru)"
+}
+
+_cardcom_brand_copy_css() {
+    local dir="$1" label="$2" quiet="${3:-}"
+    local base="$CARDCOM_TEMPLATES/low-profile/${dir}/checkout.css"
+    local skin="$CARDCOM_TEMPLATES/low-profile/_brand/brand-skin.css"
+    local tmp
+
+    if [[ ! -f "$base" || ! -f "$skin" ]]; then
+        [[ "$quiet" == "quiet" ]] || print -P "%F{red}✗%f missing $base or $skin"
+        return 1
+    fi
+
+    tmp=$(mktemp)
+    cat "$base" "$skin" > "$tmp"
+    pbcopy < "$tmp"
+    if [[ "$quiet" != "quiet" ]]; then
+        local bytes lines
+        bytes=$(wc -c < "$tmp" | tr -d ' ')
+        lines=$(wc -l < "$tmp" | tr -d ' ')
+        print -P "%F{green}✓%f copied %B$label%b to clipboard  (${bytes} bytes, ${lines} lines)"
+        print -P "  ${dir}/checkout.css + _brand/brand-skin.css"
+    fi
+    rm -f "$tmp"
+}
+
+_cardcom_brand_export_line() {
+    local line="$1" status_file="$2"
+    local family lang kind relpath note file label pane hint
+
+    if [[ -f "$line" ]]; then
+        line=$(<"$line")
+    fi
+
+    family=$(print -r -- "$line" | cut -f1)
+    lang=$(print -r -- "$line" | cut -f2)
+    kind=$(print -r -- "$line" | cut -f3)
+    relpath=$(print -r -- "$line" | cut -f4)
+    note=$(print -r -- "$line" | cut -f5)
+    file="$CARDCOM_TEMPLATES/$relpath"
+
+    if [[ "$kind" == "html" ]]; then
+        label="new version HTML"
+        pane="paste into the iframe HTML pane (this resets CSS)"
+        hint="pick the matching CSS next"
+        _cardcom_copy "$file" "$label" "html" "quiet" || {
+            print -r -- "✗ $label failed" > "$status_file"
+            return 1
+        }
+    else
+        label="new version CSS · $lang"
+        pane="paste into the CSS pane, then reopen Cardcom preview"
+        hint="Esc to quit"
+        _cardcom_brand_copy_css "$lang" "$label" "quiet" || {
+            print -r -- "✗ $label failed" > "$status_file"
+            return 1
+        }
+    fi
+
+    print -r -- "✓ $label on clipboard. $pane. $hint. Esc quits." > "$status_file"
+}
+
+_cardcom_brand_pick() {
+    local filter="${1:-}"
+    local rows status_file sel pos
+
+    if ! command -v fzf >/dev/null; then
+        print -P "%F{red}✗%f fzf is not installed (brew install fzf)"
+        return 1
+    fi
+
+    rows=$(_cardcom_brand_catalog)
+    if [[ -n "$filter" ]]; then
+        rows=$(print -r -- "$rows" | awk -F '\t' -v k="$filter" '$3 == k')
+    fi
+
+    status_file=$(mktemp)
+    print -r -- "New version. Enter copies and stays here. Esc quits. HTML first, then CSS. Do not F5 Cardcom preview." > "$status_file"
+
+    pos=1
+    while true; do
+        sel=$(
+            print -r -- "$rows" | command fzf \
+                --delimiter=$'\t' \
+                --with-nth=1,2,3,5 \
+                --header "$(cat "$status_file")" \
+                --prompt 'cardcom export > ' \
+                --height=40% \
+                --reverse \
+                --border \
+                --cycle \
+                --bind "start:pos($pos)" \
+                --bind "enter:execute-silent:zsh --norcs ${CARDCOM_CLIPBOARD_SCRIPT} --export-brand-line {f} ${status_file}" \
+                --bind "enter:+transform-header:cat ${status_file}" \
+                --bind "double-click:execute-silent:zsh --norcs ${CARDCOM_CLIPBOARD_SCRIPT} --export-brand-line {f} ${status_file}" \
+                --bind "double-click:+transform-header:cat ${status_file}"
+        ) || break
+
+        [[ -z "$sel" ]] && break
+
+        _cardcom_brand_export_line "$sel" "$status_file"
+        pos=$(print -r -- "$rows" | grep -n -F -x -- "$sel" | head -1 | cut -d: -f1)
+        pos=${pos:-1}
+    done
+
+    rm -f "$status_file"
+    return 0
+}
+
+cardcom() {
+    local sub="${1:-}"
+    case "$sub" in
+        export)
+            shift
+            _cardcom_brand_pick "$1"
+            ;;
+        tester)
+            cardcom_tester
+            ;;
+        *)
+            print -P "usage:"
+            print -P "  cardcom export    # new version (Aviv brand) HTML/CSS"
+            print -P "  cardcom tester    # start Express + Vite, open the React tester"
+            print -P "  cardcom_export    # old version (canonical paste)"
+            return 1
+            ;;
+    esac
 }
 
 _cardcom_preview_catalog() {
@@ -352,11 +486,16 @@ cardcom_tester() {
     fi
 
     open "http://127.0.0.1:5173/"
-    print -P "%F{green}✓%f opened React tester. Use Live Cardcom Redirect for a real session."
+    print -P "%F{green}✓%f opened Cardcom tester. Use Cardcom for a live session, Local for this design."
 }
 
 if [[ "$ZSH_EVAL_CONTEXT" == "toplevel" && "$1" == "--export-line" ]]; then
     _cardcom_export_line "$2" "$3"
+    exit 0
+fi
+
+if [[ "$ZSH_EVAL_CONTEXT" == "toplevel" && "$1" == "--export-brand-line" ]]; then
+    _cardcom_brand_export_line "$2" "$3"
     exit 0
 fi
 

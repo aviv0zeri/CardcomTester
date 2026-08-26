@@ -93,7 +93,11 @@
     cvv: { hide: false, label: "3 ספרות בגב הכרטיס", value: "" },
     cardOwnerID: { hide: false, label: "ת.ז. של בעל הכרטיס", value: "" },
     cardOwnerName: { hide: false, label: "שם בעל הכרטיס", value: "" },
-    cardOwnerPhone: { hide: true, label: "טלפון נייד", value: "" },
+    cardOwnerPhone: {
+      hide: new URLSearchParams(location.search).get("brand") !== "1",
+      label: "מספר טלפון",
+      value: ""
+    },
     cardOwnerEmail: { hide: true, label: "דוא״ל", value: "" },
     openSum: { hide: true, label: "סכום לתשלום", value: "" },
     numberOfPayments: {

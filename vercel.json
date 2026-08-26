@@ -1,0 +1,11 @@
+{
+  "installCommand": "npm ci --prefix cardcom-tester",
+  "buildCommand": "bash scripts/vercel-build.sh",
+  "outputDirectory": "cardcom-tester/dist",
+  "framework": null,
+  "rewrites": [
+    { "source": "/payment", "destination": "/api/payment" },
+    { "source": "/lab/create", "destination": "/api/lab-create" },
+    { "source": "/lab/result", "destination": "/api/lab-result" }
+  ]
+}

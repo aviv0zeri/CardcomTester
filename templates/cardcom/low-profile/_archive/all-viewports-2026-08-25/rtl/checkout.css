@@ -11,9 +11,6 @@ body {
     overflow-x: clip;
     overflow-y: auto;
     overscroll-behavior: auto;
-    font-size: 16px;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
     background-color: #e8eaef;
     background-image:
         radial-gradient(ellipse 70% 80% at 50% 20%, #f7f8fa 0%, rgba(247, 248, 250, 0.7) 42%, transparent 78%),
@@ -1206,11 +1203,189 @@ html[lang="ar"] .card-payment-title::after,
     }
 }
 
-/* Compact iframe layout.
-   Localhost preview sets html.checkout-embed.
-   Live Cardcom iframe uses the viewport query at the bottom
-   (600px–1280px: fill the frame, no scrollbar).
-   Wide desktop redirect stays scrollable. No JavaScript. */
+
+/* ============================================================
+   Phone + tablet — same paste CSS as desktop.
+   Document grows and scrolls. Do not lock html/body height.
+   Breakpoints are viewport width only (no device detection).
+   ============================================================ */
+
+@media (max-width: 899px) {
+    html,
+    body,
+    html.checkout-embed,
+    html.checkout-embed body {
+        height: auto !important;
+        max-height: none !important;
+        overflow-x: clip !important;
+        overflow-y: auto !important;
+        position: static !important;
+        inset: auto !important;
+    }
+
+    #Content,
+    #checkout-root,
+    html.checkout-embed #Content,
+    html.checkout-embed #checkout-root {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .checkout-page,
+    html.checkout-embed .checkout-page {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        min-height: 0;
+        padding: 8px 0 0;
+    }
+
+    .checkout-body,
+    html.checkout-embed .checkout-body {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        flex: none;
+        display: block;
+    }
+
+    .checkout-grid,
+    html.checkout-embed .checkout-grid {
+        display: flex;
+        flex-direction: column;
+        overflow: visible;
+        height: auto;
+        max-height: none;
+        min-height: 0;
+    }
+
+    .checkout-grid > .checkout-order,
+    .checkout-grid > .checkout-payment,
+    html.checkout-embed .checkout-grid > .checkout-order,
+    html.checkout-embed .checkout-grid > .checkout-payment {
+        overflow: visible;
+        height: auto;
+        max-height: none;
+        min-height: 0;
+    }
+
+    .checkout-card.checkout-order,
+    html.checkout-embed .checkout-card.checkout-order {
+        min-height: 0 !important;
+        height: auto !important;
+    }
+
+    .checkout-order {
+        order: 1;
+    }
+
+    .checkout-payment {
+        order: 2;
+    }
+
+    .checkout-grid .checkout-payment,
+    html.checkout-embed .checkout-grid .checkout-payment {
+        border-inline-start: 0;
+        border-top: 1px solid rgba(213, 222, 234, 0.7);
+    }
+
+    .payment-split,
+    html.checkout-embed .payment-split,
+    .payment-card-col,
+    html.checkout-embed .payment-card-col {
+        display: block;
+        flex: none;
+        max-width: none;
+        width: 100%;
+        overflow: visible;
+    }
+
+    .checkout-header,
+    html.checkout-embed .checkout-header,
+    .checkout-body,
+    html.checkout-embed .checkout-body {
+        width: min(100% - 16px, 782px);
+        max-width: none;
+    }
+}
+
+/* Small phone: one column, one wallet column, page scrolls. */
+@media (max-width: 599px) {
+    .checkout-order,
+    #CreditCardDiv,
+    .card-small-fields,
+    .payment-methods-grid,
+    html.checkout-embed .checkout-order,
+    html.checkout-embed #CreditCardDiv,
+    html.checkout-embed .card-small-fields,
+    html.checkout-embed .payment-methods-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-header {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardNumber),
+    html.checkout-embed #CreditCardDiv .card-small-fields,
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtTZ),
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardOwnerName),
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardOwnerPhone),
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardOwnerEmail),
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtopenSum),
+    html.checkout-embed #CreditCardDiv .formRow:has(#numberOfPaymentsselect),
+    html.checkout-embed #CreditCardDiv .agreement-row {
+        grid-column: 1 / -1;
+        grid-row: auto;
+    }
+}
+
+/* Large phone / portrait tablet: one checkout column, two wallet slots. */
+@media (min-width: 600px) and (max-width: 899px) {
+    .checkout-order,
+    html.checkout-embed .checkout-order {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-methods-grid,
+    html.checkout-embed .payment-methods-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #CreditCardDiv,
+    html.checkout-embed #CreditCardDiv {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardNumber),
+    html.checkout-embed #CreditCardDiv .card-small-fields,
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtopenSum),
+    html.checkout-embed #CreditCardDiv .formRow:has(#numberOfPaymentsselect),
+    html.checkout-embed #CreditCardDiv .agreement-row {
+        grid-column: 1 / -1;
+        grid-row: auto;
+    }
+
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtTZ),
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardOwnerName),
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardOwnerPhone),
+    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardOwnerEmail) {
+        grid-column: auto;
+        grid-row: auto;
+    }
+}
+
+/* Compact desktop iframe packing (900px–1280px only).
+   Phones and portrait tablets use the rules above and scroll.
+   Localhost preview: html.checkout-embed, only from 900px.
+   Live Cardcom: the 900px–1280px query packs columns but does not
+   lock document height (Bit QR, CAPTCHA, errors must be able to grow).
+   Wide desktop redirect (>1280px) stays the original scrollable page. */
+@media (min-width: 900px) {
 html.checkout-embed,
 html.checkout-embed body {
     height: 100%;
@@ -1218,9 +1393,6 @@ html.checkout-embed body {
     overflow: hidden !important;
     position: fixed;
     inset: 0;
-    background: #fff !important;
-    background-image: none !important;
-    box-shadow: none !important;
 }
 
 html.checkout-embed #Content,
@@ -1575,81 +1747,33 @@ html.checkout-embed .GooglePayDiv {
     min-height: 32px;
 }
 
-@media (max-width: 640px) {
-    html.checkout-embed .checkout-grid {
-        grid-template-columns: 1fr;
-        overflow: hidden;
-    }
-
-    html.checkout-embed .checkout-grid > .checkout-order,
-    html.checkout-embed .checkout-grid > .checkout-payment {
-        overflow: visible;
-        max-height: none;
-    }
-
-    html.checkout-embed .checkout-order {
-        grid-template-columns: 1fr;
-    }
-
-    html.checkout-embed .payment-methods-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    html.checkout-embed #CreditCardDiv {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardNumber),
-    html.checkout-embed #CreditCardDiv .card-small-fields,
-    html.checkout-embed #CreditCardDiv .formRow:has(#txtopenSum),
-    html.checkout-embed #CreditCardDiv .formRow:has(#numberOfPaymentsselect),
-    html.checkout-embed #CreditCardDiv .agreement-row {
-        grid-column: 1 / -1;
-        grid-row: auto;
-    }
-
-    html.checkout-embed #CreditCardDiv .formRow:has(#txtTZ),
-    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardOwnerName),
-    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardOwnerPhone),
-    html.checkout-embed #CreditCardDiv .formRow:has(#txtCardOwnerEmail) {
-        grid-column: auto;
-        grid-row: auto;
-    }
 }
 
-@media (min-width: 600px) and (max-width: 1280px) {
-    /* Live Cardcom iframe viewport. Fill the frame with no scrollbar.
-       Desktop redirect wider than 1280px keeps page scroll. */
+@media (min-width: 900px) and (max-width: 1280px) {
+    /* Live Cardcom 900–1280px: denser two-column packing.
+       Document may grow (Bit QR, CAPTCHA, errors). Parent iframe
+       should be tall enough; do not lock html/body. */
     html,
     body {
-        height: 100%;
-        max-height: 100dvh;
-        overflow: hidden !important;
-        position: fixed;
-        inset: 0;
-        background: #fff !important;
-        background-image: none !important;
-        box-shadow: none !important;
+        height: auto;
+        max-height: none;
+        overflow-x: clip;
+        overflow-y: auto;
+        position: static;
     }
 
     #Content,
     #checkout-root {
-        height: 100%;
-        max-height: 100%;
-        overflow: hidden !important;
+        height: auto;
+        max-height: none;
+        overflow: visible;
     }
 
     .checkout-page {
-        height: 100%;
-        max-height: 100%;
-        overflow: hidden;
+        height: auto;
+        max-height: none;
+        overflow: visible;
         padding: 4px 0 0;
-        scrollbar-width: none;
-    }
-
-    .checkout-page::-webkit-scrollbar {
-        width: 0;
-        height: 0;
     }
 
     .checkout-header,
@@ -1673,7 +1797,7 @@ html.checkout-embed .GooglePayDiv {
         flex-direction: column;
         flex: 1 1 auto;
         min-height: 0;
-        overflow: hidden;
+        overflow: visible;
         padding-bottom: 0;
     }
 
@@ -1709,7 +1833,7 @@ html.checkout-embed .GooglePayDiv {
         grid-template-columns: 1fr 1fr;
         flex: 1 1 auto;
         min-height: 0;
-        overflow: hidden;
+        overflow: visible;
         align-items: start;
     }
 
@@ -1984,47 +2108,5 @@ html.checkout-embed .GooglePayDiv {
     #BitDivContainer,
     .GooglePayDiv {
         min-height: 32px;
-    }
-
-    @media (max-width: 640px) {
-        .checkout-grid {
-            grid-template-columns: 1fr;
-            overflow: hidden;
-        }
-
-        .checkout-grid > .checkout-order,
-        .checkout-grid > .checkout-payment {
-            overflow: visible;
-            max-height: none;
-        }
-
-        .checkout-order {
-            grid-template-columns: 1fr;
-        }
-
-        #CreditCardDiv {
-            grid-template-columns: 1fr 1fr;
-        }
-
-        #CreditCardDiv .formRow:has(#txtCardNumber),
-        #CreditCardDiv .card-small-fields,
-        #CreditCardDiv .formRow:has(#txtopenSum),
-        #CreditCardDiv .formRow:has(#numberOfPaymentsselect),
-        #CreditCardDiv .agreement-row {
-            grid-column: 1 / -1;
-            grid-row: auto;
-        }
-
-        #CreditCardDiv .formRow:has(#txtTZ),
-        #CreditCardDiv .formRow:has(#txtCardOwnerName),
-        #CreditCardDiv .formRow:has(#txtCardOwnerPhone),
-        #CreditCardDiv .formRow:has(#txtCardOwnerEmail) {
-            grid-column: auto;
-            grid-row: auto;
-        }
-
-        .payment-methods-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
     }
 }

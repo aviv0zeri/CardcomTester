@@ -9,6 +9,7 @@ const profiles = {
   tester: {
     terminalNumber: Number(process.env.CARDCOM_TERMINAL),
     apiName: process.env.CARDCOM_USERNAME,
+    apiPassword: process.env.CARDCOM_PASSWORD,
     successRedirectUrl:
       process.env.CARDCOM_SUCCESS_URL || 'https://www.google.com',
     failedRedirectUrl:
@@ -69,6 +70,10 @@ function buildLowProfileBody(profile, amount, language) {
     FailedRedirectUrl: profile.failedRedirectUrl,
   };
 
+  if (profile.apiPassword) {
+    body.ApiPassword = profile.apiPassword;
+  }
+
   if (Object.keys(uiDefinition).length > 0) {
     body.UIDefinition = uiDefinition;
   }
@@ -76,8 +81,106 @@ function buildLowProfileBody(profile, amount, language) {
   return body;
 }
 
+function roundMoney(value) {
+  return Math.round(Number(value) * 100) / 100
+}
+
+function parseProducts(raw) {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((row) => ({
+      Description: String(row.description || row.Description || '').trim(),
+      Quantity: Number(row.quantity ?? row.Quantity),
+      UnitCost: Number(row.unitCost ?? row.UnitCost),
+    }))
+    .filter(
+      (row) =>
+        row.Description &&
+        Number.isFinite(row.Quantity) &&
+        row.Quantity > 0 &&
+        Number.isFinite(row.UnitCost) &&
+        row.UnitCost >= 0,
+    )
+}
+
+function productTotal(products) {
+  return roundMoney(
+    products.reduce((sum, row) => sum + row.Quantity * row.UnitCost, 0),
+  )
+}
+
+function assignIfPresent(target, key, value) {
+  if (value === undefined || value === null) return
+  const text = String(value).trim()
+  if (!text) return
+  target[key] = text
+}
+
+function buildLabCreateBody(profile, input) {
+  const source = input && typeof input === 'object' ? input : {}
+  const products = parseProducts(source.products)
+  const includeDocument = Boolean(source.includeDocument) || products.length > 0
+  let amount = Number(source.amount)
+  if (includeDocument && products.length) {
+    amount = productTotal(products)
+  }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    const error = new Error('amount must be a number greater than 0')
+    error.statusCode = 400
+    throw error
+  }
+
+  const body = buildLowProfileBody(profile, amount, source.language)
+  if (source.returnValue) {
+    body.ReturnValue = String(source.returnValue).slice(0, 250)
+  }
+
+  if (includeDocument) {
+    const document = {
+      DocumentTypeToCreate: source.documentType || 'TaxInvoiceAndReceipt',
+    }
+    if (products.length) document.Products = products
+
+    const customer = source.customer && typeof source.customer === 'object' ? source.customer : {}
+    assignIfPresent(document, 'Name', customer.name || customer.Name)
+    assignIfPresent(document, 'TaxId', customer.taxId || customer.TaxId)
+    assignIfPresent(document, 'Email', customer.email || customer.Email)
+    assignIfPresent(document, 'AddressLine1', customer.addressLine1 || customer.AddressLine1)
+    assignIfPresent(document, 'City', customer.city || customer.City)
+    assignIfPresent(document, 'Mobile', customer.mobile || customer.Mobile)
+    if (typeof customer.isSendByEmail === 'boolean') {
+      document.IsSendByEmail = customer.isSendByEmail
+    } else if (typeof customer.IsSendByEmail === 'boolean') {
+      document.IsSendByEmail = customer.IsSendByEmail
+    }
+    body.Document = document
+  }
+
+  return { body, amount, includeDocument }
+}
+
+function buildLabResultBody(profile, lowProfileId) {
+  const id = String(lowProfileId || '').trim()
+  if (!id) {
+    const error = new Error('LowProfileId is required')
+    error.statusCode = 400
+    throw error
+  }
+  const body = {
+    TerminalNumber: profile.terminalNumber,
+    ApiName: profile.apiName,
+    LowProfileId: id,
+  }
+  if (profile.apiPassword) body.ApiPassword = profile.apiPassword
+  return body
+}
+
 module.exports = {
   LANGUAGES,
   getProfile,
   buildLowProfileBody,
+  buildLabCreateBody,
+  buildLabResultBody,
+  productTotal,
+  parseProducts,
 };

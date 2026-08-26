@@ -2,7 +2,13 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
-const { getProfile, buildLowProfileBody } = require('./profiles');
+const {
+  getProfile,
+  buildLowProfileBody,
+  buildLabCreateBody,
+  buildLabResultBody,
+} = require('./profiles');
+const { createLowProfile, getLpResult, publicPayload } = require('./cardcom');
 
 const app = express();
 
@@ -23,6 +29,10 @@ app.use(
 app.use(
   '/templates',
   express.static(path.join(__dirname, '..', 'templates'))
+);
+app.use(
+  '/competition-template',
+  express.static(path.join(__dirname, '..', 'competition-template'))
 );
 app.use(
   '/Images/Bit',
@@ -79,6 +89,72 @@ app.post('/payment', async (req, res) => {
 
     res.status(500).json({
       message: 'Cardcom request failed',
+    });
+  }
+});
+
+app.post('/lab/create', async (req, res) => {
+  try {
+    const profile = getProfile(req.body && req.body.profileId);
+    const { body, amount, includeDocument } = buildLabCreateBody(profile, req.body);
+
+    console.log({
+      lab: 'create',
+      profileId: profile.id,
+      sent: publicPayload(body),
+    });
+
+    const cardcom = await createLowProfile(body);
+    console.log({ lab: 'create', cardcom });
+
+    res.json({
+      sent: {
+        Amount: amount,
+        Language: body.Language,
+        Operation: body.Operation,
+        includeDocument,
+        productCount: body.Document && body.Document.Products ? body.Document.Products.length : 0,
+        request: publicPayload(body),
+      },
+      cardcom,
+    });
+  } catch (error) {
+    console.log(error);
+    if (error.statusCode === 400) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    res.status(error.statusCode === 502 ? 502 : 500).json({
+      message: error.message || 'Cardcom request failed',
+      raw: error.raw,
+    });
+  }
+});
+
+app.post('/lab/result', async (req, res) => {
+  try {
+    const profile = getProfile(req.body && req.body.profileId);
+    const body = buildLabResultBody(profile, req.body && req.body.lowProfileId);
+
+    console.log({
+      lab: 'result',
+      profileId: profile.id,
+      sent: publicPayload(body),
+    });
+
+    const cardcom = await getLpResult(body);
+    console.log({ lab: 'result', cardcom });
+
+    res.json({ cardcom });
+  } catch (error) {
+    console.log(error);
+    if (error.statusCode === 400) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    res.status(error.statusCode === 502 ? 502 : 500).json({
+      message: error.message || 'Cardcom request failed',
+      raw: error.raw,
     });
   }
 });

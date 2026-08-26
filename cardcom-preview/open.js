@@ -107,6 +107,17 @@
         "/cardcom-preview/preview-iframe.css"
       ]
     },
+    "competition-template": {
+      dir: "rtl",
+      lang: "he",
+      mock: "/cardcom-preview/mock.js",
+      base: "/cardcom-preview/",
+      html: "/competition-template/checkout.html",
+      css: [
+        "/cardcom-hosted/templates/cardcom-stock.css",
+        "/competition-template/checkout.css"
+      ]
+    },
     "low-profile/_archive/english-full-snapshot": {
       dir: "ltr",
       lang: "en",
@@ -174,25 +185,37 @@
   }
   var spec = VERSIONS[key];
 
-  // &all=1 previews the unified mobile/tablet/desktop working copy.
-  // &wip=1 previews Claude's compact-iframe scratch copy.
-  // Both live under templates/cardcom/low-profile/_all/ and _wip/ (never pasted).
-  if (spec && (params.get("all") === "1" || params.get("wip") === "1")) {
-    var folder = params.get("all") === "1" ? "_all" : "_wip";
-    var toCopy = function (p) {
-      return p.replace(
-        "/templates/cardcom/low-profile/",
-        "/templates/cardcom/low-profile/" + folder + "/"
-      );
-    };
-    spec = {
-      dir: spec.dir,
-      lang: spec.lang,
-      mock: spec.mock,
-      base: spec.base,
-      html: toCopy(spec.html),
-      css: spec.css.map(toCopy)
-    };
+  // &brand=1 — compact Aviv skin (logo, name, card fields). Not Canaan, not paste.
+  // &all=1 / &wip=1 — working copies under templates/cardcom/low-profile/.
+  if (spec && spec.html.indexOf("/competition-template/") === -1) {
+    if (params.get("brand") === "1") {
+      spec = {
+        dir: spec.dir,
+        lang: spec.lang,
+        mock: spec.mock,
+        base: spec.base,
+        html: "/templates/cardcom/low-profile/_brand/checkout.html",
+        css: spec.css.concat([
+          "/templates/cardcom/low-profile/_brand/brand-skin.css"
+        ])
+      };
+    } else if (params.get("all") === "1" || params.get("wip") === "1") {
+      var folder = params.get("all") === "1" ? "_all" : "_wip";
+      var toCopy = function (p) {
+        return p.replace(
+          "/templates/cardcom/low-profile/",
+          "/templates/cardcom/low-profile/" + folder + "/"
+        );
+      };
+      spec = {
+        dir: spec.dir,
+        lang: spec.lang,
+        mock: spec.mock,
+        base: spec.base,
+        html: toCopy(spec.html),
+        css: spec.css.map(toCopy)
+      };
+    }
   }
   var root = document.getElementById("checkout-root");
   if (!spec) {
@@ -263,19 +286,22 @@
     body.appendChild(remarkRow(text.remarkTitle, text.remarkBody));
   }
   function addPreviewMerchantPrivacy() {
-    if (document.getElementById("privacy-policy-container")) return;
-    var footer = document.querySelector(".footerIfIframe") || document.querySelector(".footer");
-    if (!footer || !footer.parentNode) return;
-    var box = document.createElement("div");
-    box.id = "privacy-policy-container";
-    box.setAttribute("data-preview-only", "true");
+    var box = document.getElementById("privacy-policy-container");
+    if (!box) {
+      var footer = document.querySelector(".footerIfIframe") || document.querySelector(".footer");
+      if (!footer || !footer.parentNode) return;
+      box = document.createElement("div");
+      box.id = "privacy-policy-container";
+      box.setAttribute("data-preview-only", "true");
+      footer.parentNode.insertBefore(box, footer);
+    }
+    if (box.querySelector("a")) return;
     var a = document.createElement("a");
     a.href = "https://www.example.com/privacy";
     a.target = "_blank";
     a.rel = "noopener noreferrer";
     a.textContent = (PREVIEW_COPY[spec.lang] || PREVIEW_COPY.en).privacy;
     box.appendChild(a);
-    footer.parentNode.insertBefore(box, footer);
   }
 
   new MutationObserver(function () {

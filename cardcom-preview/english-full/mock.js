@@ -90,7 +90,7 @@
     },
     cardNumber: { hide: false, label: "Card number", value: "", disabled: false },
     cvv: { hide: false, label: "3 digits on the back of the card", value: "" },
-    cardOwnerID: { hide: false, label: "Cardholder ID", value: "" },
+    cardOwnerID: { hide: false, label: "ID (IL only)", value: "" },
     cardOwnerName: { hide: false, label: "Cardholder name", value: "" },
     cardOwnerPhone: { hide: true, label: "Mobile", value: "" },
     cardOwnerEmail: { hide: true, label: "Email", value: "" },

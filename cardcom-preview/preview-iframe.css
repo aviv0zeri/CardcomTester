@@ -5,3 +5,7 @@ html.checkout-embed .preview-wallet,
 .preview-wallet {
   height: 40px;
 }
+
+html.checkout-embed #preview-wallet-bar {
+  display: none !important;
+}

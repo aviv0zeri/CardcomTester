@@ -11,6 +11,9 @@ body {
     overflow-x: clip;
     overflow-y: auto;
     overscroll-behavior: auto;
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     background-color: #e8eaef;
     background-image:
         radial-gradient(ellipse 70% 80% at 50% 20%, #f7f8fa 0%, rgba(247, 248, 250, 0.7) 42%, transparent 78%),
@@ -736,6 +739,22 @@ html[lang="ru"] .checkout-header-title::after,
     text-transform: none;
 }
 
+/* Cardcom's English cardOwnerID label says "Teudat Zeut". */
+html:lang(en) #CreditCardDiv .formRow:has(#txtTZ) > .fieldName,
+html[lang="en"] #CreditCardDiv .formRow:has(#txtTZ) > .fieldName {
+    font-size: 0 !important;
+}
+
+html:lang(en) #CreditCardDiv .formRow:has(#txtTZ) > .fieldName::before,
+html[lang="en"] #CreditCardDiv .formRow:has(#txtTZ) > .fieldName::before {
+    content: "ID (IL only)";
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4b5b76;
+    line-height: 1;
+}
+
 /* Cardcom's labels.PayByCreditCard is English for Russian, Portuguese, and most LTR packs. */
 html:lang(ru) .card-payment-title .card-pay-label,
 html[lang="ru"] .card-payment-title .card-pay-label,
@@ -1263,6 +1282,9 @@ html.checkout-embed body {
     overflow: hidden !important;
     position: fixed;
     inset: 0;
+    background: #fff !important;
+    background-image: none !important;
+    box-shadow: none !important;
 }
 
 html.checkout-embed #Content,
@@ -1669,6 +1691,9 @@ html.checkout-embed .GooglePayDiv {
         overflow: hidden !important;
         position: fixed;
         inset: 0;
+        background: #fff !important;
+        background-image: none !important;
+        box-shadow: none !important;
     }
 
     #Content,

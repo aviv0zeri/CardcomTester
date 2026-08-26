@@ -34,14 +34,15 @@ Former iframe-specific CSS is parked at `templates/cardcom/low-profile/_archive/
 ```bash
 source scripts/cardcom-clipboard.zsh
 
-cardcom_export    # fzf: Enter copies and stays in the list, Esc quits
-cardcom_html      # same, HTML only (paste first)
-cardcom_css       # same, CSS only (paste second)
+cardcom export    # new version (Aviv brand): HTML first, then CSS
+cardcom tester    # start Express + Vite if needed, open the React tester
+cardcom_export    # old version: fzf, Enter copies and stays in the list, Esc quits
+cardcom_html      # old version, HTML only (paste first)
+cardcom_css       # old version, CSS only (paste second)
 cardcom_open      # fzf: open that version's HTML+CSS on localhost (not React)
-cardcom_tester    # start Express + Vite if needed, open the React tester
 ```
 
-Needs [fzf](https://github.com/junegunn/fzf). `cardcom_open` uses the API server on port 3000 if it is running, otherwise it starts `python3 -m http.server 8080` at the repo root. `cardcom_tester` needs Express on :3000 (not a python preview) and Vite on :5173.
+Needs [fzf](https://github.com/junegunn/fzf). `cardcom_open` uses the API server on port 3000 if it is running, otherwise it starts `python3 -m http.server 8080` at the repo root. `cardcom tester` needs Express on :3000 (not a python preview) and Vite on :5173.
 
 ## Local preview
 
@@ -55,7 +56,7 @@ http://127.0.0.1:8080/cardcom-preview/
 
 Or the React tester: API `cd server && node index.js`, then `cd cardcom-tester && npm run dev` → http://localhost:5173
 
-The tester has the same three sections as above. Redirect full-page buttons navigate away; iframe and Either open an overlay. Do not touch the iframe DOM.
+The React page has two tabs: **API lab** (Create → pay → GetLpResult) and **Design** (Local / live Cardcom, page / iframe / phone). Do not touch the iframe DOM.
 
 Older files under `cardcom-hosted/` are leftover from earlier experiments. Do not edit them for new work.
 
@@ -87,5 +88,5 @@ After any CSS change, start a **new** payment. Old Low Profile URLs keep the old
 
 - `templates/cardcom/low-profile/` — paste-ready Low Profile HTML + RTL/LTR CSS
 - `cardcom-preview/` — localhost mock wrappers (never paste)
-- `server/` — shared payment API and `profiles.js`
-- `cardcom-tester/` — React test harness
+- `server/` — shared payment API, `profiles.js`, lab Create / GetLpResult
+- `cardcom-tester/` — React test harness (design tester + API lab)

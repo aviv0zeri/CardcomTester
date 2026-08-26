@@ -1,0 +1,558 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap');
+
+/* =========================================================
+   כנען תיירות — עיצוב מדברי לדף סליקה קארדקום (פרופיל נמוך 5)
+   מבוסס על מבנה קיים; שונו צבעים/טקסטים בלבד, ה-data-bind נשמר
+   ========================================================= */
+
+/* ===== BASE ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { background-color: #EADFCA; }
+
+body {
+  font-family: 'Rubik', sans-serif;
+  background-color: #EADFCA; /* fallback חול — מונע רקע לבן במובייל */
+  background-image: radial-gradient(130% 90% at 50% -15%, #F6EFDE 0%, #EADFCA 62%, #DFD2B6 100%);
+  background-repeat: no-repeat;
+  background-size: cover;
+  min-height: 100vh;
+  direction: rtl;
+}
+
+.container {
+  padding: 26px 18px 34px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* ===== CANAAN BRAND HEADER (נוסף) ===== */
+.canaan-head {
+  background: linear-gradient(180deg, #54512F 0%, #3C3A20 100%);
+  border-radius: 20px 20px 0 0;
+  padding: 30px 26px 22px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.canaan-head::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 70% at 50% 120%, rgba(201,162,75,.20), transparent 65%);
+}
+.canaan-logo {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 15px 26px;
+  border: 2px solid rgba(239,232,214,.45);
+  border-radius: 16px;
+  position: relative;
+}
+.canaan-logo .cl-name {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: 30px;
+  color: #EFE8D6;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+.canaan-logo .cl-rule {
+  width: 64px; height: 2px;
+  background: #C9A24B;
+  border-radius: 2px;
+}
+.canaan-logo .cl-sub {
+  font-size: 10px;
+  color: #EFE8D6;
+  opacity: .9;
+  letter-spacing: 4px;
+}
+.canaan-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+.canaan-divider .r {
+  height: 1px; width: 80px;
+  background: linear-gradient(90deg, transparent, #C9A24B);
+  opacity: .75;
+}
+.canaan-divider .r.rev { background: linear-gradient(90deg, #C9A24B, transparent); }
+.canaan-divider .dot {
+  width: 7px; height: 7px;
+  transform: rotate(45deg);
+  background: #C9A24B;
+  opacity: .9;
+}
+
+/* ===== CARD SECTION (מחובר לכותרת) ===== */
+.card-section {
+  background: #FCF8EF;
+  border: 1px solid #E1D6BB;
+  border-top: none;
+  border-radius: 0 0 20px 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 24px 50px -30px rgba(60,58,32,.55);
+  animation: fadeInUp 0.4s ease-out forwards;
+  animation-delay: 0.15s;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #EFE4CC;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #3C3A20;
+  margin: 0;
+}
+
+/* קופסאות אייקון ריקות של התבנית — מוסתרות */
+.card-icons { display: none; }
+
+/* ===== CARDCOM FORM ===== */
+.blockDetails { margin-bottom: 20px; }
+.blockDetails.paymentDetails { background: transparent; border: none; padding: 0; }
+.blockDetailsIn { padding: 0; }
+.blockDetailsIn .title { display: none; }
+
+/* Form Row */
+.formRow { margin-bottom: 16px; }
+
+.formRow .fieldName {
+  display: block !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #736A48 !important;
+  margin-bottom: 6px !important;
+  letter-spacing: 0.3px !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.formRow .fieldName label { text-align: right !important; display: block !important; }
+
+/* כוכבית חובה */
+.required-asterisk {
+  color: #A65729 !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  display: inline !important;
+}
+
+/* הסתרת סימוני חובה מובנים */
+.formRow .fieldName .required,
+.formRow .fieldName .asterisk,
+.formRow .fieldName span.mandatory,
+.blockDetails .fieldName .required,
+.blockDetails .fieldName .asterisk,
+.blockDetails .fieldName span.mandatory { display: none !important; }
+
+/* שדות מותאמים */
+.blockDetails.customDetails .fieldName,
+.formRow.customFieldRow .fieldName,
+.formRow.nameRow .fieldName {
+  display: block !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #736A48 !important;
+  margin-bottom: 6px !important;
+  text-align: right !important;
+}
+
+#CreditCardDiv .formRow.cardRow[data-bind*="cardNumber"] .fieldName,
+#CreditCardDiv .formRow.cardNumberRow .fieldName { font-size: 12px !important; }
+#CreditCardDiv .formRow.cardRow[data-bind*="cardNumber"] .fieldName::before,
+#CreditCardDiv .formRow.cardNumberRow .fieldName::before { content: none; }
+
+/* תווית תוקף */
+.formRow.validityRow .fieldName { font-size: 0 !important; }
+.formRow.validityRow .fieldName::before {
+  content: "תוקף כרטיס ";
+  font-size: 12px !important;
+  font-weight: 600;
+  color: #736A48;
+  letter-spacing: 0.3px;
+}
+.formRow.validityRow .fieldName::after {
+  content: "*" !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #A65729 !important;
+}
+
+.formRow .fieldInput { display: block; width: 100%; }
+
+.formRow .fieldInput input,
+.formRow .fieldInput select {
+  width: 100%;
+  height: 44px;
+  padding: 6px 14px;
+  font-size: 15px;
+  font-family: 'Rubik', sans-serif;
+  color: #2B281B;
+  background: #fff;
+  border: 1.5px solid #D3C4A0;
+  border-radius: 11px;
+  transition: all 0.15s ease;
+  outline: none;
+}
+.formRow .fieldInput input:focus:not(.validation-success),
+.formRow .fieldInput select:focus:not(.validation-success) {
+  background: #fff;
+  border-color: #C2703A;
+  box-shadow: 0 0 0 3px rgba(194,112,58,0.15);
+}
+.formRow .fieldInput input::placeholder { color: #BAAF8E; }
+
+/* Layout */
+#CreditCardDiv { display: block !important; }
+#CreditCardDiv .formRow { margin-bottom: 0 !important; }
+
+.form-row-group {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  margin-bottom: 16px !important;
+}
+.form-row-group.fields-flow-grid > .formRow,
+.form-row-group.fields-flow-grid > .custom-field-item {
+  flex: 1 1 calc(50% - 6px) !important;
+  min-width: calc(50% - 6px) !important;
+  max-width: calc(50% - 6px) !important;
+}
+.form-row-group.fields-flow-grid > .formRow.validityRow {
+  flex: 1 1 calc(35% - 6px) !important;
+  min-width: 160px !important;
+  max-width: calc(50% - 6px) !important;
+}
+.form-row-group.fields-flow-grid > .formRow.cvvRow {
+  flex: 0 0 130px !important;
+  min-width: 110px !important;
+  max-width: 150px !important;
+}
+
+.custom-field-item .fieldName,
+.formRow.customFieldRow .fieldName {
+  display: block !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #736A48 !important;
+  margin-bottom: 6px !important;
+  text-align: right !important;
+}
+.custom-field-item .fieldInput input,
+.custom-field-item .fieldInput select,
+.formRow.customFieldRow .fieldInput input {
+  width: 100% !important;
+  height: 44px !important;
+  padding: 6px 14px !important;
+  font-size: 15px !important;
+  font-family: 'Rubik', sans-serif !important;
+  color: #2B281B !important;
+  background: #fff !important;
+  border: 1.5px solid #D3C4A0 !important;
+  border-radius: 11px !important;
+  transition: all 0.15s ease !important;
+  outline: none !important;
+}
+.custom-field-item .fieldInput input:focus:not(.validation-success),
+.custom-field-item .fieldInput select:focus:not(.validation-success),
+.formRow.customFieldRow .fieldInput input:focus:not(.validation-success) {
+  background: #fff !important;
+  border-color: #C2703A !important;
+  box-shadow: 0 0 0 3px rgba(194,112,58,0.15) !important;
+}
+
+/* ת.ז + טלפון של בעל הכרטיס מוצגים (חובה) — הוצאו מרשימת ההסתרה.
+   הצגתם בפועל נקבעת ע"י המסוף (cardOwnerID.hide / cardOwnerPhone.hide).
+   רק אימייל בעל הכרטיס נשאר מוסתר. */
+#CreditCardDiv .formRow.cardRow[data-bind*="cardOwnerEmail"],
+.formRow[data-bind*="cardOwnerEmail"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Validity Row */
+.formRow.validityRow .fieldInput { display: flex; gap: 8px; }
+.formRow.validityRow .fieldInput select { flex: 1; }
+
+/* CVV Row */
+.formRow.cvvRow .fieldName {
+  display: block !important;
+  text-align: right !important;
+  width: 100% !important;
+  direction: rtl !important;
+}
+.formRow.cvvRow .fieldName label { text-align: right !important; display: block !important; width: 100% !important; }
+.formRow.cvvRow .fieldInput { width: 100% !important; }
+.formRow.cvvRow .fieldInput input { width: 100% !important; text-align: center !important; }
+.formRow.cvvRow .fieldName a,
+.formRow.cvvRow .fieldName img { display: none !important; }
+
+.blockDetails.customDetails { display: none !important; }
+
+/* ===== SUBMIT — כפתור תשלום ברוחב מלא ===== */
+.submitDiv {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  margin-top: 16px !important;
+  padding-top: 16px !important;
+  border-top: 1px solid #E1D6BB !important;
+  direction: rtl !important;
+}
+.submitDiv.inline-submit {
+  display: block !important;
+  border-top: none !important;
+  padding-top: 0 !important;
+  margin-top: 22px !important;
+}
+.submitDiv .buttonDiv { width: 100%; }
+.submitDiv .buttonDiv input[type="button"] {
+  width: 100%;
+  height: auto;
+  padding: 15px 24px;
+  background: linear-gradient(180deg, #C2703A 0%, #A65729 100%);
+  border: none;
+  border-radius: 13px;
+  color: #FCF4EA;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  font-family: 'Rubik', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 14px 26px -12px rgba(166,87,41,0.6);
+}
+.submitDiv .buttonDiv input[type="button"]:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+  box-shadow: 0 18px 32px -12px rgba(166,87,41,0.72);
+}
+.submitDiv .buttonDiv input[type="button"]:active { transform: translateY(0); }
+.submitDiv .buttonDiv input[type="button"]:disabled,
+.submitDiv .buttonDiv input[type="button"].button-disabled {
+  background: #E2C7A9 !important;
+  color: #FCF4EA !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+.submitDiv .buttonDiv input[type="button"]:disabled:hover,
+.submitDiv .buttonDiv input[type="button"].button-disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.submitDiv .homeLink a { color: #736A48; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+.submitDiv .homeLink a:hover { color: #A65729; }
+
+/* ===== ERROR ===== */
+.errorDiv {
+  margin-top: 16px;
+  padding: 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+}
+.errorDiv ul { list-style: none; margin: 0; padding: 0; }
+.errorDiv li { color: #dc2626; font-size: 14px; margin-bottom: 4px; }
+.errorDiv li:last-child { margin-bottom: 0; }
+
+/* ===== SECURITY NOTICE ===== */
+.security-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  background: #F1E8D6;
+  border-radius: 14px;
+  border: 1px solid #E1D6BB;
+  flex-direction: row-reverse;
+  margin-bottom: 6px;
+}
+.security-icon { width: 24px; height: 24px; flex-shrink: 0; }
+.security-icon svg { width: 24px; height: 24px; fill: #5C7A4A; }
+.security-text { flex: 1; text-align: right; }
+.security-text strong { display: block; color: #2B281B; font-size: 12.5px; font-weight: 700; margin-bottom: 2px; }
+.security-text p { color: #736A48; font-size: 10.5px; line-height: 1.5; margin: 0; }
+
+/* ===== TERMS NOTICE ===== */
+.terms-notice {
+  text-align: center;
+  padding: 10px 0 2px;
+  color: #736A48;
+  font-size: 11.5px;
+  line-height: 1.6;
+  direction: rtl;
+}
+.terms-notice a { color: #A65729; text-decoration: underline; }
+.terms-notice a:hover { color: #C2703A; }
+
+/* ===== PROCESSING OVERLAY ===== */
+.processing-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(243,236,221,0.95);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.processing-overlay.active { display: flex; }
+.spinner {
+  width: 48px; height: 48px;
+  border: 3px solid #E1D6BB;
+  border-top-color: #C2703A;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+.processing-text { margin-top: 16px; font-size: 16px; color: #3C3A20; font-weight: 600; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== HIDE UNWANTED ELEMENTS ===== */
+.productsDetails,
+.showProductsTabs,
+.showProductsTables,
+.blockDetails.OrderDetails,
+div[data-bind*="labels.HtmlComments"],
+.htmlCommentsDiv,
+#privacy-policy-popup,
+#PopUpRTL,
+#PopUpLTR,
+.paypalDiv,
+.ApplePayDiv,
+.GooglePayDiv,
+#BitDivContainer,
+#uPayBitDiv,
+#PayMeBitDiv,
+#CardcomBitDiv,
+#cookies-banner,
+.masterPassDiv,
+#ApplePayDivContainer,
+#captcha_div { display: none !important; }
+
+.formRow.cardRow[data-bind*="numberOfPayments"] { display: none !important; }
+.formRow.cardRow[data-bind*="condition.hide"] { display: none !important; }
+
+/* ===== VALIDATION STATES ===== */
+.formRow.notValid .fieldInput input,
+.formRow.notValid .fieldInput select,
+.fieldInput input.validation-error,
+input.validation-error,
+select.validation-error {
+  border-color: #dc2626 !important;
+  background: #fef2f2 !important;
+}
+.formRow.valid .fieldInput input,
+.formRow.valid .fieldInput select,
+.fieldInput input.validation-success,
+input.validation-success,
+select.validation-success {
+  border: 2px solid #5C7A4A !important;
+  background: #ffffff !important;
+}
+.fieldInput input.validation-success:focus,
+input.validation-success:focus,
+select.validation-success:focus,
+.formRow.valid .fieldInput input:focus,
+.formRow.valid .fieldInput select:focus {
+  border: 2px solid #5C7A4A !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(92,122,74,0.12) !important;
+}
+
+.blockDetails.customDetails .formRow input:not(:placeholder-shown),
+.blockDetails.customDetails .formRow.nameRow input:not(:placeholder-shown),
+.blockDetails.customDetails input[id^="custom_"]:not(:placeholder-shown) {
+  border: 2px solid #5C7A4A !important;
+  background: #ffffff !important;
+}
+.blockDetails.customDetails .formRow input:valid:not(:placeholder-shown):not(:focus),
+.blockDetails.customDetails input:valid:not(:placeholder-shown):not(:focus) {
+  border: 2px solid #5C7A4A !important;
+}
+
+.field-error-message {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+  text-align: right;
+  direction: rtl;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .container { padding: 18px 14px 28px; }
+  .canaan-head { padding: 26px 20px 20px; }
+  .card-section { padding: 20px; }
+
+  .form-row-group { flex-direction: row !important; flex-wrap: wrap !important; }
+  .form-row-group .formRow,
+  .form-row-group .custom-field-item {
+    flex: 1 1 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .form-row-group.fields-flow-grid > .formRow.validityRow {
+    flex: 1 1 55% !important;
+    min-width: 0 !important;
+    max-width: 60% !important;
+    width: auto !important;
+  }
+  .form-row-group.fields-flow-grid > .formRow.cvvRow {
+    flex: 1 1 35% !important;
+    min-width: 0 !important;
+    max-width: 40% !important;
+    width: auto !important;
+  }
+}
+
+/* ===== DIRECTION FIX ===== */
+input.directionLTR { direction: ltr; text-align: left; }
+
+/* ===== FOOTER (לוגו קארדקום — חובה שיישאר) ===== */
+.footerIfIframe,
+.footer {
+  display: block !important;
+  text-align: center;
+  padding: 16px;
+  font-size: 12px;
+  color: #736A48;
+  background: transparent;
+  border-top: 1px solid #E1D6BB;
+  margin-top: 8px;
+}
+.footerIfIframe a,
+.footer a { color: #A65729; text-decoration: none; }
+.footerIfIframe a:hover,
+.footer a:hover { text-decoration: underline; }

@@ -93,7 +93,11 @@
     cvv: { hide: false, label: "3 цифры на обороте карты", value: "" },
     cardOwnerID: { hide: false, label: "ID владельца карты", value: "" },
     cardOwnerName: { hide: false, label: "Имя на карте", value: "" },
-    cardOwnerPhone: { hide: true, label: "Мобильный", value: "" },
+    cardOwnerPhone: {
+      hide: new URLSearchParams(location.search).get("brand") !== "1",
+      label: "Номер телефона",
+      value: ""
+    },
     cardOwnerEmail: { hide: true, label: "Эл. почта", value: "" },
     openSum: { hide: true, label: "Сумма к оплате", value: "" },
     numberOfPayments: {

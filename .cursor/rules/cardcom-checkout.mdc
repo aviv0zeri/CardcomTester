@@ -37,4 +37,4 @@ The React app (`cardcom-tester/`) is a shell: three sections (redirect page, ifr
 
 ## Submit
 
-`cardcom_export` (or `cardcom_html` then `cardcom_css`). Do not F5 Cardcom's preview window.
+Old version: `cardcom_export` (or `cardcom_html` then `cardcom_css`). New version: `cardcom export`. Do not F5 Cardcom's preview window.
