@@ -197,9 +197,12 @@ export function ApiLab({ disabled }: ApiLabProps) {
         </div>
 
         {scenario === 'customer' ? (
-          <p className="lab-pending">
-            Pending experimental verification. Sends customer fields, including IsSendByEmail.
-            Does not claim Cardcom emailed a document.
+          <p className="lab-later">
+            Experimentally verified: Document.IsSendByEmail true → on successful payment,
+            Cardcom emails the generated document (PDF attached) to Document.Email. Confirmed by
+            inbox check, not by the API. Limitation: GetLpResult exposes no email delivery/status
+            field — the response confirms the document was created, never that the email arrived.
+            Treat send as fire-and-forget unless Cardcom exposes a delivery-status API later.
           </p>
         ) : null}
 
