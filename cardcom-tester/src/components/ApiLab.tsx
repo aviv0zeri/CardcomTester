@@ -61,12 +61,13 @@ function Value({ label, value }: { label: string; value: unknown }) {
   )
 }
 
+// Callers append " · {code}" themselves, so text here must never repeat the code.
 function statusLabel(code: number | null): { kind: string; text: string } {
   if (code === 0) return { kind: 'ok', text: 'Success' }
   if (code === 5119) return { kind: 'pending', text: 'Pending / payment not completed' }
-  if (code === 605) return { kind: 'error', text: 'API user locked (605)' }
+  if (code === 605) return { kind: 'error', text: 'API user locked' }
   if (code === null) return { kind: 'muted', text: 'Waiting for Cardcom' }
-  return { kind: 'error', text: `Cardcom ${code}` }
+  return { kind: 'error', text: 'Cardcom error' }
 }
 
 function documentUrl(cardcom: CardcomPayload | null): string {
@@ -411,7 +412,6 @@ export function ApiLab({ disabled }: ApiLabProps) {
           </li>
         </ol>
 
-        {error ? <p className="status status--error">{error}</p> : null}
         <p className="lab-later">Webhooks, tokens, refunds, subscriptions — add later.</p>
       </div>
 
@@ -438,7 +438,9 @@ export function ApiLab({ disabled }: ApiLabProps) {
           ) : null}
         </div>
 
-        {!createCardcom && !resultCardcom ? (
+        {error ? (
+          <p className="lab-badge lab-badge--error">{error}</p>
+        ) : !createCardcom && !resultCardcom ? (
           <p className="lab-empty">Create a session. Cardcom’s reply shows up here.</p>
         ) : pane === 'result' && resultCardcom ? (
           <>
@@ -452,6 +454,7 @@ export function ApiLab({ disabled }: ApiLabProps) {
               <Value label="ResponseCode" value={resultCardcom.ResponseCode} />
               <Value label="Description" value={resultCardcom.Description} />
               <Value label="LowProfileId" value={resultCardcom.LowProfileId} />
+              <Value label="ReturnValue" value={resultCardcom.ReturnValue} />
               <Value label="Operation" value={resultCardcom.Operation} />
             </dl>
             {transaction ? (

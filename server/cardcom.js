@@ -1,6 +1,11 @@
 const CREATE_URL = 'https://secure.cardcom.solutions/api/v11/LowProfile/Create'
 const RESULT_URL = 'https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult'
 
+// ApiPassword must never reach the browser — stripped here before the debug
+// echo goes back to React. ApiName currently still leaks into that debug
+// view, which is acceptable only because terminal 1000 is Cardcom's public
+// test account. Strip ApiName here too (or gate the whole debug echo behind
+// a non-production flag) before this profile ever points at a real account.
 function publicPayload(body) {
   if (!body || typeof body !== 'object') return body
   const copy = { ...body }
