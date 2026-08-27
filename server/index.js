@@ -8,7 +8,7 @@ const {
   buildLabCreateBody,
   buildLabResultBody,
 } = require('./profiles');
-const { createLowProfile, getLpResult, publicPayload } = require('./cardcom');
+const { createLowProfile, getLpResult, publicPayload, responseSummary } = require('./cardcom');
 
 const app = express();
 
@@ -76,7 +76,7 @@ app.post('/payment', async (req, res) => {
 
     const data = await cardcomResponse.json();
 
-    console.log(data);
+    console.log(responseSummary(data));
 
     res.json(data);
   } catch (error) {
@@ -105,7 +105,7 @@ app.post('/lab/create', async (req, res) => {
     });
 
     const cardcom = await createLowProfile(body);
-    console.log({ lab: 'create', cardcom });
+    console.log({ lab: 'create', cardcom: responseSummary(cardcom) });
 
     res.json({
       sent: {
@@ -143,7 +143,7 @@ app.post('/lab/result', async (req, res) => {
     });
 
     const cardcom = await getLpResult(body);
-    console.log({ lab: 'result', cardcom });
+    console.log({ lab: 'result', cardcom: responseSummary(cardcom) });
 
     res.json({ cardcom });
   } catch (error) {

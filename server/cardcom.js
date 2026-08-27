@@ -13,6 +13,15 @@ function publicPayload(body) {
   return copy
 }
 
+// Cardcom's Create/GetLpResult responses carry card metadata and customer
+// PII (name, email, phone, ID, transaction details) — never dump the full
+// object to stdout, even in local dev. This is the only shape safe to log.
+function responseSummary(data) {
+  if (!data || typeof data !== 'object') return data
+  const { ResponseCode, Description, LowProfileId } = data
+  return { ResponseCode, Description, LowProfileId }
+}
+
 async function postCardcom(url, body) {
   const response = await fetch(url, {
     method: 'POST',
@@ -42,6 +51,7 @@ module.exports = {
   CREATE_URL,
   RESULT_URL,
   publicPayload,
+  responseSummary,
   createLowProfile,
   getLpResult,
 }
