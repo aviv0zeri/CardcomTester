@@ -25,6 +25,12 @@ const profiles = {
       ButtonWidth: '100%',
       ButtonHeight: '40',
     },
+    // Documented UIDefinition field (API 11 Swagger) — the real way to drop
+    // the email field. Phone stays visible: Cardcom's own docs say 3DS only
+    // fails if BOTH phone and email are hidden. Preferred over the CSS-only
+    // hide in brand-skin.css, since this stops Cardcom's own validation from
+    // expecting a value there too (a CSS hide alone can't guarantee that).
+    hideCardOwnerEmail: true,
   },
 };
 
@@ -58,6 +64,10 @@ function buildLowProfileBody(profile, amount, language) {
 
   if (profile.googlePayBtnDesign) {
     uiDefinition.GooglePayBtnDesign = profile.googlePayBtnDesign;
+  }
+
+  if (profile.hideCardOwnerEmail) {
+    uiDefinition.IsHideCardOwnerEmail = true;
   }
 
   const body = {
