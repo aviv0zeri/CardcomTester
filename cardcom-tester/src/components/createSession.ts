@@ -30,9 +30,7 @@ export async function createCardcomSession(language: Language): Promise<string> 
 
   const description = data.Description || data.message || 'no description'
   if (Number(data.ResponseCode) === 605) {
-    throw new Error(
-      'Cardcom API user is locked (605). Reset the password in Cardcom (שכחתי סיסמה), then try again.',
-    )
+    throw new Error('Cardcom server is unavailable right now. Back Sunday–Thursday until 17:00.')
   }
   throw new Error(`Cardcom error: ${data.ResponseCode} — ${description}`)
 }

@@ -23,9 +23,9 @@ describe('createCardcomSession', () => {
     await expect(createCardcomSession('he')).resolves.toBe('https://secure.cardcom.solutions/y')
   })
 
-  it('raises a specific message for a locked API user (605)', async () => {
+  it('raises a generic unavailable message for a locked API user (605)', async () => {
     mockFetchOnce(JSON.stringify({ ResponseCode: 605, Description: 'locked' }))
-    await expect(createCardcomSession('he')).rejects.toThrow(/API user is locked \(605\)/)
+    await expect(createCardcomSession('he')).rejects.toThrow(/server is unavailable/)
   })
 
   it('raises a generic Cardcom error for any other failing code', async () => {
