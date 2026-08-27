@@ -1035,6 +1035,18 @@ html.checkout-embed .payment-card-col {
     max-height: none !important;
 }
 
+/* Bit desktop flow expands inline (countdown + status + 200px QR image,
+   documented behavior). Ported from the compact-iframe project's verified
+   fix (COMPACT-IFRAME-HANDOFF.md #5): only once the QR is actually present
+   does the card scroll internally, and it must not stay centered —
+   centered + overflow makes the top of the QR unreachable. This is what
+   keeps the compact 520px card usable despite Cardcom's documented iframe
+   recommendation of >=1000px height (built for Bit's worst case, not ours). */
+html.checkout-embed .checkout-card.checkout-payment:has(#qrBarcode[src]) {
+    overflow-y: auto !important;
+    justify-content: flex-start !important;
+}
+
 /* Embed keeps the exact base card layout (two-column rows, validity/cvv
    grid) — same as the wide redirect page. Only the page chrome differs. */
 
