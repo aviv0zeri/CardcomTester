@@ -42,9 +42,14 @@ const DESKTOP_IFRAME: PreviewVersion[] = [
   { id: 'claude-port', label: 'Portrait', note: '640×1080', width: 640, height: 1080, scroll: false, embed: true },
 ]
 
+// Measured directly at 520px width (the real iframe width): full 4-wallet
+// content is ~722px tall (header 138 + body 520 + footer 61). Do NOT
+// re-derive this from the standalone/redirect page at a wide browser
+// width — a viewport-width media query (600-1280px) changes that page's
+// layout entirely, so it is not a fair comparison to the 520px iframe.
 const NEW_DESKTOP_IFRAME: PreviewVersion[] = [
-  { id: 'brand-frame', label: 'Checkout', note: '520×800', width: 520, height: 800, scroll: true, embed: true },
-  { id: 'brand-tall', label: 'Tall', note: '520×960', width: 520, height: 960, scroll: true, embed: true },
+  { id: 'brand-frame', label: 'Checkout', note: '520×760', width: 520, height: 760, scroll: true, embed: true },
+  { id: 'brand-tall', label: 'Tall', note: '520×850', width: 520, height: 850, scroll: true, embed: true },
 ]
 
 export function versionsFor(device: Device, mode: Mode, design: 'old' | 'new' = 'old'): PreviewVersion[] {
