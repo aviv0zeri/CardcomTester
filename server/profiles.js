@@ -10,10 +10,16 @@ const profiles = {
     terminalNumber: Number(process.env.CARDCOM_TERMINAL),
     apiName: process.env.CARDCOM_USERNAME,
     apiPassword: process.env.CARDCOM_PASSWORD,
+    // Diagnostic pages only — display whatever Cardcom put on the redirect,
+    // change no billing state. Cardcom's own docs say this redirect is not
+    // authoritative; GetLpResult / their server-to-server reporting is.
+    // Always the production URL: Cardcom redirects the customer's own
+    // browser here, which needs a real internet-reachable HTTPS address
+    // regardless of whether local dev is running.
     successRedirectUrl:
-      process.env.CARDCOM_SUCCESS_URL || 'https://www.google.com',
+      process.env.CARDCOM_SUCCESS_URL || 'https://cardcom-tester.vercel.app/diagnostics/success.html',
     failedRedirectUrl:
-      process.env.CARDCOM_FAILED_URL || 'https://www.yahoo.com',
+      process.env.CARDCOM_FAILED_URL || 'https://cardcom-tester.vercel.app/diagnostics/failure.html',
     operation: 'ChargeOnly',
     // Optional HTTPS stylesheet. Production branding belongs in Cardcom's CSS editor.
     // Localhost CSS is blocked as mixed content on Cardcom's HTTPS page.

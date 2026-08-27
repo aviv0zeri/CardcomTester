@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cardcom diagnostic — SuccessRedirectUrl</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background: #0e1320; color: #e5e7eb; }
+  .banner { background: #0d3b26; border: 1px solid #1f7a4d; color: #7be8ab; border-radius: 8px; padding: 16px 20px; font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
+  .note { color: #93a0b4; font-size: 0.85rem; margin: 0 0 20px; }
+  table { border-collapse: collapse; width: 100%; max-width: 900px; }
+  th, td { text-align: left; padding: 6px 12px; border-bottom: 1px solid #2b3245; font-size: 0.9rem; vertical-align: top; word-break: break-all; }
+  th { color: #93a0b4; font-weight: 600; width: 220px; }
+  .raw { margin-top: 24px; }
+  .raw pre { background: #171d2b; border: 1px solid #2b3245; border-radius: 8px; padding: 12px; overflow: auto; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; }
+  .empty { color: #6f7c91; font-style: italic; }
+</style>
+</head>
+<body>
+  <div class="banner">✅ SUCCESS redirect fired</div>
+  <p class="note">
+    Instrumentation only — this page is not authoritative for payment/billing state.
+    It just displays whatever Cardcom put on this redirect. GetLpResult / Cardcom's
+    server-to-server reporting remains the source of truth.
+  </p>
+
+  <table id="params"></table>
+  <p class="empty" id="empty-note" style="display:none">No query parameters were present on this redirect.</p>
+
+  <div class="raw">
+    <div>Loaded at: <strong id="loaded-at"></strong></div>
+    <div>Full URL:</div>
+    <pre id="raw-url"></pre>
+  </div>
+
+<script>
+  document.getElementById('loaded-at').textContent = new Date().toISOString();
+  document.getElementById('raw-url').textContent = location.href;
+
+  var params = new URLSearchParams(location.search);
+  var table = document.getElementById('params');
+  var keys = Array.from(params.keys());
+  if (keys.length === 0) {
+    document.getElementById('empty-note').style.display = 'block';
+  } else {
+    keys.forEach(function (key) {
+      var row = document.createElement('tr');
+      var th = document.createElement('th');
+      th.textContent = key;
+      var td = document.createElement('td');
+      td.textContent = params.get(key);
+      row.appendChild(th);
+      row.appendChild(td);
+      table.appendChild(row);
+    });
+  }
+</script>
+</body>
+</html>

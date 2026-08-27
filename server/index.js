@@ -35,6 +35,10 @@ app.use(
   express.static(path.join(__dirname, '..', 'competition-template'))
 );
 app.use(
+  '/diagnostics',
+  express.static(path.join(__dirname, '..', 'diagnostics'))
+);
+app.use(
   '/Images/Bit',
   express.static(path.join(__dirname, '..', 'cardcom-preview', 'assets'))
 );
