@@ -288,8 +288,15 @@ button {
 #CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 4; }
 #CreditCardDiv .validityRow { order: 5; }
 #CreditCardDiv .cvvRow { order: 6; }
-#CreditCardDiv .formRow:has(#txtCardOwnerEmail) { order: 7; }
 #CreditCardDiv .agreement-row { order: 8; }
+
+/* Email hidden deliberately (Aviv's call) — documented rule is 3DS only
+   fails if BOTH phone and email are hidden (QUESTIONS-FOR-GPT.md context).
+   Phone stays visible above, so this is the safe half of that pair.
+   Field is CSS-hidden only, never removed from the DOM/bindings. */
+#CreditCardDiv .formRow:has(#txtCardOwnerEmail) {
+    display: none !important;
+}
 
 #CreditCardDiv .agreement-row {
     display: flex !important;
