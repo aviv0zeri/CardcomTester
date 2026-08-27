@@ -47,6 +47,7 @@ Add `&wallets=1|2|3` to test reflow, `&billing=0` for invoice-hidden layout, or 
    - Test fields hidden via UIDefinition (name, phone, email, CVV).
    - Test 3DS (forced phone/email) to ensure 24px padding doesn't clip submit.
    - Test on an actual iframe with `allow="payment"` + `allowpaymentrequest`.
+   - Test a top-level Cardcom redirect resized to ~900px wide and confirm that receiving the compact layout is acceptable. If not, the current CSS cannot reliably distinguish iframe from redirect without some external signal Cardcom does not document.
 
 2. **Promote to canonical** — Once verified, copy `_wip/rtl/checkout.css` → `rtl/checkout.css` and `_wip/ltr/checkout.css` → `ltr/checkout.css` (base sections are byte-identical by construction).
 
@@ -63,7 +64,7 @@ Add `&wallets=1|2|3` to test reflow, `&billing=0` for invoice-hidden layout, or 
 
 - ✅ No JavaScript in the HTML pane.
 - ✅ Base sections (first ~1200 lines) byte-identical to canonical (confirmed by diff during build).
-- ✅ New rules isolated to `html.checkout-embed` (preview-only) + live `@media 600-1280px` (iframe viewport).
+- ⚠️ Live compact rules are viewport-scoped to 600–1280px. Cardcom does not expose a documented iframe-only CSS marker, so a top-level redirect opened at that width will also receive the compact layout. Wide redirects above 1280px remain unaffected.
 - ✅ Wide redirect (>1280px) never touched by any compact rule.
 - ✅ Google Pay `#GooglePayDiv` never hidden via CSS (Cardcom SDKs it).
 - ✅ Apple Pay/Bit outer containers only hidden when truly empty (`:not(:has(*))`).

@@ -288,15 +288,18 @@ button {
 #CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 4; }
 #CreditCardDiv .validityRow { order: 5; }
 #CreditCardDiv .cvvRow { order: 6; }
+#CreditCardDiv .formRow:has(#txtCardOwnerEmail) { order: 7; }
 #CreditCardDiv .agreement-row { order: 8; }
 
-/* Email hidden deliberately (Aviv's call) — documented rule is 3DS only
-   fails if BOTH phone and email are hidden (QUESTIONS-FOR-GPT.md context).
-   Phone stays visible above, so this is the safe half of that pair.
-   Field is CSS-hidden only, never removed from the DOM/bindings. */
-#CreditCardDiv .formRow:has(#txtCardOwnerEmail) {
-    display: none !important;
-}
+/* Do NOT CSS-hide this field. The canonical way to drop it is
+   UIDefinition.IsHideCardOwnerEmail on the Create request (server/profiles.js)
+   — that's the only mechanism confirmed to also stop Cardcom's own runtime
+   from expecting a value here. order:7 restores this field's original
+   position (unchanged from before this field was ever CSS-hidden). It
+   renders cleanly beside the CVV/validity row in the local mock, but the
+   collision originally seen was only reproduced on the live Cardcom
+   platform, never locally — so this position is not itself confirmed to
+   prevent that collision live, only known to match the pre-existing design. */
 
 #CreditCardDiv .agreement-row {
     display: flex !important;
@@ -1039,9 +1042,12 @@ html.checkout-embed .payment-card-col {
    documented behavior). Ported from the compact-iframe project's verified
    fix (COMPACT-IFRAME-HANDOFF.md #5): only once the QR is actually present
    does the card scroll internally, and it must not stay centered —
-   centered + overflow makes the top of the QR unreachable. This is what
-   keeps the compact 520px card usable despite Cardcom's documented iframe
-   recommendation of >=1000px height (built for Bit's worst case, not ours). */
+   centered + overflow makes the top of the QR unreachable.
+   Cardcom does not document why it recommends >=1000px iframe height —
+   this rule is one known mitigation for our deliberate 520x760 deviation
+   from that recommendation, not a documented explanation of it. Still
+   needs live testing against QR, CAPTCHA, 3DS, and error flows before
+   trusting the compact card generally. */
 html.checkout-embed .checkout-card.checkout-payment:has(#qrBarcode[src]) {
     overflow-y: auto !important;
     justify-content: flex-start !important;
