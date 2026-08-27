@@ -216,7 +216,30 @@ button {
 
 #ApplePayDivContainer:not(:has(*)),
 #BitDivContainer:not(:has(*)),
+#PayMeBitDiv:not(:has(*)),
+#CardcomBitDiv:not(:has(*)),
 .ApplePayDiv:empty {
+    display: none !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Confirmed live (not a guess): when a terminal has Apple Pay enabled but
+   the browser doesn't support it, Cardcom's own script hides all three
+   inner buttons via inline style, but leaves .ApplePayDiv itself visible
+   (display:flex, 40px) — it's governed only by IsApplePayActive (terminal
+   config), not by whether any button actually renders. .ApplePayDiv:empty
+   above never catches this, since the container still has its (all-hidden)
+   button children. Collapse it only when none of the three real buttons
+   are actually shown. */
+.ApplePayDiv:not(:has(
+    #apple-pay-button-setup:not([style*="none"]),
+    #apple-pay-button-start:not([style*="none"]),
+    #apple-pay-button-popup:not([style*="none"])
+)) {
     display: none !important;
     min-height: 0 !important;
     height: 0 !important;
@@ -289,6 +312,18 @@ button {
 #CreditCardDiv .validityRow { order: 5; }
 #CreditCardDiv .cvvRow { order: 6; }
 #CreditCardDiv .formRow:has(#txtCardOwnerEmail) { order: 7; }
+
+/* Confirmed live: cvvRow can shrink its flex-basis to 0 (see its own rule
+   below), so #CreditCardDiv's wrap logic never treats that line as "full"
+   and packs this email row onto the SAME line as validityRow+cvvRow instead
+   of wrapping — squeezing CVV's input down to ~9px wide. Only matters for
+   a session without UIDefinition.IsHideCardOwnerEmail set (ours always
+   sets it), but real. Force this row onto its own full-width line. */
+#CreditCardDiv .formRow:has(#txtCardOwnerEmail) {
+    flex-basis: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+}
 #CreditCardDiv .agreement-row { order: 8; }
 
 /* Do NOT CSS-hide this field. The canonical way to drop it is
@@ -315,9 +350,13 @@ button {
     padding: 6px 0 4px !important;
 }
 
-html[dir="ltr"] #CreditCardDiv .agreement-row {
+html[dir="ltr"] #CreditCardDiv .agreement-row,
+html:lang(en) #CreditCardDiv .agreement-row,
+html[lang="en"] #CreditCardDiv .agreement-row,
+html:lang(ru) #CreditCardDiv .agreement-row,
+html[lang="ru"] #CreditCardDiv .agreement-row {
     direction: ltr;
-    justify-content: flex-end;
+    justify-content: flex-start;
 }
 
 #CreditCardDiv .agreement-row .fieldInput {
@@ -332,9 +371,13 @@ html[dir="ltr"] #CreditCardDiv .agreement-row {
     margin: 0;
 }
 
-html[dir="ltr"] #CreditCardDiv .agreement-row .fieldInput {
+html[dir="ltr"] #CreditCardDiv .agreement-row .fieldInput,
+html:lang(en) #CreditCardDiv .agreement-row .fieldInput,
+html[lang="en"] #CreditCardDiv .agreement-row .fieldInput,
+html:lang(ru) #CreditCardDiv .agreement-row .fieldInput,
+html[lang="ru"] #CreditCardDiv .agreement-row .fieldInput {
     direction: ltr;
-    justify-content: flex-end;
+    justify-content: flex-start;
 }
 
 #CreditCardDiv .agreement-row input.checkbox {
@@ -563,9 +606,19 @@ html:lang(en) .validityDate::after { content: "Month"; }
     white-space: nowrap;
 }
 
+/* The native label's line-height:16px (from the base .fieldName rule)
+   still reserves space even at font-size:0, and the ::before below adds
+   its own line ON TOP of that (::before is display:block, forcing its own
+   line before the now-invisible text run) — stacking to ~2x a normal
+   label's height and pushing this field's input down relative to its
+   row partner (Card owner phone), which has no such override. Killing
+   line-height here, and matching line-height:16px on the ::before below
+   (the base rule's own value), makes this label occupy exactly the same
+   height as a normal one. */
 html:lang(en) #CreditCardDiv .formRow:has(#txtTZ) > .fieldName,
 html[lang="en"] #CreditCardDiv .formRow:has(#txtTZ) > .fieldName {
     font-size: 0 !important;
+    line-height: 0 !important;
 }
 
 html:lang(en) #CreditCardDiv .formRow:has(#txtTZ) > .fieldName::before,
@@ -575,7 +628,7 @@ html[lang="en"] #CreditCardDiv .formRow:has(#txtTZ) > .fieldName::before {
     font-size: 12px;
     font-weight: 600;
     color: #4b5b76;
-    line-height: 1;
+    line-height: 16px;
 }
 
 .fieldInput input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
@@ -596,7 +649,11 @@ html[dir="rtl"] .fieldInput select {
     padding-left: 32px !important;
 }
 
-html[dir="ltr"] .fieldInput select {
+html[dir="ltr"] .fieldInput select,
+html:lang(en) .fieldInput select,
+html[lang="en"] .fieldInput select,
+html:lang(ru) .fieldInput select,
+html[lang="ru"] .fieldInput select {
     padding-right: 32px !important;
     padding-left: 12px !important;
 }
@@ -686,7 +743,11 @@ html:lang(ru) .submitDiv .buttonDiv::after,
     border-radius: 10px;
 }
 
-html[dir="ltr"] .brand-security {
+html[dir="ltr"] .brand-security,
+html:lang(en) .brand-security,
+html[lang="en"] .brand-security,
+html:lang(ru) .brand-security,
+html[lang="ru"] .brand-security {
     direction: ltr;
     justify-content: flex-start;
 }
@@ -716,7 +777,11 @@ html[dir="ltr"] .brand-security {
     color: #4b5b76;
 }
 
-html[dir="ltr"] .brand-security-text {
+html[dir="ltr"] .brand-security-text,
+html:lang(en) .brand-security-text,
+html[lang="en"] .brand-security-text,
+html:lang(ru) .brand-security-text,
+html[lang="ru"] .brand-security-text {
     direction: ltr;
     text-align: left;
 }
@@ -896,7 +961,11 @@ html[dir="rtl"] .footerIfIframe .footer-text {
     text-align: right;
 }
 
-html[dir="ltr"] .footerIfIframe .footer-text {
+html[dir="ltr"] .footerIfIframe .footer-text,
+html:lang(en) .footerIfIframe .footer-text,
+html[lang="en"] .footerIfIframe .footer-text,
+html:lang(ru) .footerIfIframe .footer-text,
+html[lang="ru"] .footerIfIframe .footer-text {
     text-align: left;
 }
 

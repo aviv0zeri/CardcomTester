@@ -21,6 +21,16 @@ body {
   text-size-adjust: 100%;
 }
 
+/* Local-preview-only dim backdrop so the card pops the same way it does
+   boxed in the React tester's overlay. Overrides brand-skin.css's lighter
+   page wash, which is what real Cardcom customers actually see — never
+   paste this rule. */
+html,
+body {
+  background: rgba(10, 14, 22, 0.86) !important;
+  background-image: none !important;
+}
+
 .footerIfIframe {
   background: transparent !important;
   background-image: none !important;

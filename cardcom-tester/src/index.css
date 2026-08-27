@@ -899,7 +899,6 @@ a.cta-button[aria-disabled="true"] {
 .checkout-overlay:has(.checkout-stage--iframe) {
   align-items: center;
   padding: 8px 28px 8px 52px;
-  background: transparent;
 }
 
 .checkout-stage--iframe {
