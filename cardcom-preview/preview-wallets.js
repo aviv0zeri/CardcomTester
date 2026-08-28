@@ -5,7 +5,9 @@
  * can be checked with 4, 3, 2, or 1 visible methods. Does not replace
  * Cardcom containers or change mock.js.
  *
- * Use the toolbar, or ?wallets=4|3|2|1
+ * Use ?wallets=4|3|2|1 to pick the preset. The floating toolbar is opt-in
+ * only (?walletBar=1) -- it stays off by default so it doesn't sit in the
+ * phone-sized preview's chin/safe-area during normal testing.
  */
 (function () {
   var PRESETS = {
@@ -99,9 +101,13 @@
     if (order) order.style.display = "none";
   }
 
+  function wantsBar() {
+    return new URLSearchParams(location.search).get("walletBar") === "1";
+  }
+
   function sync() {
     if (!document.querySelector(".payment-methods-grid")) return false;
-    mountBar();
+    if (wantsBar()) mountBar();
     apply(requestedCount());
     applyBillingParam();
     return true;
