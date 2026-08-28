@@ -6,9 +6,17 @@ const {
   getProfile,
   buildLowProfileBody,
   buildLabCreateBody,
+  buildTokenChargeBody,
   buildLabResultBody,
 } = require('./profiles');
-const { createLowProfile, getLpResult, publicPayload, responseSummary } = require('./cardcom');
+const {
+  createLowProfile,
+  getLpResult,
+  chargeToken,
+  publicPayload,
+  responseSummary,
+} = require('./cardcom');
+const { recordWebhookHit, listWebhookHits } = require('./webhookStore');
 
 const app = express();
 
@@ -161,6 +169,51 @@ app.post('/lab/result', async (req, res) => {
       raw: error.raw,
     });
   }
+});
+
+app.post('/lab/charge-token', async (req, res) => {
+  try {
+    const profile = getProfile(req.body && req.body.profileId);
+    const body = buildTokenChargeBody(profile, req.body);
+
+    // publicPayload only strips ApiPassword — not enough here, since this
+    // body can carry CVV2. Log an explicit safe subset instead of reusing it.
+    console.log({
+      lab: 'charge-token',
+      profileId: profile.id,
+      TerminalNumber: body.TerminalNumber,
+      hasToken: Boolean(body.Token),
+      Amount: body.Amount,
+      ExternalUniqTranId: body.ExternalUniqTranId,
+    });
+
+    const cardcom = await chargeToken(body);
+    console.log({ lab: 'charge-token', cardcom: responseSummary(cardcom) });
+
+    res.json({ cardcom });
+  } catch (error) {
+    console.log(error);
+    if (error.statusCode === 400) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    res.status(error.statusCode === 502 ? 502 : 500).json({
+      message: error.message || 'Cardcom request failed',
+      raw: error.raw,
+    });
+  }
+});
+
+// LAB / UNTRUSTED — see webhookStore.js and cardcom.js#summarizeWebhookPayload.
+app.post('/lab/webhook', (req, res) => {
+  const entry = recordWebhookHit(req.body);
+  console.log({ lab: 'webhook', hit: entry });
+  const failOnce = req.query.fail === '1' || req.query.fail === 'true';
+  res.status(failOnce ? 500 : 200).json({ received: true, entry });
+});
+
+app.get('/lab/webhook', (req, res) => {
+  res.json({ hits: listWebhookHits() });
 });
 
 app.listen(3000, () => {

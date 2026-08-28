@@ -55,6 +55,13 @@ function getProfile(profileId) {
 
 const LANGUAGES = ['he', 'en', 'ru', 'ar'];
 
+// Lab-only experimental Operation values a Create request may opt into.
+// ChargeOnly (the profile default) is never overridden through this path.
+const LAB_OPERATIONS = ['ChargeAndCreateToken', 'CreateTokenOnly'];
+
+// Cardcom's documented AdvancedLPDefinition.JValidateType values, verbatim.
+const J_VALIDATE_TYPES = ['J2', 'J5'];
+
 function buildLowProfileBody(profile, amount, language) {
   if (!LANGUAGES.includes(language)) {
     const error = new Error('language must be he, en, ru, or ar');
@@ -147,6 +154,27 @@ function buildLabCreateBody(profile, input) {
   }
 
   const body = buildLowProfileBody(profile, amount, source.language)
+
+  // Experimental only — the profile's own Operation/WebHookUrl (used by
+  // /payment) are untouched unless the lab request explicitly opts in.
+  if (source.operation && LAB_OPERATIONS.includes(source.operation)) {
+    body.Operation = source.operation
+  }
+
+  if (source.webHookUrl && String(source.webHookUrl).trim()) {
+    body.WebHookUrl = String(source.webHookUrl).trim()
+  }
+
+  // Cardcom scopes JValidateType to CreateTokenOnly (or SuspendedDeal, which
+  // this lab does not expose) — ignore it for every other Operation.
+  if (
+    body.Operation === 'CreateTokenOnly' &&
+    source.jValidateType &&
+    J_VALIDATE_TYPES.includes(source.jValidateType)
+  ) {
+    body.AdvancedDefinition = { JValidateType: source.jValidateType }
+  }
+
   if (source.returnValue) {
     body.ReturnValue = String(source.returnValue).slice(0, 250)
   }
@@ -175,6 +203,42 @@ function buildLabCreateBody(profile, input) {
   return { body, amount, includeDocument }
 }
 
+// Stored-token charge (POST /api/v11/Transactions/Transaction). Deliberately
+// narrow: only ever reads token/amount/ExternalUniqTranId/expiration/CVV2 —
+// never a raw card number. We stay on the hosted Low Profile path for card
+// capture/tokenization so raw PAN never reaches this server.
+function buildTokenChargeBody(profile, input) {
+  const source = input && typeof input === 'object' ? input : {}
+
+  const token = String(source.token || '').trim()
+  if (!token) {
+    const error = new Error('token is required')
+    error.statusCode = 400
+    throw error
+  }
+
+  const amount = Number(source.amount)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    const error = new Error('amount must be a number greater than 0')
+    error.statusCode = 400
+    throw error
+  }
+
+  const body = {
+    TerminalNumber: profile.terminalNumber,
+    ApiName: profile.apiName,
+    Amount: amount,
+    Token: token,
+  }
+  if (profile.apiPassword) body.ApiPassword = profile.apiPassword
+
+  assignIfPresent(body, 'ExternalUniqTranId', source.externalUniqTranId)
+  assignIfPresent(body, 'CardExpirationMMYY', source.cardExpirationMMYY)
+  assignIfPresent(body, 'CVV2', source.cvv2)
+
+  return body
+}
+
 function buildLabResultBody(profile, lowProfileId) {
   const id = String(lowProfileId || '').trim()
   if (!id) {
@@ -193,9 +257,12 @@ function buildLabResultBody(profile, lowProfileId) {
 
 module.exports = {
   LANGUAGES,
+  LAB_OPERATIONS,
+  J_VALIDATE_TYPES,
   getProfile,
   buildLowProfileBody,
   buildLabCreateBody,
+  buildTokenChargeBody,
   buildLabResultBody,
   productTotal,
   parseProducts,

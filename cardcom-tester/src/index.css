@@ -459,6 +459,50 @@ h1 {
   font-size: 0.75rem;
 }
 
+.lab-inline-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.lab-inline-row input {
+  flex: 1;
+}
+
+.lab-charge-token {
+  margin: 18px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.lab-webhook {
+  margin: 18px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.lab-webhook-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow: auto;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lab-webhook-hit {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+}
+
+.lab-webhook-hit .lab-dl {
+  margin: 0;
+}
+
 @media (min-width: 960px) {
   .lab-layout {
     grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);

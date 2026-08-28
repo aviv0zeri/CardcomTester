@@ -2,13 +2,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   asRecord,
   asText,
+  chargeStoredToken,
   checkLabResult,
+  countWebhookHits,
   createLabSession,
   newProduct,
   productAmount,
   responseCode,
+  tokenInfoView,
   type LabCustomer,
   type LabProduct,
+  type WebhookHit,
 } from './labClient'
 
 function mockFetchOnce(status: number, body: string) {
@@ -186,6 +190,77 @@ describe('createLabSession request shape', () => {
     })
   })
 
+  it('omits Document for the token scenario too', async () => {
+    const fetchMock = mockFetchOnce(200, JSON.stringify({ cardcom: { ResponseCode: 0 } }))
+    await createLabSession({
+      language: 'he',
+      scenario: 'token',
+      amount: '10',
+      documentType: 'TaxInvoiceAndReceipt',
+      returnValue: '',
+      products: [newProduct()],
+      customer: EMPTY_CUSTOMER,
+      operation: 'CreateTokenOnly',
+    })
+    const [, init] = fetchMock.mock.calls[0]
+    const body = JSON.parse(init.body as string)
+    expect(body.includeDocument).toBe(false)
+    expect(body.operation).toBe('CreateTokenOnly')
+  })
+
+  it('omits operation and jValidateType when not given', async () => {
+    const fetchMock = mockFetchOnce(200, JSON.stringify({ cardcom: { ResponseCode: 0 } }))
+    await createLabSession({
+      language: 'he',
+      scenario: 'charge',
+      amount: '10',
+      documentType: 'TaxInvoiceAndReceipt',
+      returnValue: '',
+      products: [newProduct()],
+      customer: EMPTY_CUSTOMER,
+    })
+    const [, init] = fetchMock.mock.calls[0]
+    const body = JSON.parse(init.body as string)
+    expect(body.operation).toBeUndefined()
+    expect(body.jValidateType).toBeUndefined()
+    expect(body.webHookUrl).toBeUndefined()
+  })
+
+  it('forwards jValidateType alongside operation', async () => {
+    const fetchMock = mockFetchOnce(200, JSON.stringify({ cardcom: { ResponseCode: 0 } }))
+    await createLabSession({
+      language: 'he',
+      scenario: 'token',
+      amount: '10',
+      documentType: 'TaxInvoiceAndReceipt',
+      returnValue: '',
+      products: [newProduct()],
+      customer: EMPTY_CUSTOMER,
+      operation: 'CreateTokenOnly',
+      jValidateType: 'J2',
+    })
+    const [, init] = fetchMock.mock.calls[0]
+    expect(JSON.parse(init.body as string).jValidateType).toBe('J2')
+  })
+
+  it('trims and forwards a non-empty webHookUrl, omits it when blank', async () => {
+    const fetchMock = mockFetchOnce(200, JSON.stringify({ cardcom: { ResponseCode: 0 } }))
+    await createLabSession({
+      language: 'he',
+      scenario: 'charge',
+      amount: '10',
+      documentType: 'TaxInvoiceAndReceipt',
+      returnValue: '',
+      products: [newProduct()],
+      customer: EMPTY_CUSTOMER,
+      webHookUrl: '  https://cardcom-tester.vercel.app/lab/webhook  ',
+    })
+    const [, init] = fetchMock.mock.calls[0]
+    expect(JSON.parse(init.body as string).webHookUrl).toBe(
+      'https://cardcom-tester.vercel.app/lab/webhook',
+    )
+  })
+
   it('trims and forwards a non-empty returnValue, omits it when blank', async () => {
     const fetchMock = mockFetchOnce(200, JSON.stringify({ cardcom: { ResponseCode: 0 } }))
     await createLabSession({
@@ -226,5 +301,87 @@ describe('error classification', () => {
   it('reports the Express-down case on a non-JSON response', async () => {
     mockFetchOnce(200, '<html>not json</html>')
     await expect(checkLabResult('some-id')).rejects.toThrow(/Express API is not running/)
+  })
+})
+
+describe('tokenInfoView', () => {
+  it('returns null for a missing TokenInfo', () => {
+    expect(tokenInfoView(null)).toBeNull()
+  })
+
+  it('extracts the five allowed fields', () => {
+    const view = tokenInfoView({
+      Token: 'tok-1',
+      TokenExDate: '20270101',
+      CardYear: 2027,
+      CardMonth: 1,
+      TokenApprovalNumber: 'appr-1',
+    })
+    expect(view).toEqual({
+      token: 'tok-1',
+      tokenExDate: '20270101',
+      cardYear: '2027',
+      cardMonth: '1',
+      tokenApprovalNumber: 'appr-1',
+    })
+  })
+
+  it('never surfaces CardOwnerIdentityNumber even when present on the payload', () => {
+    const view = tokenInfoView({
+      Token: 'tok-1',
+      TokenExDate: '20270101',
+      CardYear: 2027,
+      CardMonth: 1,
+      TokenApprovalNumber: 'appr-1',
+      CardOwnerIdentityNumber: '123456789',
+    })
+    expect(view).not.toHaveProperty('cardOwnerIdentityNumber')
+    expect(view).not.toHaveProperty('CardOwnerIdentityNumber')
+    expect(JSON.stringify(view)).not.toContain('123456789')
+  })
+})
+
+describe('countWebhookHits', () => {
+  it('counts hits grouped by LowProfileId', () => {
+    const hits: WebhookHit[] = [
+      { receivedAt: 't1', LowProfileId: 'lp-1' },
+      { receivedAt: 't2', LowProfileId: 'lp-1' },
+      { receivedAt: 't3', LowProfileId: 'lp-2' },
+    ]
+    const counts = countWebhookHits(hits)
+    expect(counts.get('lp-1')).toBe(2)
+    expect(counts.get('lp-2')).toBe(1)
+  })
+
+  it('ignores hits with no LowProfileId', () => {
+    const hits: WebhookHit[] = [{ receivedAt: 't1' }]
+    expect(countWebhookHits(hits).size).toBe(0)
+  })
+})
+
+describe('chargeStoredToken request shape', () => {
+  it('builds the minimum request from token and amount', async () => {
+    const fetchMock = mockFetchOnce(200, JSON.stringify({ cardcom: { ResponseCode: 0 } }))
+    await chargeStoredToken({ token: '  tok-1  ', amount: '20.5' })
+    const [path, init] = fetchMock.mock.calls[0]
+    expect(path).toBe('/lab/charge-token')
+    const body = JSON.parse(init.body as string)
+    expect(body).toEqual({ profileId: 'tester', token: 'tok-1', amount: 20.5 })
+  })
+
+  it('includes externalUniqTranId, cardExpirationMMYY, cvv2 only when provided', async () => {
+    const fetchMock = mockFetchOnce(200, JSON.stringify({ cardcom: { ResponseCode: 0 } }))
+    await chargeStoredToken({
+      token: 'tok-1',
+      amount: '20.5',
+      externalUniqTranId: 'lab-1',
+      cardExpirationMMYY: '1225',
+      cvv2: '123',
+    })
+    const [, init] = fetchMock.mock.calls[0]
+    const body = JSON.parse(init.body as string)
+    expect(body.externalUniqTranId).toBe('lab-1')
+    expect(body.cardExpirationMMYY).toBe('1225')
+    expect(body.cvv2).toBe('123')
   })
 })

@@ -6,6 +6,8 @@
   "rewrites": [
     { "source": "/payment", "destination": "/api/payment" },
     { "source": "/lab/create", "destination": "/api/lab-create" },
-    { "source": "/lab/result", "destination": "/api/lab-result" }
+    { "source": "/lab/result", "destination": "/api/lab-result" },
+    { "source": "/lab/charge-token", "destination": "/api/lab-charge-token" },
+    { "source": "/lab/webhook", "destination": "/api/lab-webhook" }
   ]
 }
