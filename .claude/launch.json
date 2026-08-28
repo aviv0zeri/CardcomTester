@@ -5,7 +5,8 @@
       "name": "cardcom-tester-vite",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "cardcom-tester"],
-      "port": 5173
+      "port": 5173,
+      "autoPort": true
     }
   ]
 }
