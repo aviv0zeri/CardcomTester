@@ -305,18 +305,16 @@ button {
     margin: 0 !important;
 }
 
-/* Expiry/CVV moved up next to the card number (conventional card-form
-   order: number, then expiry+CVV, then the owner's own details) -- this
-   was previously the last paired row before the submit button, which is
-   why iOS had to flip its 12-item month picker upward over the whole
-   screen instead of dropping it below the field. Higher on the page,
-   the same native picker has room to open downward instead. */
-#CreditCardDiv .formRow:has(#txtCardNumber) { order: 1; }
-#CreditCardDiv .validityRow { order: 2; }
-#CreditCardDiv .cvvRow { order: 3; }
-#CreditCardDiv .formRow:has(#txtCardOwnerName) { order: 4; }
-#CreditCardDiv .formRow:has(#txtTZ) { order: 5; }
-#CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 6; }
+/* Base order = the approved wide-redirect arrangement. The >1280px
+   redirect is locked -- never reorder it here. The phone (<=600px) and
+   desktop-window (600-1280px) arrangements are deliberately different
+   and live in their own media blocks further down. */
+#CreditCardDiv .formRow:has(#txtCardOwnerName) { order: 1; }
+#CreditCardDiv .formRow:has(#txtCardNumber) { order: 2; }
+#CreditCardDiv .formRow:has(#txtTZ) { order: 3; }
+#CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 4; }
+#CreditCardDiv .validityRow { order: 5; }
+#CreditCardDiv .cvvRow { order: 6; }
 #CreditCardDiv .formRow:has(#txtCardOwnerEmail) { order: 7; }
 
 /* Confirmed live: cvvRow can shrink its flex-basis to 0 (see its own rule
@@ -1124,6 +1122,17 @@ html[lang="ru"] .footerIfIframe .footer-text {
         width: 0;
         height: 0;
     }
+
+    /* Phone arrangement (user-specified, distinct from desktop): name +
+       number on top, then the expiry/CVV row, then phone + ID -- every
+       row is paired so nothing sits alone and the form clears one
+       screen. */
+    #CreditCardDiv .formRow:has(#txtCardOwnerName) { order: 1; }
+    #CreditCardDiv .formRow:has(#txtCardNumber) { order: 2; }
+    #CreditCardDiv .validityRow { order: 3; }
+    #CreditCardDiv .cvvRow { order: 4; }
+    #CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 5; }
+    #CreditCardDiv .formRow:has(#txtTZ) { order: 6; }
 }
 
 /* Iframe keeps the 520px card. Tester sizes the frame to that width
@@ -1364,5 +1373,38 @@ html.checkout-embed .preview-wallet {
         grid-row: auto !important;
         align-self: start !important;
         min-height: 40px !important;
+    }
+
+    /* Desktop-window arrangement (user-specified, distinct from both the
+       phone order and the locked >1280px redirect): number + expiry on
+       top, then name + ID, then phone with the CVV (and its privacy
+       link) beside it -- CVV no longer crammed onto the number row where
+       its privacy link overflowed the card. */
+    #CreditCardDiv .formRow:has(#txtCardNumber) { order: 1; }
+    #CreditCardDiv .validityRow { order: 2; }
+    #CreditCardDiv .formRow:has(#txtCardOwnerName) { order: 3; }
+    #CreditCardDiv .formRow:has(#txtTZ) { order: 4; }
+    #CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 5; }
+    #CreditCardDiv .cvvRow { order: 6; }
+
+    /* The dev wallet toolbar no longer overlays the bottom of the
+       preview, so let the card breathe into the freed height: roomier
+       ROW spacing only -- the column gap must stay 12px because the
+       paired rows are sized calc(50% - 6px) each, and any wider gap
+       makes the second field wrap onto its own line. */
+    #CreditCardDiv {
+        gap: 18px 12px !important;
+    }
+
+    .payment-methods-grid {
+        gap: 14px !important;
+    }
+
+    .checkout-body {
+        padding: 22px 20px 6px;
+    }
+
+    .submitDiv {
+        padding: 22px 0 10px;
     }
 }
