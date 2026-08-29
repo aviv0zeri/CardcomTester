@@ -1051,23 +1051,32 @@ html[lang="ru"] .footerIfIframe .footer-text {
 
     /* Fit the whole card (logo through footer) in one phone screen, no
        scroll. Independent of the 600-1280px compact-iframe work elsewhere
-       (COMPACT-IFRAME-HANDOFF.md) -- different range, untouched by it, and
-       does not touch html.checkout-embed's own scrolling reset below. The
-       logo is the one purely decorative block with real slack, so it
-       absorbs the trim rather than tightening functional form spacing. */
-    .brand-logo-frame {
+       (COMPACT-IFRAME-HANDOFF.md) -- different range, but that alone
+       doesn't keep the two systems apart: the tester's own 520px "Iframe"
+       preset (previewVersions.ts's NEW_DESKTOP_IFRAME) sets embed:true,
+       which adds html.checkout-embed regardless of width, so 520px gets
+       BOTH this max-width:600px block and checkout-embed's own rules at
+       once. Confirmed live (collision: phone-field row overlapping CVV)
+       when this whole group was unscoped. Every selector below is now
+       explicitly html:not(.checkout-embed) so this phone-only group never
+       fires alongside checkout-embed's own (separately-owned, Cursor-
+       handoff) layout -- not just "different range", actually mutually
+       exclusive. The logo is the one purely decorative block with real
+       slack, so it absorbs the trim rather than tightening functional
+       form spacing. */
+    html:not(.checkout-embed) .brand-logo-frame {
         max-width: 110px;
     }
 
-    .brand-logo {
+    html:not(.checkout-embed) .brand-logo {
         max-height: 46px;
     }
 
-    .brand-head {
+    html:not(.checkout-embed) .brand-head {
         gap: 4px;
     }
 
-    .checkout-header {
+    html:not(.checkout-embed) .checkout-header {
         padding: 10px 16px 8px;
     }
 
@@ -1075,8 +1084,8 @@ html[lang="ru"] .footerIfIframe .footer-text {
        (height:auto, position:static, min-height:100vh, all !important)
        would otherwise silently win over this block. Later-in-file
        !important at equal specificity resolves in this block's favor. */
-    html,
-    body {
+    html:not(.checkout-embed),
+    html:not(.checkout-embed) body {
         height: 100% !important;
         min-height: 0 !important;
         max-height: 100svh !important;
@@ -1085,8 +1094,8 @@ html[lang="ru"] .footerIfIframe .footer-text {
         inset: 0 !important;
     }
 
-    #Content,
-    #checkout-root {
+    html:not(.checkout-embed) #Content,
+    html:not(.checkout-embed) #checkout-root {
         height: 100% !important;
         min-height: 0 !important;
         max-height: 100% !important;
@@ -1096,7 +1105,7 @@ html[lang="ru"] .footerIfIframe .footer-text {
     /* auto, not hidden: when everything fits (the goal) this cannot
        scroll at all; on unusually short screens it quietly becomes the
        safety valve instead of clipping the submit button off-screen. */
-    .checkout-page {
+    html:not(.checkout-embed) .checkout-page {
         height: 100% !important;
         max-height: 100% !important;
         min-height: 0 !important;
@@ -1109,16 +1118,16 @@ html[lang="ru"] .footerIfIframe .footer-text {
 
     /* Decorative spacing only -- the last few px so the footer clears
        the fold; form-field breathing room stays untouched. */
-    .footerIfIframe {
+    html:not(.checkout-embed) .footerIfIframe {
         padding-bottom: 4px !important;
     }
 
-    .brand-security {
+    html:not(.checkout-embed) .brand-security {
         margin-top: 2px;
         margin-bottom: 4px;
     }
 
-    .checkout-page::-webkit-scrollbar {
+    html:not(.checkout-embed) .checkout-page::-webkit-scrollbar {
         width: 0;
         height: 0;
     }
@@ -1126,13 +1135,14 @@ html[lang="ru"] .footerIfIframe .footer-text {
     /* Phone arrangement (user-specified, distinct from desktop): name +
        number on top, then the expiry/CVV row, then phone + ID -- every
        row is paired so nothing sits alone and the form clears one
-       screen. */
-    #CreditCardDiv .formRow:has(#txtCardOwnerName) { order: 1; }
-    #CreditCardDiv .formRow:has(#txtCardNumber) { order: 2; }
-    #CreditCardDiv .validityRow { order: 3; }
-    #CreditCardDiv .cvvRow { order: 4; }
-    #CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 5; }
-    #CreditCardDiv .formRow:has(#txtTZ) { order: 6; }
+       screen. html:not(.checkout-embed) keeps this out of the 520px
+       "Iframe" preset entirely -- see the block comment above. */
+    html:not(.checkout-embed) #CreditCardDiv .formRow:has(#txtCardOwnerName) { order: 1; }
+    html:not(.checkout-embed) #CreditCardDiv .formRow:has(#txtCardNumber) { order: 2; }
+    html:not(.checkout-embed) #CreditCardDiv .validityRow { order: 3; }
+    html:not(.checkout-embed) #CreditCardDiv .cvvRow { order: 4; }
+    html:not(.checkout-embed) #CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 5; }
+    html:not(.checkout-embed) #CreditCardDiv .formRow:has(#txtTZ) { order: 6; }
 }
 
 /* Iframe keeps the 520px card. Tester sizes the frame to that width
@@ -1379,13 +1389,21 @@ html.checkout-embed .preview-wallet {
        phone order and the locked >1280px redirect): number + expiry on
        top, then name + ID, then phone with the CVV (and its privacy
        link) beside it -- CVV no longer crammed onto the number row where
-       its privacy link overflowed the card. */
-    #CreditCardDiv .formRow:has(#txtCardNumber) { order: 1; }
-    #CreditCardDiv .validityRow { order: 2; }
-    #CreditCardDiv .formRow:has(#txtCardOwnerName) { order: 3; }
-    #CreditCardDiv .formRow:has(#txtTZ) { order: 4; }
-    #CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 5; }
-    #CreditCardDiv .cvvRow { order: 6; }
+       its privacy link overflowed the card.
+       html:not(.checkout-embed): the tester's own brand+iframe presets
+       never land in this 600-1280px range while embedded (they're 520px,
+       which only hits the phone block below 600px), but a manually built
+       URL combining brand=1, /embed, and a 600-1280px frame could -- and
+       the phone block's real, live-confirmed collision (order rules
+       fighting checkout-embed's own layout) is proof this isn't
+       theoretical. Guard it the same way on principle, not just where
+       it's been caught. */
+    html:not(.checkout-embed) #CreditCardDiv .formRow:has(#txtCardNumber) { order: 1; }
+    html:not(.checkout-embed) #CreditCardDiv .validityRow { order: 2; }
+    html:not(.checkout-embed) #CreditCardDiv .formRow:has(#txtCardOwnerName) { order: 3; }
+    html:not(.checkout-embed) #CreditCardDiv .formRow:has(#txtTZ) { order: 4; }
+    html:not(.checkout-embed) #CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 5; }
+    html:not(.checkout-embed) #CreditCardDiv .cvvRow { order: 6; }
 
     /* The dev wallet toolbar no longer overlays the bottom of the
        preview, so let the card breathe into the freed height: roomier
