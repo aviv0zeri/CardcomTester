@@ -1044,6 +1044,61 @@ html[lang="ru"] .footerIfIframe .footer-text {
     .footerIfIframe .footer-text span a {
         font-size: 7px !important;
     }
+
+    /* Fit the whole card (logo through footer) in one phone screen, no
+       scroll. Independent of the 600-1280px compact-iframe work elsewhere
+       (COMPACT-IFRAME-HANDOFF.md) -- different range, untouched by it, and
+       does not touch html.checkout-embed's own scrolling reset below. The
+       logo is the one purely decorative block with real slack, so it
+       absorbs the trim rather than tightening functional form spacing. */
+    .brand-logo-frame {
+        max-width: 110px;
+    }
+
+    .brand-logo {
+        max-height: 46px;
+    }
+
+    .brand-head {
+        gap: 4px;
+    }
+
+    .checkout-header {
+        padding: 10px 16px 8px;
+    }
+
+    html,
+    body {
+        height: 100%;
+        max-height: 100svh;
+        overflow: hidden !important;
+        position: fixed;
+        inset: 0;
+    }
+
+    #Content,
+    #checkout-root {
+        height: 100%;
+        max-height: 100%;
+        overflow: hidden !important;
+    }
+
+    /* auto, not hidden: when everything fits (the goal) this cannot
+       scroll at all; on unusually short screens it quietly becomes the
+       safety valve instead of clipping the submit button off-screen. */
+    .checkout-page {
+        height: 100%;
+        max-height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: none;
+        scrollbar-width: none;
+    }
+
+    .checkout-page::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+    }
 }
 
 /* Iframe keeps the 520px card. Tester sizes the frame to that width
