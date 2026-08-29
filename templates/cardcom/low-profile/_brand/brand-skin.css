@@ -583,14 +583,14 @@ html:lang(en) .validityDate::after { content: "Month"; }
     width: 100% !important;
     max-width: none !important;
     padding: 4px 10px !important;
-    font-size: 13px !important;
+    font-size: 16px !important;
 }
 
 #txtCvv {
     width: 100% !important;
     max-width: 96px !important;
     padding: 4px 8px !important;
-    font-size: 13px !important;
+    font-size: 16px !important;
     letter-spacing: 0.14em;
     text-align: center !important;
 }
@@ -638,11 +638,11 @@ html[lang="en"] #CreditCardDiv .formRow:has(#txtTZ) > .fieldName::before {
     border: 1.5px solid #c5d0e0 !important;
     border-radius: 11px !important;
     background: #fff !important;
-    font-size: 13px !important;
+    font-size: 16px !important;
 }
 
 #txtCardNumber {
-    font-size: 13px !important;
+    font-size: 16px !important;
 }
 
 html[dir="rtl"] .fieldInput select {
@@ -1016,7 +1016,7 @@ html[lang="ru"] .footerIfIframe .footer-text {
     #txtCvv,
     #validityYear,
     #validityMonth {
-        font-size: 13px !important;
+        font-size: 16px !important;
         min-height: 36px !important;
     }
 
