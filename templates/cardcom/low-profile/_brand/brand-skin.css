@@ -305,12 +305,18 @@ button {
     margin: 0 !important;
 }
 
-#CreditCardDiv .formRow:has(#txtCardOwnerName) { order: 1; }
-#CreditCardDiv .formRow:has(#txtCardNumber) { order: 2; }
-#CreditCardDiv .formRow:has(#txtTZ) { order: 3; }
-#CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 4; }
-#CreditCardDiv .validityRow { order: 5; }
-#CreditCardDiv .cvvRow { order: 6; }
+/* Expiry/CVV moved up next to the card number (conventional card-form
+   order: number, then expiry+CVV, then the owner's own details) -- this
+   was previously the last paired row before the submit button, which is
+   why iOS had to flip its 12-item month picker upward over the whole
+   screen instead of dropping it below the field. Higher on the page,
+   the same native picker has room to open downward instead. */
+#CreditCardDiv .formRow:has(#txtCardNumber) { order: 1; }
+#CreditCardDiv .validityRow { order: 2; }
+#CreditCardDiv .cvvRow { order: 3; }
+#CreditCardDiv .formRow:has(#txtCardOwnerName) { order: 4; }
+#CreditCardDiv .formRow:has(#txtTZ) { order: 5; }
+#CreditCardDiv .formRow:has(#txtCardOwnerPhone) { order: 6; }
 #CreditCardDiv .formRow:has(#txtCardOwnerEmail) { order: 7; }
 
 /* Confirmed live: cvvRow can shrink its flex-basis to 0 (see its own rule
