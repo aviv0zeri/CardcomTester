@@ -1100,6 +1100,18 @@ html[lang="ru"] .footerIfIframe .footer-text {
         overflow-y: auto !important;
         overscroll-behavior: none;
         scrollbar-width: none;
+        padding: 6px 0 2px !important;
+    }
+
+    /* Decorative spacing only -- the last few px so the footer clears
+       the fold; form-field breathing room stays untouched. */
+    .footerIfIframe {
+        padding-bottom: 4px !important;
+    }
+
+    .brand-security {
+        margin-top: 2px;
+        margin-bottom: 4px;
     }
 
     .checkout-page::-webkit-scrollbar {
