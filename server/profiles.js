@@ -5,43 +5,47 @@
  * not something this process toggles inside the hosted page.
  */
 
-const profiles = {
-  tester: {
-    terminalNumber: Number(process.env.CARDCOM_TERMINAL),
-    apiName: process.env.CARDCOM_USERNAME,
-    apiPassword: process.env.CARDCOM_PASSWORD,
-    // Diagnostic pages only — display whatever Cardcom put on the redirect,
-    // change no billing state. Cardcom's own docs say this redirect is not
-    // authoritative; GetLpResult / their server-to-server reporting is.
-    // Always the production URL: Cardcom redirects the customer's own
-    // browser here, which needs a real internet-reachable HTTPS address
-    // regardless of whether local dev is running.
-    successRedirectUrl:
-      process.env.CARDCOM_SUCCESS_URL || 'https://cardcom-tester.vercel.app/diagnostics/success.html',
-    failedRedirectUrl:
-      process.env.CARDCOM_FAILED_URL || 'https://cardcom-tester.vercel.app/diagnostics/failure.html',
-    operation: 'ChargeOnly',
-    // Optional HTTPS stylesheet. Production branding belongs in Cardcom's CSS editor.
-    // Localhost CSS is blocked as mixed content on Cardcom's HTTPS page.
-    cssUrl: process.env.CARDCOM_CSS_URL || '',
-    // Cardcom UIDefinition.GooglePayBtnDesign — documented GPay face (not CSS internals).
-    googlePayBtnDesign: {
-      ButtonColor: 0,
-      ButtonType: 0,
-      ButtonWidth: '100%',
-      ButtonHeight: '40',
-    },
-    // Documented UIDefinition field (API 11 Swagger) — the real way to drop
-    // the email field. Phone stays visible: Cardcom's own docs say 3DS only
-    // fails if BOTH phone and email are hidden. Preferred over the CSS-only
-    // hide in brand-skin.css, since this stops Cardcom's own validation from
-    // expecting a value there too (a CSS hide alone can't guarantee that).
-    hideCardOwnerEmail: true,
+// One entry per business ("which Cardcom terminal"). The tester's business
+// profiles (cardcom-tester/src/components/profiles.ts) point here by key.
+// `tester` stays as an alias of the first business so older callers and the
+// deployed API keep working unchanged.
+const gateopen = {
+  terminalNumber: Number(process.env.CARDCOM_TERMINAL),
+  apiName: process.env.CARDCOM_USERNAME,
+  apiPassword: process.env.CARDCOM_PASSWORD,
+  // Diagnostic pages only — display whatever Cardcom put on the redirect,
+  // change no billing state. Cardcom's own docs say this redirect is not
+  // authoritative; GetLpResult / their server-to-server reporting is.
+  // Always the production URL: Cardcom redirects the customer's own
+  // browser here, which needs a real internet-reachable HTTPS address
+  // regardless of whether local dev is running.
+  successRedirectUrl:
+    process.env.CARDCOM_SUCCESS_URL || 'https://cardcom-tester.vercel.app/diagnostics/success.html',
+  failedRedirectUrl:
+    process.env.CARDCOM_FAILED_URL || 'https://cardcom-tester.vercel.app/diagnostics/failure.html',
+  operation: 'ChargeOnly',
+  // Optional HTTPS stylesheet. Production branding belongs in Cardcom's CSS editor.
+  // Localhost CSS is blocked as mixed content on Cardcom's HTTPS page.
+  cssUrl: process.env.CARDCOM_CSS_URL || '',
+  // Cardcom UIDefinition.GooglePayBtnDesign — documented GPay face (not CSS internals).
+  googlePayBtnDesign: {
+    ButtonColor: 0,
+    ButtonType: 0,
+    ButtonWidth: '100%',
+    ButtonHeight: '40',
   },
+  // Documented UIDefinition field (API 11 Swagger) — the real way to drop
+  // the email field. Phone stays visible: Cardcom's own docs say 3DS only
+  // fails if BOTH phone and email are hidden. Preferred over the CSS-only
+  // hide in brand-skin.css, since this stops Cardcom's own validation from
+  // expecting a value there too (a CSS hide alone can't guarantee that).
+  hideCardOwnerEmail: true,
 };
 
+const profiles = { gateopen, tester: gateopen };
+
 function getProfile(profileId) {
-  const id = profileId || 'tester';
+  const id = profileId || 'gateopen';
   const profile = profiles[id];
 
   if (!profile) {

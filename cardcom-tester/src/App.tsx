@@ -13,6 +13,8 @@ import { GuidedWalkthrough } from './components/GuidedWalkthrough'
 import { VersionMenu } from './components/VersionMenu'
 import { PaymentOverlay } from './components/PaymentOverlay'
 import { createCardcomSession } from './components/createSession'
+import { DEFAULT_PROFILE, profileById } from './components/profiles'
+import { loadSfxMuted, playClick, saveSfxMuted, setSfxMuted } from './components/sfx'
 import { loadUiLang, saveUiLang, type UiLang } from './components/uiLang'
 import {
   isRealPhone,
@@ -42,7 +44,12 @@ const TAB_LABELS: Record<UiLang, Record<Tab, string>> = {
 
 function App() {
   const [tab, setTab] = useState<Tab>('guide')
+  // Which business the tester acts as (Cardcom terminal + Spectra project +
+  // brand). Picked in the walkthrough's first step; the other tabs follow it.
+  const [profileId, setProfileId] = useState(DEFAULT_PROFILE.id)
+  const profile = profileById(profileId)
   const [uiLang, setUiLang] = useState<UiLang>(loadUiLang)
+  const [sfxMuted, setSfxMutedState] = useState<boolean>(loadSfxMuted)
   const [design, setDesign] = useState<Design>('new')
   const [language, setLanguage] = useState<Language>('he')
   const [region, setRegion] = useState<OpenFieldsRegion>('il')
@@ -56,6 +63,7 @@ function App() {
   const [statusUrl, setStatusUrl] = useState<string | null>(null)
   const overlayOpen = Boolean(overlay)
   const openAs = openAsFrom(device, mode)
+  const dualView = (design === 'new' || design === 'openfields') && doubleView
   const statusOk =
     status === 'ready' ||
     status === 'creating session…' ||
@@ -94,7 +102,7 @@ function App() {
       width: version.width,
       height: version.height,
       scroll: design === 'new' ? true : version.scroll,
-      summarySrc: design === 'new' && doubleView ? '/cardcom-preview/order-summary.html' : undefined,
+      summarySrc: dualView ? '/cardcom-preview/order-summary.html' : undefined,
     })
     setStatusUrl(null)
     setStatus(`open ${label} · ${version.note}`)
@@ -103,7 +111,8 @@ function App() {
   const openLocal = (version?: PreviewVersion) => {
     if (!guardDevice()) return
     const embed = Boolean(version?.embed)
-    const src = localPreviewUrl(language, embed, design, region)
+    const screen = design === 'openfields' && embed && dualView ? 'checkout' : undefined
+    const src = localPreviewUrl(language, embed, design, { region, screen, brand: profile.id })
     // The guard above already confirmed device matches reality, so on mobile
     // this is a real phone — show the real page, not a scaled-down box.
     // Boxing is only useful as a desktop-side simulation of the Iframe mode.
@@ -122,8 +131,21 @@ function App() {
     if (!guardDevice()) return
     if (design === 'openfields') {
       // No session is created here -- the Open Fields page itself calls
-      // LowProfile/Create when its "Continue to checkout" is pressed.
-      const src = openFieldsUrl(language, { region })
+      // LowProfile/Create when its "Continue to checkout" is pressed (or on
+      // load, in the two-panel view where the tester's summary replaces the
+      // page's own cart screen).
+      const framed = device === 'desktop' && Boolean(version)
+      if (framed && version) {
+        const src = openFieldsUrl(language, {
+          region,
+          embed: true,
+          screen: dualView ? 'checkout' : undefined,
+          brand: profile.id,
+        })
+        openFrame(src, version, 'Open Fields (live)')
+        return
+      }
+      const src = openFieldsUrl(language, { region, brand: profile.id })
       const tabWindow = window.open(src, '_blank', 'noopener,noreferrer')
       setStatusUrl(tabWindow ? null : src)
       setStatus(tabWindow ? 'opened Open Fields (live) in a new tab' : 'Popup blocked. Open the live page:')
@@ -136,7 +158,7 @@ function App() {
     setStatus('creating session…')
     setStatusUrl(null)
     try {
-      const url = await createCardcomSession(language)
+      const url = await createCardcomSession(language, profile.expressProfileId)
       if (version) {
         openFrame(url, version, 'cardcom')
       } else if (tabWindow && !tabWindow.closed) {
@@ -157,30 +179,71 @@ function App() {
   return (
     <main className="app">
       <section className="start">
-        <div className="page-bar">
-          <div className="seg seg--small" role="radiogroup" aria-label="Interface language">
-            {(['en', 'he'] as UiLang[]).map((option) => (
-              <button
-                key={option}
-                type="button"
-                className={`seg-btn${uiLang === option ? ' is-on' : ''}`}
-                onClick={() => {
-                  setUiLang(option)
-                  saveUiLang(option)
-                }}
-              >
-                {option === 'en' ? 'English' : 'עברית'}
-              </button>
-            ))}
-          </div>
-        </div>
         <div className="shell">
           <header className="shell-head">
-            <div>
-              <h1>
-                Cardcom <span className="shell-title-accent">tester</span>
-              </h1>
-              <p className="shell-sub">Visual API laboratory</p>
+            <div className="shell-head-left">
+              {/* Top-left, above the title -- not tucked into the top-right
+                  controls bar where it read as an afterthought next to the tabs. */}
+              <div className="shell-head-top">
+                <div className="seg seg--small" role="radiogroup" aria-label="Interface language">
+                  {(['en', 'he'] as UiLang[]).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`seg-btn${uiLang === option ? ' is-on' : ''}`}
+                      onClick={() => {
+                        setUiLang(option)
+                        saveUiLang(option)
+                      }}
+                    >
+                      {option === 'en' ? 'English' : 'עברית'}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="sfx-toggle"
+                  aria-pressed={!sfxMuted}
+                  aria-label={sfxMuted ? 'Unmute UI sounds' : 'Mute UI sounds'}
+                  title={sfxMuted ? 'Unmute UI sounds' : 'Mute UI sounds'}
+                  onClick={() => {
+                    const next = !sfxMuted
+                    if (!next) playClick()
+                    setSfxMuted(next)
+                    saveSfxMuted(next)
+                    setSfxMutedState(next)
+                  }}
+                >
+                  {sfxMuted ? (
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                      <path d="M3 8v4h3.2L11 16V4L6.2 8H3Z" fill="currentColor" />
+                      <path
+                        d="M13.5 7.5l4 4m0-4l-4 4"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                      <path d="M3 8v4h3.2L11 16V4L6.2 8H3Z" fill="currentColor" />
+                      <path
+                        d="M13.3 7.2a3.6 3.6 0 0 1 0 5.6M15.4 5.2a6.6 6.6 0 0 1 0 9.6"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        fill="none"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <div>
+                <h1>
+                  Cardcom <span className="shell-title-accent">tester</span>
+                </h1>
+                <p className="shell-sub">Visual API laboratory</p>
+              </div>
             </div>
             <div className="shell-head-controls">
               <div className="seg" role="tablist" aria-label="Tester">
@@ -201,7 +264,12 @@ function App() {
           </header>
 
           {tab === 'guide' ? (
-            <GuidedWalkthrough disabled={overlayOpen} lang={uiLang} />
+            <GuidedWalkthrough
+              disabled={overlayOpen}
+              lang={uiLang}
+              profile={profile}
+              onProfileChange={setProfileId}
+            />
           ) : tab === 'lab' ? (
             <ApiLab disabled={overlayOpen} />
           ) : (

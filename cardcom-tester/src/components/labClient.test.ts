@@ -366,7 +366,7 @@ describe('chargeStoredToken request shape', () => {
     const [path, init] = fetchMock.mock.calls[0]
     expect(path).toBe('/lab/charge-token')
     const body = JSON.parse(init.body as string)
-    expect(body).toEqual({ profileId: 'tester', token: 'tok-1', amount: 20.5 })
+    expect(body).toEqual({ profileId: 'gateopen', token: 'tok-1', amount: 20.5 })
   })
 
   it('includes externalUniqTranId, cardExpirationMMYY, cvv2 only when provided', async () => {

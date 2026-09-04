@@ -1,177 +1,445 @@
-body {
-  font-family: Arial;
-  font-size: 17px;
-  padding: 8px;
+/* Single-column checkout in the tester's visual language (token values match
+   cardcom-tester/src/index.css) -- this file is loaded inside its own
+   standalone document (an iframe), so the tokens are redefined here rather
+   than inherited across the document boundary. Every selector JS in form.js
+   depends on (ids, [data-billing], [data-i18n]) is unchanged; this file only
+   touches presentation. The Cardcom-hosted card-number and CVV boxes are
+   styled separately (styles/cardNumber.css and the #css_template in
+   form.html) and must stay visually identical to input[type="text"] here. */
+
+:root {
+  --surface: #fff;
+  --surface-alt: #eef0f6;
+  --border: #e1e4ee;
+  --border-strong: #c7cddd;
+  --text: #14161c;
+  --text-secondary: #3d4456;
+  --text-muted: #5a5e6e;
+  --text-faint: #8b90a0;
+  --accent: #3d5580;
+  --accent-strong: #1c2c46;
+  --accent-soft-bg: #eef1f7;
+  --accent-contrast: #fff;
+  --danger: #b91c1c;
+  --danger-bg: #fef2f2;
+  --success: #047857;
+  --shell-shadow: 0 1px 2px rgba(20, 22, 28, 0.05), 0 1px 1px rgba(20, 22, 28, 0.03);
+  --shell-shadow-lg: 0 10px 30px rgba(20, 22, 28, 0.08), 0 2px 6px rgba(20, 22, 28, 0.05);
 }
 
-iframe {
-  border: 0;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #171c27;
+    --surface-alt: #1e2531;
+    --border: #2a3242;
+    --border-strong: #39435a;
+    --text: #eef0f5;
+    --text-secondary: #b7bdcc;
+    --text-muted: #8991a6;
+    --text-faint: #656d80;
+    --accent: #5c78a8;
+    --accent-strong: #8fa8d1;
+    --accent-soft-bg: rgba(92, 120, 168, 0.18);
+    --accent-contrast: #fff;
+    --danger: #f87171;
+    --danger-bg: rgba(248, 113, 113, 0.14);
+    --success: #34d399;
+    --shell-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shell-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
 }
 
 * {
   box-sizing: border-box;
 }
 
-.row {
-  display: -ms-flexbox;
-  /* IE10 */
+body {
+  margin: 0;
+  padding: 32px 16px 40px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+iframe {
+  display: block;
+  border: 0;
+}
+
+/* ---- brand header (which business this checkout belongs to) ------------- */
+
+.brand {
   display: flex;
-  -ms-flex-wrap: wrap;
-  /* IE10 */
-  flex-wrap: wrap;
-  margin: 0 -16px;
+  align-items: center;
+  gap: 10px;
+  width: min(460px, 100%);
+  margin: 0 auto 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
 }
 
-.col-25 {
-  -ms-flex: 25%;
-  /* IE10 */
-  flex: 25%;
+.brand img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
 }
 
-.col-50 {
-  -ms-flex: 50%;
-  /* IE10 */
-  flex: 50%;
+/* ---- layout shells ------------------------------------------------------ */
+
+#first-screen {
+  width: min(400px, 100%);
+  margin: 0 auto;
 }
 
-.col-75 {
-  -ms-flex: 75%;
-  /* IE10 */
-  flex: 75%;
-}
-
-.col-25,
-.col-50,
-.col-75 {
-  padding: 0 16px;
+#second-screen {
+  width: min(460px, 100%);
+  margin: 0 auto;
 }
 
 .container {
-  background-color: #f2f2f2;
-  padding: 5px 20px 15px 20px;
-  border: 1px solid lightgrey;
-  border-radius: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shell-shadow);
+  padding: 20px 20px 18px;
 }
 
-input[type=text] {
-  width: 100%;
-  margin-bottom: 20px;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+.summary-container .container {
+  box-shadow: var(--shell-shadow-lg);
+}
+
+/* ---- cart (first screen) -------------------------------------------------- */
+
+h4 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.cart p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cart a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.cart .price {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.cart hr {
+  display: none;
+}
+
+.cart .cart-total {
+  padding-top: 12px;
+  border-bottom: 0;
+  font-weight: 700;
+}
+
+.cart .cart-total .price {
+  color: var(--text);
+  font-size: 16px;
+}
+
+#continue {
+  margin-top: 14px;
+}
+
+/* ---- checkout (second screen) -------------------------------------------- */
+
+.block {
+  margin: 0 0 14px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.block:last-of-type {
+  margin-bottom: 4px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.fields--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.field {
+  min-width: 0;
+}
+
+.field--full {
+  grid-column: 1 / -1;
 }
 
 label {
-  margin-bottom: 10px;
   display: block;
+  margin-bottom: 5px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
-.icon-container {
-  margin-bottom: 20px;
-  padding: 7px 0;
-  font-size: 24px;
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
 }
 
-.btn {
-  background-color: #04AA6D;
-  color: white;
-  padding: 12px;
-  margin: 10px 0;
-  border: none;
-  width: 100%;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 17px;
+.label-row label {
+  margin: 0;
 }
 
-.btn:hover {
-  background-color: #45a049;
+.brands {
+  display: flex;
+  gap: 6px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.brands .fa-cc-visa {
+  color: #1a1f71;
+}
+
+.brands .fa-cc-mastercard {
+  color: #eb001b;
+}
+
+.brands .fa-cc-amex {
+  color: #2e77bc;
+}
+
+.brands .fa-cc-discover {
+  color: #f58220;
 }
 
 a {
-  color: #2196F3;
+  color: var(--accent);
 }
 
-hr {
-  border: 1px solid lightgrey;
+/* ---- inputs --------------------------------------------------------------- */
+
+input[type="text"] {
+  width: 100%;
+  height: 41px;
+  margin: 0;
+  padding: 0 12px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-span.price {
-  float: right;
-  color: grey;
+input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft-bg);
 }
 
-/* Mirror the float when the Israel template flips the page to RTL. */
-[dir="rtl"] span.price {
-  float: left;
+input[type="text"]::placeholder {
+  color: var(--text-faint);
+}
+
+#CardComCardNumber,
+#CardComCvv {
+  width: 100%;
+  height: 41px;
 }
 
 .checkbox {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin: 27px 0;
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
 }
 
-.cvv-label {
-  display: inline-block;
+.checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
 }
 
-.cvv {
+/* ---- buttons ---------------------------------------------------------------- */
+
+.btn {
+  display: block;
+  width: 100%;
+  height: 46px;
+  margin: 18px 0 0;
+  padding: 0;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn:hover {
+  background: var(--accent-strong);
+}
+
+.wallet {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.wallet iframe {
+  width: 100%;
+  max-width: 277px;
+  height: 48px;
+}
+
+/* ---- footer / credits -------------------------------------------------------- */
+
+.footer {
+  width: min(460px, 100%);
+  margin: 14px auto 0;
+  text-align: center;
+}
+
+.notice {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+/* "Powered by" at the left, Cardcom's own credit small at the right (the
+   row is forced LTR in the markup so this holds in Hebrew too). */
+.footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.powered {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.powered:hover {
+  color: var(--text-secondary);
+}
+
+.powered strong {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.powered img {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+/* Cardcom's short credit, shown whole but scaled down -- never cropped. */
+.credits {
+  display: flex;
+  justify-content: flex-end;
+  width: 150px;
+  height: 30px;
+  overflow: hidden;
+  opacity: 0.7;
+}
+
+.credits iframe {
+  flex: none;
+  width: 330px;
+  height: 66px;
+  transform: scale(0.45);
+  transform-origin: top right;
+}
+
+/* ---- embedded (inside the tester's sized iframe) ------------------------- */
+
+.embed body {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100vh;
+  padding: 12px 14px 10px;
 }
 
-.expDate {
+.embed .brand {
+  margin-bottom: 10px;
+}
+
+/* The cart screen centers in whatever height is left under the brand bar. */
+.embed #first-screen {
+  flex: 1;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: center;
 }
 
-/* Responsive layout - when the screen is less than 800px wide, make the two columns stack on top of each other instead of next to each other (also change the direction - make the "cart" column go on top) */
-@media (max-width: 800px) {
-  .row {
-    flex-direction: column-reverse;
-  }
-
-  .col-25 {
-    margin-bottom: 20px;
-  }
+.embed .footer {
+  margin-top: 8px;
 }
 
-#first-screen {
-  width: 33%;
-  margin: 25px auto;
-}
-
-#second-screen {
-  width: 70%;
-  margin: 25px auto;
-}
-
-
-#submit-btn{
-  display: block;
-}
-
-/* loading GIF */
+/* ---- loading overlay ----------------------------------------------------- */
 
 #loading {
-  background-color: #0000008a;
+  background-color: rgba(20, 22, 28, 0.55);
   height: 100vh;
   width: 100%;
   position: fixed;
   top: 0;
   left: 0;
-  
   display: flex;
   justify-content: space-evenly;
   align-items: center;
+  z-index: 10;
 }
 
 .lds-spinner {
-  color: #6d75e7;
+  color: var(--accent);
   display: inline-block;
   position: relative;
   width: 80px;
@@ -192,7 +460,7 @@ span.price {
   width: 6px;
   height: 18px;
   border-radius: 20%;
-  background: #3945ec;
+  background: var(--accent);
 }
 
 .lds-spinner div:nth-child(1) {

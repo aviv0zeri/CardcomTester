@@ -28,6 +28,9 @@ import {
   type SpectraPayment,
   type SpectraVerifyResult,
 } from './spectraClient'
+import { MenuSelect } from './MenuSelect'
+import { playClick, playError, playStep, playSuccess } from './sfx'
+import { PROFILES, type BusinessProfile } from './profiles'
 
 // One screen at a time, one action at a time. The whole point of this tab is
 // that nothing scrolls and nothing competes for attention -- the full ApiLab
@@ -36,7 +39,7 @@ import {
 // step carries an optional "under the hood" corner that teaches the tech
 // (HTTP, API, JSON, webhooks) using the REAL payloads from this very run.
 
-type GuidedStep = 'intro' | 'pick' | 'setup' | 'create' | 'pay' | 'check' | 'done'
+type GuidedStep = 'intro' | 'profile' | 'pick' | 'setup' | 'create' | 'pay' | 'check' | 'done'
 type Integration = 'lowprofile' | 'openfields' | 'spectra'
 type Lang = UiLang
 
@@ -44,10 +47,14 @@ const TEST_CARD_NUMBER = '4580 2800 0000 0008'
 const TEST_CARD_RAW = '4580280000000008'
 
 type Copy = {
-  dots: [string, string, string, string, string]
+  dots: [string, string, string, string, string, string]
   introBubble: ReactNode
   introGo: string
   pickBubble: ReactNode
+  // Business step: which business (Cardcom terminal + Spectra project + brand).
+  profileBubble: ReactNode
+  profileLabel: string
+  profileLong: (name: string) => ReactNode
   lpTitle: string
   lpShort: ReactNode
   ofTitle: string
@@ -128,7 +135,7 @@ type Copy = {
 
 const COPY: Record<Lang, Copy> = {
   en: {
-    dots: ['Choose', 'Amount', 'Session', 'Pay', 'Verify'],
+    dots: ['Business', 'Choose', 'Amount', 'Session', 'Pay', 'Verify'],
     introBubble: (
       <>
         <strong>Hi! Let's run a pretend payment.</strong> Real Cardcom API, real screens,
@@ -139,8 +146,22 @@ const COPY: Record<Lang, Copy> = {
     introGo: "Let's go",
     pickBubble: (
       <>
-        Cardcom gives you two ways to take a payment. <strong>Pick one</strong> — you can
-        always come back and try the other.
+        There are three ways to take a payment here. <strong>Pick one</strong> — you can
+        always come back and try another.
+      </>
+    ),
+    profileBubble: (
+      <>
+        First, <strong>whose business is this?</strong> Every business has its own Cardcom
+        terminal and its own data on our side. Pick the one to act as.
+      </>
+    ),
+    profileLabel: 'Business',
+    profileLong: (name) => (
+      <>
+        From here on everything runs as <strong>{name}</strong>: sessions go to its Cardcom
+        terminal, its logo is on the payment page, and every Customer and Payment is stored
+        under its own project.
       </>
     ),
     lpTitle: 'Low Profile',
@@ -339,13 +360,10 @@ const COPY: Record<Lang, Copy> = {
     ),
     spLong: (
       <>
-        <strong>Spectra Payments is the "put our own API in front" way.</strong> Instead of
-        talking to Cardcom's raw API, your app talks to <em>our</em> Payment API
-        (spectra-payments). It asks Cardcom for the session on your behalf, keeps the
-        secrets and the messy provider details inside, and hands back clean objects with
-        our own names: a Customer, a CheckoutSession, a Payment. This is what GateOpen will
-        use — and it's the same hosted Cardcom page underneath, so compare it with Low
-        Profile and spot what changed.
+        <strong>Spectra Payments is the "put our own API in front" way.</strong> Your app
+        talks to <em>our</em> Payment API, not raw Cardcom — it gets the session, keeps the
+        secrets inside, and hands back clean objects: a Customer, a CheckoutSession, a
+        Payment.
       </>
     ),
     createBubbleSp: (amount) => (
@@ -413,7 +431,7 @@ const COPY: Record<Lang, Copy> = {
     errSpectra: (message) => `Could not reach spectra-payments: ${message}`,
   },
   he: {
-    dots: ['בחירה', 'סכום', 'יצירה', 'תשלום', 'אימות'],
+    dots: ['עסק', 'בחירה', 'סכום', 'יצירה', 'תשלום', 'אימות'],
     introBubble: (
       <>
         <strong>היי! בואו נריץ תשלום דמה.</strong> API אמיתי של קארדקום, מסכים אמיתיים,
@@ -424,8 +442,21 @@ const COPY: Record<Lang, Copy> = {
     introGo: 'בואו נתחיל',
     pickBubble: (
       <>
-        לקארדקום יש שתי דרכים לקבל תשלום. <strong>בחרו אחת</strong> — תמיד אפשר לחזור
-        ולנסות את השנייה.
+        יש כאן שלוש דרכים לקבל תשלום. <strong>בחרו אחת</strong> — תמיד אפשר לחזור
+        ולנסות דרך אחרת.
+      </>
+    ),
+    profileBubble: (
+      <>
+        קודם כל, <strong>של איזה עסק זה?</strong> לכל עסק יש מסוף קארדקום משלו ונתונים משלו
+        אצלנו. בחרו בשם מי לפעול.
+      </>
+    ),
+    profileLabel: 'עסק',
+    profileLong: (name) => (
+      <>
+        מכאן והלאה הכול רץ בתור <strong>{name}</strong>: הסשנים הולכים למסוף שלו, הלוגו שלו
+        מופיע בדף התשלום, וכל לקוח ותשלום נשמרים תחת הפרויקט שלו.
       </>
     ),
     lpTitle: 'Low Profile',
@@ -614,12 +645,9 @@ const COPY: Record<Lang, Copy> = {
     ),
     spLong: (
       <>
-        <strong>Spectra Payments היא שיטת "שמים API משלנו מקדימה".</strong> במקום לדבר עם
-        ה-API הגולמי של קארדקום, האפליקציה מדברת עם <em>ה-API של התשלומים שלנו</em>
-        (spectra-payments). הוא מבקש את הסשן מקארדקום בשבילכם, שומר בפנים את הסודות ואת
-        הפרטים המבולגנים של הספק, ומחזיר אובייקטים נקיים עם שמות משלנו: לקוח, סשן תשלום,
-        תשלום. בזה GateOpen ישתמש — ומתחת זה אותו דף קארדקום מתארח, אז השוו ל-Low Profile
-        ושימו לב מה השתנה.
+        <strong>Spectra Payments היא שיטת "שמים API משלנו מקדימה".</strong> האפליקציה
+        מדברת עם <em>ה-API של התשלומים שלנו</em>, לא עם קארדקום גולמי — היא משיגה את
+        הסשן, שומרת את הסודות בפנים, ומחזירה אובייקטים נקיים: לקוח, סשן תשלום, תשלום.
       </>
     ),
     createBubbleSp: (amount) => (
@@ -786,9 +814,12 @@ function SuccessCheck() {
 type GuidedWalkthroughProps = {
   disabled?: boolean
   lang: Lang
+  // The business this run acts as -- owned by App so the other tabs follow it.
+  profile: BusinessProfile
+  onProfileChange: (id: string) => void
 }
 
-export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
+export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: GuidedWalkthroughProps) {
   const viewport = useViewport()
   const [step, setStep] = useState<GuidedStep>('intro')
   const [integration, setIntegration] = useState<Integration>('lowprofile')
@@ -830,7 +861,7 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
     ? asText(spectraSession?.checkout_url)
     : isOpenFields
       ? lowProfileId
-        ? openFieldsUrl(language, { lpid: lowProfileId, region, amount: amountNumber })
+        ? openFieldsUrl(language, { lpid: lowProfileId, region, amount: amountNumber, brand: profile.id })
         : ''
       : asText(session?.Url || session?.url)
   // "Session created" for whichever path is active -- drives the create step.
@@ -839,6 +870,8 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
   const goTo = (next: GuidedStep) => {
     setError('')
     setStep(next)
+    if (next === 'done') playSuccess()
+    else playStep()
   }
 
   const clearRun = () => {
@@ -890,22 +923,28 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
       // Our own Payment API does the Cardcom call for us -- two requests, both to
       // spectra-payments, zero raw-Cardcom fields in either direction.
       try {
-        const customer = await createCustomer({ displayName: 'Guided Tester' })
+        const customer = await createCustomer(
+          { displayName: 'Guided Tester' },
+          profile.spectraProjectId,
+        )
         setSpectraCustomer(customer)
         const created = await createHostedCheckoutSession({
           customerId: customer.id,
           amount: amountNumber,
           language,
+          projectId: profile.spectraProjectId,
         })
         setSpectraSession(created)
       } catch (cause) {
         setError(t.errSpectra(cause instanceof Error ? cause.message : ''))
+        playError()
       }
       setBusy(false)
       return
     }
     try {
       const data = await createLabSession({
+        profileId: profile.expressProfileId,
         language,
         // A receipt needs a Document with an Email on it -- the 'customer'
         // scenario is the existing lab path that builds exactly that.
@@ -937,9 +976,11 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
       const code = responseCode(cardcom)
       if (code !== 0) {
         setError(friendlyCardcomError(code, asText(cardcom?.Description)))
+        playError()
       }
     } catch (cause) {
       setError(t.errServer(cause instanceof Error ? cause.message : ''))
+      playError()
     }
     setBusy(false)
   }
@@ -985,13 +1026,17 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
       try {
         // Authoritative verification through OUR API (it runs GetLpResult itself),
         // then the persisted Payment -- the only thing the app should believe.
-        const verified = await verifyCheckoutSession(spectraSession.checkout_session_id)
+        const verified = await verifyCheckoutSession(
+          spectraSession.checkout_session_id,
+          profile.spectraProjectId,
+        )
         setSpectraVerify(verified)
-        const payment = await getPayment(verified.payment_id)
+        const payment = await getPayment(verified.payment_id, profile.spectraProjectId)
         setSpectraPayment(payment)
         if (payment.status === 'SUCCEEDED') goTo('done')
       } catch (cause) {
         setError(t.errSpectra(cause instanceof Error ? cause.message : ''))
+        playError()
       }
       setBusy(false)
       return
@@ -1000,12 +1045,13 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
     setBusy(true)
     setError('')
     try {
-      const data = await checkLabResult(lowProfileId)
+      const data = await checkLabResult(lowProfileId, profile.expressProfileId)
       const cardcom = asRecord(data.cardcom)
       setResult(cardcom)
       if (responseCode(cardcom) === 0) goTo('done')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'GetLpResult failed')
+      playError()
     }
     setBusy(false)
   }
@@ -1013,6 +1059,7 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
   const copyCard = async () => {
     try {
       await navigator.clipboard.writeText(TEST_CARD_RAW)
+      playClick()
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1600)
     } catch {
@@ -1021,11 +1068,12 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
   }
 
   const dots: { id: GuidedStep; label: string }[] = [
-    { id: 'pick', label: t.dots[0] },
-    { id: 'setup', label: t.dots[1] },
-    { id: 'create', label: t.dots[2] },
-    { id: 'pay', label: t.dots[3] },
-    { id: 'check', label: t.dots[4] },
+    { id: 'profile', label: t.dots[0] },
+    { id: 'pick', label: t.dots[1] },
+    { id: 'setup', label: t.dots[2] },
+    { id: 'create', label: t.dots[3] },
+    { id: 'pay', label: t.dots[4] },
+    { id: 'check', label: t.dots[5] },
   ]
   const dotIndex = dots.findIndex((dot) => dot.id === step)
   const transaction = asRecord(result?.TranzactionInfo)
@@ -1064,6 +1112,7 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
   const spectraSessionId = spectraSession?.checkout_session_id ?? ''
   const spectraSentPreview = spectraCustomer
     ? {
+        project_id: profile.spectraProjectId,
         customer_id: spectraCustomer.id,
         amount: amountNumber.toFixed(2),
         currency: 'ILS',
@@ -1119,9 +1168,44 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
           <ArtTicket />
           <Bubble>{t.introBubble}</Bubble>
           <div className="gw-actions">
-            <button type="button" className="cta-button gw-pulse" disabled={disabled} onClick={() => goTo('pick')}>
+            <button type="button" className="cta-button gw-pulse" disabled={disabled} onClick={() => goTo('profile')}>
               {t.introGo}
             </button>
+          </div>
+        </section>
+      ) : null}
+
+      {step === 'profile' ? (
+        <section className="gw-step" key="profile">
+          <Bubble>{t.profileBubble}</Bubble>
+          <div className="gw-form gw-form--business">
+            <div className="gw-field">
+              {t.profileLabel}
+              <div className="gw-profile-picker">
+                <picture>
+                  <source srcSet={profile.logoDark} media="(prefers-color-scheme: dark)" />
+                  <img src={profile.logoLight} alt="" />
+                </picture>
+                <MenuSelect
+                  aria-label={t.profileLabel}
+                  value={profile.id}
+                  options={PROFILES.map((option) => ({ value: option.id, label: option.name }))}
+                  disabled={disabled}
+                  onChange={(next) => {
+                    playClick()
+                    onProfileChange(next)
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="gw-picked-reveal" key={profile.id}>
+            <Bubble>{t.profileLong(profile.name)}</Bubble>
+            <div className="gw-actions">
+              <button type="button" className="cta-button gw-pulse" disabled={disabled} onClick={() => goTo('pick')}>
+                {t.continueBtn}
+              </button>
+            </div>
           </div>
         </section>
       ) : null}
@@ -1136,6 +1220,7 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
               aria-pressed={picked === 'lowprofile'}
               disabled={disabled}
               onClick={() => {
+                playClick()
                 setPicked('lowprofile')
                 setIntegration('lowprofile')
               }}
@@ -1157,6 +1242,7 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
               aria-pressed={picked === 'openfields'}
               disabled={disabled}
               onClick={() => {
+                playClick()
                 setPicked('openfields')
                 setIntegration('openfields')
               }}
@@ -1176,6 +1262,7 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
               aria-pressed={picked === 'spectra'}
               disabled={disabled}
               onClick={() => {
+                playClick()
                 setPicked('spectra')
                 setIntegration('spectra')
               }}

@@ -24,10 +24,22 @@ export const OPEN_FIELDS_REGIONS: { value: OpenFieldsRegion; label: string }[] =
 // preview=1 -> never touches the API; lpid -> reuses a session created
 // elsewhere (the API lab); neither -> creates its own session on Continue.
 // region picks the billing template; amount only matters for the invoice
-// document's product line (il template, checkbox on).
+// document's product line (il template, checkbox on). embed -> tight padding
+// and short credits so the page fits a sized iframe without scrolling;
+// screen=checkout -> skip the page's own cart screen (the tester's two-panel
+// view shows its own order summary instead). brand -> which business's logo the
+// page shows (an allowlisted id the page maps itself; never a URL).
 export function openFieldsUrl(
   language: Language,
-  opts: { preview?: boolean; lpid?: string; region?: OpenFieldsRegion; amount?: number } = {},
+  opts: {
+    preview?: boolean
+    lpid?: string
+    region?: OpenFieldsRegion
+    amount?: number
+    embed?: boolean
+    screen?: 'checkout'
+    brand?: string
+  } = {},
 ) {
   const lang = language === 'en' ? 'en' : 'he'
   const params = new URLSearchParams({ lang })
@@ -35,6 +47,9 @@ export function openFieldsUrl(
   if (opts.preview) params.set('preview', '1')
   if (opts.lpid) params.set('lpid', opts.lpid)
   if (opts.amount && Number.isFinite(opts.amount)) params.set('amount', String(opts.amount))
+  if (opts.embed) params.set('embed', '1')
+  if (opts.screen) params.set('screen', opts.screen)
+  if (opts.brand) params.set('brand', opts.brand)
   return `/cardcom-preview/open-fields/form.html?${params}`
 }
 
@@ -42,10 +57,16 @@ export function localPreviewUrl(
   language: Language,
   embed: boolean,
   design: 'old' | 'new' | 'openfields',
-  region?: OpenFieldsRegion,
+  opts: { region?: OpenFieldsRegion; screen?: 'checkout'; brand?: string } = {},
 ) {
   if (design === 'openfields') {
-    return openFieldsUrl(language, { preview: true, region })
+    return openFieldsUrl(language, {
+      preview: true,
+      region: opts.region,
+      embed,
+      screen: opts.screen,
+      brand: opts.brand,
+    })
   }
   const kind = embed ? `${language}/embed` : language
   const params = new URLSearchParams({
@@ -84,13 +105,23 @@ const NEW_DESKTOP_IFRAME: PreviewVersion[] = [
   { id: 'brand-tall', label: 'Tall', note: '520×850', width: 520, height: 850, scroll: true, embed: true },
 ]
 
+// Single-column checkout (Stripe/Shopify-style), sized to the tallest state
+// measured in embed mode -- the US/EU templates (address rows + name on
+// card, ~737px with the preview caption) beat Israel with its invoice
+// fields open (~703px) -- so nothing inside ever needs to scroll. 500 wide
+// leaves the page's 460px card centered with its own padding.
+const OPEN_FIELDS_IFRAME: PreviewVersion[] = [
+  { id: 'of-frame', label: 'Checkout', note: '500×760', width: 500, height: 760, scroll: false, embed: true },
+]
+
 export function versionsFor(
   device: Device,
   mode: Mode,
   design: 'old' | 'new' | 'openfields' = 'old',
 ): PreviewVersion[] {
-  // No framed/sized variants upstream yet -- always a plain page open.
-  if (design === 'openfields') return []
+  // Merchant-owned page: no phone/tablet framing variants, and on a real
+  // phone it opens as a plain page. Desktop iframe is the tester's own box.
+  if (design === 'openfields') return device === 'desktop' && mode === 'iframe' ? OPEN_FIELDS_IFRAME : []
   if (device === 'mobile') return [...MOBILE_REDIRECT, ...MOBILE_IFRAME]
   if (mode === 'redirect') return MOBILE_REDIRECT
   if (design === 'new') return NEW_DESKTOP_IFRAME

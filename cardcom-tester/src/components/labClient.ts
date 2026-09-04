@@ -1,4 +1,5 @@
 import type { Language } from './CheckoutControls'
+import { DEFAULT_PROFILE } from './profiles'
 
 export type LabScenario = 'charge' | 'document' | 'customer' | 'token'
 
@@ -104,12 +105,15 @@ export function createLabSession(input: {
   webHookUrl?: string
   operation?: LabOperation
   jValidateType?: JValidateType
+  // Which business (Cardcom terminal) -- server/profiles.js key. Defaults to
+  // the first business profile so the API lab keeps working without a picker.
+  profileId?: string
 }) {
   // Token experiments don't want an invoice muddying the result — only
   // document/customer opt into Document, same as before this scenario existed.
   const includeDocument = input.scenario === 'document' || input.scenario === 'customer'
   const body: Record<string, unknown> = {
-    profileId: 'tester',
+    profileId: input.profileId ?? DEFAULT_PROFILE.expressProfileId,
     language: input.language,
     amount: Number(input.amount),
     includeDocument,
@@ -140,9 +144,12 @@ export function createLabSession(input: {
   return postLab('/lab/create', body)
 }
 
-export function checkLabResult(lowProfileId: string) {
+export function checkLabResult(
+  lowProfileId: string,
+  profileId: string = DEFAULT_PROFILE.expressProfileId,
+) {
   return postLab('/lab/result', {
-    profileId: 'tester',
+    profileId,
     lowProfileId,
   })
 }
@@ -158,9 +165,10 @@ export function chargeStoredToken(input: {
   externalUniqTranId?: string
   cardExpirationMMYY?: string
   cvv2?: string
+  profileId?: string
 }) {
   const body: Record<string, unknown> = {
-    profileId: 'tester',
+    profileId: input.profileId ?? DEFAULT_PROFILE.expressProfileId,
     token: input.token.trim(),
     amount: Number(input.amount),
   }

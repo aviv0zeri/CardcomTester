@@ -2,12 +2,16 @@
 // backend/process from the Express raw-Cardcom lab (see labClient.ts, never merged
 // with this file on purpose). Every response shape here is spectra-payments' own
 // vocabulary (Customer/CheckoutSession/Payment) -- never a raw Cardcom field, never a
-// provider credential. project_id is fixed to one constant: CardcomTester behaves as
-// one consuming project, exactly like any other integration would.
+// provider credential. project_id comes from the selected business profile
+// (profiles.ts): each business is its own spectra-payments project, exactly like
+// any other consuming integration would be. Callers that don't pick one get the
+// default business.
+
+import { DEFAULT_PROFILE } from './profiles'
 
 const SPECTRA_API_BASE = '/spectra-api'
 
-export const SPECTRA_PROJECT_ID = 'cardcom-tester'
+export const SPECTRA_PROJECT_ID = DEFAULT_PROFILE.spectraProjectId
 
 async function spectraFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${SPECTRA_API_BASE}${path}`, {
@@ -31,8 +35,8 @@ async function spectraFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T
 }
 
-function withProject(params: Record<string, string> = {}): string {
-  return new URLSearchParams({ project_id: SPECTRA_PROJECT_ID, ...params }).toString()
+function withProject(projectId: string, params: Record<string, string> = {}): string {
+  return new URLSearchParams({ project_id: projectId, ...params }).toString()
 }
 
 export type SpectraHealth = {
@@ -88,14 +92,17 @@ export function checkSpectraHealth(): Promise<SpectraHealth> {
   return spectraFetch('/health')
 }
 
-export function createCustomer(input: {
-  displayName?: string
-  email?: string
-} = {}): Promise<SpectraCustomer> {
+export function createCustomer(
+  input: {
+    displayName?: string
+    email?: string
+  } = {},
+  projectId: string = SPECTRA_PROJECT_ID,
+): Promise<SpectraCustomer> {
   return spectraFetch('/customers', {
     method: 'POST',
     body: JSON.stringify({
-      project_id: SPECTRA_PROJECT_ID,
+      project_id: projectId,
       display_name: input.displayName,
       email: input.email,
     }),
@@ -107,11 +114,12 @@ export function createHostedCheckoutSession(input: {
   amount: number
   currency?: string
   language?: string
+  projectId?: string
 }): Promise<SpectraCheckoutSession> {
   return spectraFetch('/checkout-sessions', {
     method: 'POST',
     body: JSON.stringify({
-      project_id: SPECTRA_PROJECT_ID,
+      project_id: input.projectId ?? SPECTRA_PROJECT_ID,
       customer_id: input.customerId,
       amount: input.amount.toFixed(2),
       currency: input.currency ?? 'ILS',
@@ -121,16 +129,25 @@ export function createHostedCheckoutSession(input: {
   })
 }
 
-export function getCheckoutSession(checkoutSessionId: string): Promise<SpectraCheckoutSession> {
-  return spectraFetch(`/checkout-sessions/${checkoutSessionId}?${withProject()}`)
+export function getCheckoutSession(
+  checkoutSessionId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+): Promise<SpectraCheckoutSession> {
+  return spectraFetch(`/checkout-sessions/${checkoutSessionId}?${withProject(projectId)}`)
 }
 
-export function verifyCheckoutSession(checkoutSessionId: string): Promise<SpectraVerifyResult> {
-  return spectraFetch(`/checkout-sessions/${checkoutSessionId}/verify?${withProject()}`, {
+export function verifyCheckoutSession(
+  checkoutSessionId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+): Promise<SpectraVerifyResult> {
+  return spectraFetch(`/checkout-sessions/${checkoutSessionId}/verify?${withProject(projectId)}`, {
     method: 'POST',
   })
 }
 
-export function getPayment(paymentId: string): Promise<SpectraPayment> {
-  return spectraFetch(`/payments/${paymentId}?${withProject()}`)
+export function getPayment(
+  paymentId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+): Promise<SpectraPayment> {
+  return spectraFetch(`/payments/${paymentId}?${withProject(projectId)}`)
 }

@@ -1,11 +1,14 @@
 body {
     margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 #cardNumber {
-    border: 1px solid #ccc;
-    border-radius: 3px;
+    border: 1.5px solid #c7cddd;
+    border-radius: 8px;
     width: 100%;
     height: 39px;
     margin: 0;
     padding: 0 35px;
+    font-size: 14px;
+    color: #14161c;
 }

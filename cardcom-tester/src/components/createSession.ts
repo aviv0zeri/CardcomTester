@@ -1,12 +1,17 @@
 import type { Language } from './CheckoutControls'
+import { DEFAULT_PROFILE } from './profiles'
 
-export async function createCardcomSession(language: Language): Promise<string> {
+export async function createCardcomSession(
+  language: Language,
+  // Which business (Cardcom terminal) -- server/profiles.js key.
+  profileId: string = DEFAULT_PROFILE.expressProfileId,
+): Promise<string> {
   const response = await fetch('/payment', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       amount: 10,
-      profileId: 'tester',
+      profileId,
       language,
     }),
   })

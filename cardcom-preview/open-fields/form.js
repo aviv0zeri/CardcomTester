@@ -35,9 +35,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const secondSceen = document.getElementById('second-screen');
     const iframe = document.querySelector('#CardComMasterFrame');
     const loading = document.getElementById('loading');
+    // The init postMessage is lost if it goes out before the master frame
+    // has loaded -- which is exactly what happens with screen=checkout,
+    // where the checkout is shown at DOMContentLoaded rather than on a
+    // later click. Capped so an already-fired load can't stall the page.
+    const masterLoaded = new Promise((resolve) => {
+        iframe.addEventListener('load', resolve, { once: true });
+        setTimeout(resolve, 3000);
+    });
 
     var iframeMessage = {};
     const isPreview = new URLSearchParams(location.search).get('preview') === '1';
+    // embed=1: the page sits inside the tester's sized iframe -- tight
+    // padding and short credits so it fits without scrolling (form.css).
+    const isEmbed = new URLSearchParams(location.search).get('embed') === '1';
+    if (isEmbed) document.documentElement.classList.add('embed');
     document.getElementById('continue').addEventListener('click', nextScreen);
 
     const region = currentRegion();
@@ -65,29 +77,55 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Credits iframe supports en/he only (per Cardcom's own comment in the
-    // HTML). Default src is he; only swap when English was asked for.
+    // HTML). Always the short variant, kept small at the footer's right;
+    // the default src is Hebrew, so only English needs a swap.
     if (new URLSearchParams(location.search).get('lang') === 'en') {
         const credits = document.getElementById('CardcomCredits');
-        credits.src = 'https://secure.cardcom.solutions/api/openfields/credits?language=en&type=long';
+        credits.src = 'https://secure.cardcom.solutions/api/openfields/credits?language=en&type=short';
     }
 
+    // Brand header: which business this checkout belongs to. Allowlisted ids
+    // only -- never a name or image URL taken from the query string. The
+    // tester's business profiles (profiles.ts) use these same ids.
+    const BRANDS = {
+        gateopen: {
+            name: 'GateOpen',
+            // server/profiles.js key -> that business's Cardcom terminal.
+            profileId: 'gateopen',
+            logo: '/cardcom-preview/brand/gateopen-light.svg',
+            logoDark: '/cardcom-preview/brand/gateopen-dark.svg',
+        },
+    };
+    const brand = BRANDS[new URLSearchParams(location.search).get('brand')];
+    if (brand) {
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.getElementById('brandLogo').src = dark ? brand.logoDark : brand.logo;
+        document.getElementById('brandName').textContent = brand.name;
+        document.getElementById('brand').hidden = false;
+    }
+
+    // screen=checkout: skip the page's own cart screen -- the tester's
+    // two-panel view shows its own order summary in that role.
+    if (new URLSearchParams(location.search).get('screen') === 'checkout') nextScreen();
+
     function showNotice(text) {
-        const notice = document.createElement('div');
+        const notice = document.getElementById('notice');
         notice.textContent = text;
-        notice.style.cssText = 'background:#fff3cd;color:#664d03;border:1px solid #ffe69c;border-radius:4px;padding:10px 14px;margin-bottom:14px;font-size:13px;';
-        secondSceen.insertBefore(notice, secondSceen.firstChild);
+        notice.hidden = false;
     }
 
     async function showFields() {
         firstSceen.style.display = 'none';
         secondSceen.style.display = 'block';
+        // Google Pay needs a real session; without one its frame is a blank box.
+        if (isPreview) document.getElementById('walletRow').style.display = 'none';
         await loadIframesCss();
         window.addEventListener("message", handleFrameMessages);
         handleFormSubmit();
     }
 
     function nextScreen(event) {
-        event.preventDefault();
+        if (event) event.preventDefault();
         const params = new URLSearchParams(location.search);
         const language = params.get('lang') || 'he';
 
@@ -95,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // render fine without a session (they only validate lowProfileCode
         // at doTransaction time), so the layout is fully viewable.
         if (isPreview) {
-            showNotice('Preview only: no Cardcom session was created. The card/CVV fields are real Cardcom iframes; Submit Payment will not charge.');
+            showNotice('Preview — no Cardcom session was created; Pay will not charge.');
             showFields();
             return;
         }
@@ -112,11 +150,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         //create a low profile deal -- CardcomTester's own /payment route (same
         //LowProfile/Create call every other tab in this app uses), not the
-        //standalone example backend this file originally shipped with.
+        //standalone example backend this file originally shipped with. The
+        //business's own terminal (its brand's profileId) takes the session.
         fetch('/payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ profileId: 'tester', amount: 3, language }),
+            body: JSON.stringify({ profileId: brand ? brand.profileId : 'gateopen', amount: 3, language }),
         }).then(async res => {
             const json = await res.json();
             lowProfileCode = json.LowProfileId
@@ -168,6 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
             //language: "he"
         }
 
+        await masterLoaded;
         iframe.contentWindow.postMessage(iframeMessage, '*');
 
     }

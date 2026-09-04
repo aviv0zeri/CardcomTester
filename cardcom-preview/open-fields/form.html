@@ -4,6 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="./form.css">
     <script src="./form.js"></script>
@@ -17,169 +21,214 @@
 </head>
 
 <body>
+    <!-- Which business this checkout belongs to (?brand=<id>, allowlisted in
+         form.js -- the tester's business profiles use the same ids). -->
+    <header class="brand" id="brand" hidden>
+        <img id="brandLogo" alt="" width="32" height="32">
+        <span id="brandName"></span>
+    </header>
     <div id="first-screen">
         <div class="summary-container">
-            <div class="container">
-                <h4>Cart <span class="price" style="color:black"><i class="fa fa-shopping-cart"></i> <b>4</b></span>
-                </h4>
+            <div class="container cart">
+                <h4>Cart <span class="price"><i class="fa fa-shopping-cart"></i> <b>4</b></span></h4>
                 <p><a href="#">Product 1</a> <span class="price">$15</span></p>
                 <p><a href="#">Product 2</a> <span class="price">$5</span></p>
                 <p><a href="#">Product 3</a> <span class="price">$8</span></p>
                 <p><a href="#">Product 4</a> <span class="price">$2</span></p>
                 <hr>
-                <p>Total <span class="price" style="color:black"><b>$30</b></span></p>
+                <p class="cart-total">Total <span class="price"><b>$30</b></span></p>
             </div>
         </div>
         <input type="button" id="continue" value="Continue to checkout" class="btn">
     </div>
     <div id="second-screen" style="display: none;">
-        <div class="container">
+        <div class="container checkout">
             <form action="" id="form">
-                <div class="row">
-                    <!-- Billing templates: exactly one is shown, picked by the
-                         ?region= query param (us | il | eu). form.js does the
-                         switching; us is the default and matches Cardcom's
-                         original example. -->
-                    <div class="col-50" id="billing-us" data-billing>
-                        <h3>Billing Address</h3>
-                        <label for="cname"><i class="fa fa-user"></i> Full Name</label>
-                        <input type="text" id="cname" name="fname" placeholder="John M. Doe">
-                        <label for="cardOwnerEmail"><i class="fa fa-envelope"></i> Email</label>
-                        <input type="text" id="cardOwnerEmail" name="email" onblur="setCardOwnerDetails()"
-                            placeholder="john@example.com">
-                        <label for="adr"><i class="fa fa-address-card-o"></i> Address</label>
-                        <input type="text" id="adr" name="address" placeholder="542 W. 15th Street">
-                        <label for="city"><i class="fa fa-institution"></i> City</label>
-                        <input type="text" id="city" name="city" placeholder="New York">
-
-                        <div class="row">
-                            <div class="col-50">
+                <!-- Billing templates: exactly one is shown, picked by the
+                     ?region= query param (us | il | eu). form.js does the
+                     switching; us is the default and matches Cardcom's
+                     original example. -->
+                <section class="block" id="billing-us" data-billing>
+                    <h3>Billing address</h3>
+                    <div class="fields">
+                        <div class="field">
+                            <label for="cname">Full name</label>
+                            <input type="text" id="cname" name="fname" placeholder="John M. Doe">
+                        </div>
+                        <div class="field">
+                            <label for="cardOwnerEmail">Email</label>
+                            <input type="text" id="cardOwnerEmail" name="email" onblur="setCardOwnerDetails()"
+                                placeholder="john@example.com">
+                        </div>
+                        <div class="field field--full">
+                            <label for="adr">Address</label>
+                            <input type="text" id="adr" name="address" placeholder="542 W. 15th Street">
+                        </div>
+                        <div class="field--full fields fields--3">
+                            <div class="field">
+                                <label for="city">City</label>
+                                <input type="text" id="city" name="city" placeholder="New York">
+                            </div>
+                            <div class="field">
                                 <label for="state">State</label>
                                 <input type="text" id="state" name="state" placeholder="NY">
                             </div>
-                            <div class="col-50">
-                                <label for="zip">Zip</label>
+                            <div class="field">
+                                <label for="zip">ZIP</label>
                                 <input type="text" id="zip" name="zip" placeholder="10001">
                             </div>
                         </div>
                     </div>
-                    <!-- Israel: the same personal fields the Low Profile
-                         checkout collects (name, ID, phone, email) -- no
-                         US-style address block. Labels flip to Hebrew (and the
-                         page to RTL) when lang=he. -->
-                    <div class="col-50" id="billing-il" data-billing style="display: none;">
-                        <h3><span data-i18n="il_details">Personal details</span></h3>
-                        <label for="ilFullName"><i class="fa fa-user"></i> <span data-i18n="il_full_name">Full
-                                Name</span></label>
-                        <input type="text" id="ilFullName" name="ilFullName" onblur="setCardOwnerDetails()"
-                            placeholder="ישראל ישראלי">
-                        <label for="ilIdNumber"><i class="fa fa-id-card-o"></i> <span data-i18n="il_id">ID
-                                number</span></label>
-                        <input type="text" id="ilIdNumber" name="ilIdNumber" inputmode="numeric"
-                            placeholder="000000000">
-                        <label for="ilPhone"><i class="fa fa-phone"></i> <span
-                                data-i18n="il_phone">Phone</span></label>
-                        <input type="text" id="ilPhone" name="ilPhone" inputmode="tel" onblur="setCardOwnerDetails()"
-                            placeholder="0501234567">
-                        <label for="ilEmail"><i class="fa fa-envelope"></i> <span
-                                data-i18n="il_email">Email</span></label>
-                        <input type="text" id="ilEmail" name="ilEmail" onblur="setCardOwnerDetails()"
-                            placeholder="israel@example.com">
-                        <label class="checkbox" for="ilInvoiceToggle">
+                </section>
+                <!-- Israel: the same personal fields the Low Profile
+                     checkout collects (name, ID, phone, email) -- no
+                     US-style address block. Labels flip to Hebrew (and the
+                     page to RTL) when lang=he. -->
+                <section class="block" id="billing-il" data-billing style="display: none;">
+                    <h3><span data-i18n="il_details">Personal details</span></h3>
+                    <div class="fields">
+                        <div class="field">
+                            <label for="ilFullName"><span data-i18n="il_full_name">Full name</span></label>
+                            <input type="text" id="ilFullName" name="ilFullName" onblur="setCardOwnerDetails()"
+                                placeholder="ישראל ישראלי">
+                        </div>
+                        <div class="field">
+                            <label for="ilIdNumber"><span data-i18n="il_id">ID number</span></label>
+                            <input type="text" id="ilIdNumber" name="ilIdNumber" inputmode="numeric"
+                                placeholder="000000000">
+                        </div>
+                        <div class="field">
+                            <label for="ilPhone"><span data-i18n="il_phone">Phone</span></label>
+                            <input type="text" id="ilPhone" name="ilPhone" inputmode="tel" onblur="setCardOwnerDetails()"
+                                placeholder="0501234567">
+                        </div>
+                        <div class="field">
+                            <label for="ilEmail"><span data-i18n="il_email">Email</span></label>
+                            <input type="text" id="ilEmail" name="ilEmail" onblur="setCardOwnerDetails()"
+                                placeholder="israel@example.com">
+                        </div>
+                        <label class="checkbox field--full" for="ilInvoiceToggle">
                             <input type="checkbox" id="ilInvoiceToggle" name="ilInvoiceToggle">
                             <span data-i18n="il_invoice_toggle">I want an invoice / receipt</span>
                         </label>
-                        <div id="il-invoice-fields" style="display: none;">
-                            <label for="ilInvoiceName"><i class="fa fa-file-text-o"></i> <span
-                                    data-i18n="il_invoice_name">Name on invoice</span></label>
-                            <input type="text" id="ilInvoiceName" name="ilInvoiceName" placeholder="ישראל ישראלי">
-                            <label for="ilInvoiceEmail"><i class="fa fa-envelope-o"></i> <span
-                                    data-i18n="il_invoice_email">Email for the invoice</span></label>
-                            <input type="text" id="ilInvoiceEmail" name="ilInvoiceEmail"
-                                placeholder="israel@example.com">
+                        <div class="field--full fields" id="il-invoice-fields" style="display: none;">
+                            <div class="field">
+                                <label for="ilInvoiceName"><span data-i18n="il_invoice_name">Name on
+                                        invoice</span></label>
+                                <input type="text" id="ilInvoiceName" name="ilInvoiceName" placeholder="ישראל ישראלי">
+                            </div>
+                            <div class="field">
+                                <label for="ilInvoiceEmail"><span data-i18n="il_invoice_email">Email for the
+                                        invoice</span></label>
+                                <input type="text" id="ilInvoiceEmail" name="ilInvoiceEmail"
+                                    placeholder="israel@example.com">
+                            </div>
                         </div>
                     </div>
-                    <!-- Europe: like the US template, but postal code +
-                         country instead of state/zip. -->
-                    <div class="col-50" id="billing-eu" data-billing style="display: none;">
-                        <h3>Billing Address</h3>
-                        <label for="euFullName"><i class="fa fa-user"></i> Full Name</label>
-                        <input type="text" id="euFullName" name="euFullName" placeholder="Anna Schmidt">
-                        <label for="euEmail"><i class="fa fa-envelope"></i> Email</label>
-                        <input type="text" id="euEmail" name="euEmail" onblur="setCardOwnerDetails()"
-                            placeholder="anna@example.com">
-                        <label for="euAddress"><i class="fa fa-address-card-o"></i> Address</label>
-                        <input type="text" id="euAddress" name="euAddress" placeholder="Hauptstraße 12">
-                        <label for="euCity"><i class="fa fa-institution"></i> City</label>
-                        <input type="text" id="euCity" name="euCity" placeholder="Berlin">
-
-                        <div class="row">
-                            <div class="col-50">
+                </section>
+                <!-- Europe: like the US template, but postal code +
+                     country instead of state/zip. -->
+                <section class="block" id="billing-eu" data-billing style="display: none;">
+                    <h3>Billing address</h3>
+                    <div class="fields">
+                        <div class="field">
+                            <label for="euFullName">Full name</label>
+                            <input type="text" id="euFullName" name="euFullName" placeholder="Anna Schmidt">
+                        </div>
+                        <div class="field">
+                            <label for="euEmail">Email</label>
+                            <input type="text" id="euEmail" name="euEmail" onblur="setCardOwnerDetails()"
+                                placeholder="anna@example.com">
+                        </div>
+                        <div class="field field--full">
+                            <label for="euAddress">Address</label>
+                            <input type="text" id="euAddress" name="euAddress" placeholder="Hauptstraße 12">
+                        </div>
+                        <div class="field--full fields fields--3">
+                            <div class="field">
+                                <label for="euCity">City</label>
+                                <input type="text" id="euCity" name="euCity" placeholder="Berlin">
+                            </div>
+                            <div class="field">
                                 <label for="euPostal">Postal code</label>
                                 <input type="text" id="euPostal" name="euPostal" placeholder="10115">
                             </div>
-                            <div class="col-50">
+                            <div class="field">
                                 <label for="euCountry">Country</label>
                                 <input type="text" id="euCountry" name="euCountry" placeholder="Germany">
                             </div>
                         </div>
                     </div>
-                    <div class="col-50">
-                        <h3><span data-i18n="payment_title">Payment</span></h3>
-                        <label><span data-i18n="accepted_cards">Accepted Cards</span></label>
-                        <div class="icon-container">
-                            <i class="fa fa-cc-visa" style="color:navy;"></i>
-                            <i class="fa fa-cc-amex" style="color:blue;"></i>
-                            <i class="fa fa-cc-mastercard" style="color:red;"></i>
-                            <i class="fa fa-cc-discover" style="color:orange;"></i>
-                        </div>
-                        <div id="nameOnCardRow">
-                            <label for="cardOwnerName">Name on Card</label>
+                </section>
+                <section class="block">
+                    <h3><span data-i18n="payment_title">Payment</span></h3>
+                    <div class="fields">
+                        <div class="field field--full" id="nameOnCardRow">
+                            <label for="cardOwnerName">Name on card</label>
                             <input type="text" id="cardOwnerName" name="cardOwnerName" onblur="setCardOwnerDetails()"
                                 placeholder="John More Doe">
                         </div>
-                        <label for="CardComCardNumber"><span data-i18n="card_number">Credit card
-                                number</span></label>
-                        <iframe id="CardComMasterFrame" name="CardComMasterFrame"
-                            src="https://secure.cardcom.solutions/api/openfields/master"
-                            style="display: block;width:0px;height:0px;"></iframe>
-                        <iframe id="CardComCardNumber" name="CardComCardNumber"
-                            src="https://secure.cardcom.solutions/api/openfields/cardNumber"
-                            style="width:100%;height:57px;"></iframe>
-                        <div class="expDate">
-                            <div class="expMonth">
-                                <label for="expirationMonth"><span data-i18n="exp_month">Exp Month</span></label>
+                        <div class="field field--full">
+                            <div class="label-row">
+                                <label for="CardComCardNumber"><span data-i18n="card_number">Card
+                                        number</span></label>
+                                <span class="brands" aria-hidden="true">
+                                    <i class="fa fa-cc-visa"></i>
+                                    <i class="fa fa-cc-mastercard"></i>
+                                    <i class="fa fa-cc-amex"></i>
+                                    <i class="fa fa-cc-discover"></i>
+                                </span>
+                            </div>
+                            <iframe id="CardComMasterFrame" name="CardComMasterFrame"
+                                src="https://secure.cardcom.solutions/api/openfields/master"
+                                style="display: block;width:0px;height:0px;"></iframe>
+                            <iframe id="CardComCardNumber" name="CardComCardNumber"
+                                src="https://secure.cardcom.solutions/api/openfields/cardNumber"
+                                style="width:100%;height:41px;"></iframe>
+                        </div>
+                        <div class="field--full fields fields--3 expDate">
+                            <div class="field expMonth">
+                                <label for="expirationMonth"><span data-i18n="exp_month">Month</span></label>
                                 <input type="text" id="expirationMonth" name="expirationMonth" value="12"
                                     placeholder="12">
                             </div>
-                            <div class="expYear">
-                                <label for="expirationYear"><span data-i18n="exp_year">Exp Year</span></label>
+                            <div class="field expYear">
+                                <label for="expirationYear"><span data-i18n="exp_year">Year</span></label>
                                 <input type="text" id="expirationYear" name="expirationYear" value="30"
                                     placeholder="30">
                             </div>
-                            <div class="cvv">
+                            <div class="field cvv">
                                 <label class="cvv-label" for="CardComCvv">CVV</label>
                                 <iframe id="CardComCvv" name="CardComCvv"
                                     src="https://secure.cardcom.solutions//api/openfields/CVV"
-                                    style="max-width: 188px;height:57px;"></iframe>
+                                    style="width:100%;height:41px;"></iframe>
                             </div>
                         </div>
-                        <div class="row">
-                            <iframe allow="payment" id="CardComGooglePay" name="CardComGooglePay"
-                                src="https://secure.cardcom.solutions/api/openfields/GooglePay?terminalNumber=1000"
-                                style="max-width: 277px;height:64px;"></iframe>
-                        </div>
                     </div>
-                </div>
+                </section>
                 <!-- Shared across all three billing templates. -->
-                <input type="submit" id="submit-btn" value="Submit Payment" class="btn" data-i18n-value="submit">
+                <input type="submit" id="submit-btn" value="Pay now" class="btn" data-i18n-value="submit">
+                <div class="wallet" id="walletRow">
+                    <iframe allow="payment" id="CardComGooglePay" name="CardComGooglePay"
+                        src="https://secure.cardcom.solutions/api/openfields/GooglePay?terminalNumber=1000"></iframe>
+                </div>
             </form>
         </div>
         <div class="footer">
-            <!-- credits supported languages: en, he. types: short, long -->
-            <iframe id="CardcomCredits" name="CardcomCredits"
-                src="https://secure.cardcom.solutions/api/openfields/credits?language=he&type=long" width="100%" height="100%"
-                style="z-index: 2;"></iframe>
+            <p id="notice" class="notice" hidden></p>
+            <!-- Always left-to-right: "Powered by" at the left, Cardcom's own
+                 credit small at the right, whatever the page direction. -->
+            <div class="footer-row" dir="ltr">
+                <a class="powered" href="https://spectra.avivozeri.com" target="_blank" rel="noopener noreferrer">
+                    <img src="/cardcom-preview/brand/aviv-ozeri.png" alt="" width="22" height="22">
+                    <span>Powered by <strong>Spectra</strong> · Aviv Ozeri</span>
+                </a>
+                <div class="credits">
+                    <!-- credits supported languages: en, he. types: short, long -->
+                    <iframe id="CardcomCredits" name="CardcomCredits" title="Cardcom"
+                        src="https://secure.cardcom.solutions/api/openfields/credits?language=he&type=short"></iframe>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -202,7 +251,8 @@
     </div>
 </body>
 
-<!-- Example CSS stored in template  -->
+<!-- CSS for the CVV iframe (sent to Cardcom by postMessage; see form.js).
+     Must match the page's own inputs and styles/cardNumber.css. -->
 <template id="css_template">
     <style>
         body {
@@ -212,16 +262,20 @@
         }
 
         .cvvField {
-            border: 1px solid #ccc;
-            border-radius: 3px;
+            box-sizing: border-box;
+            border: 1.5px solid #c7cddd;
+            border-radius: 8px;
             height: 39px;
             margin: 0;
-            padding: 0 10px;
-            width: 165px;
+            padding: 0 12px;
+            width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            color: #14161c;
         }
 
         .cvvField.invalid{
-            border: 1px solid #c01111;
+            border: 1.5px solid #b91c1c;
         }
 
         input::-webkit-outer-spin-button,
