@@ -23,6 +23,7 @@ import {
   createEmbeddedFieldsCheckoutSession,
   createHostedCheckoutSession,
   getPayment,
+  resolveSpectraCustomer,
   verifyCheckoutSession,
   type SpectraCheckoutSession,
   type SpectraCustomer,
@@ -937,7 +938,6 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
     setSession(null)
     setCreateSent(null)
     setResult(null)
-    setSpectraCustomer(null)
     setSpectraSession(null)
     setSpectraVerify(null)
     setSpectraPayment(null)
@@ -947,10 +947,15 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
       // spectra-payments, zero raw-Cardcom fields in either direction. spectra-payments
       // is the ONLY creator of the LowProfile session for either presentation -- no
       // /payment, no /lab/create, ever, from this branch.
+      //
+      // spectraCustomer is deliberately NOT reset here: a retry after a
+      // CheckoutSession/LowProfile failure must reuse the Customer this run
+      // already created, not manufacture a second one for the same attempt.
+      // clearRun() (restart / run-again / profile change) is the only thing
+      // that clears it back to null for a genuinely new run.
       try {
-        const customer = await createCustomer(
-          { displayName: 'Guided Tester' },
-          profile.spectraProjectId,
+        const customer = await resolveSpectraCustomer(spectraCustomer, () =>
+          createCustomer({ displayName: 'Guided Tester' }, profile.spectraProjectId),
         )
         setSpectraCustomer(customer)
         const created =
@@ -1232,6 +1237,12 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
                   disabled={disabled}
                   onChange={(next) => {
                     playClick()
+                    // A different business is a different spectra-payments
+                    // project_id -- clear any Customer/session this run
+                    // already holds before it, or a later Spectra retry
+                    // could reuse a Customer that belongs to the OLD
+                    // business's project.
+                    clearRun()
                     onProfileChange(next)
                   }}
                 />

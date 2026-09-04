@@ -7,8 +7,10 @@ import {
   createHostedCheckoutSession,
   getCheckoutSession,
   getPayment,
+  resolveSpectraCustomer,
   verifyCheckoutSession,
 } from './spectraClient'
+import type { SpectraCustomer } from './spectraClient'
 
 function mockFetchOnce(status: number, body: unknown) {
   const fn = vi.fn().mockResolvedValue({
@@ -55,6 +57,47 @@ describe('createCustomer', () => {
       display_name: 'Ada',
       email: undefined,
     })
+  })
+})
+
+describe('resolveSpectraCustomer', () => {
+  const existingCustomer: SpectraCustomer = {
+    id: 'cust-existing',
+    project_id: SPECTRA_PROJECT_ID,
+    external_reference: null,
+    display_name: 'Guided Tester',
+    email: null,
+    created_at: 't',
+    updated_at: 't',
+  }
+
+  // A: first Spectra create -- no existing Customer, so `create` runs once.
+  it('creates a Customer when none exists yet', async () => {
+    const create = vi.fn().mockResolvedValue(existingCustomer)
+    const result = await resolveSpectraCustomer(null, create)
+    expect(create).toHaveBeenCalledTimes(1)
+    expect(result).toBe(existingCustomer)
+  })
+
+  // B + C: a retry (e.g. after a CheckoutSession/LowProfile failure) must
+  // reuse the already-created Customer -- `create` must NOT run again, and
+  // the SAME Customer object/id comes back.
+  it('reuses an existing Customer without calling create again', async () => {
+    const create = vi.fn().mockRejectedValue(new Error('must not be called'))
+    const result = await resolveSpectraCustomer(existingCustomer, create)
+    expect(create).not.toHaveBeenCalled()
+    expect(result).toBe(existingCustomer)
+    expect(result.id).toBe('cust-existing')
+  })
+
+  // D: a genuinely new/reset run (existing cleared back to null, matching
+  // GuidedWalkthrough's clearRun()) creates a Customer normally again.
+  it('creates a fresh Customer again once the caller has reset to null', async () => {
+    const secondCustomer: SpectraCustomer = { ...existingCustomer, id: 'cust-second' }
+    const create = vi.fn().mockResolvedValue(secondCustomer)
+    const result = await resolveSpectraCustomer(null, create)
+    expect(create).toHaveBeenCalledTimes(1)
+    expect(result.id).toBe('cust-second')
   })
 })
 

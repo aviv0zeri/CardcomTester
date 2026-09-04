@@ -109,6 +109,18 @@ export function createCustomer(
   })
 }
 
+// A Guided-run retry (e.g. after a CheckoutSession/LowProfile rejection) must
+// reuse the Customer that run already created, never manufacture a second one
+// for the same attempt. `existing` is only ever null at the START of a
+// genuinely new run (see GuidedWalkthrough's clearRun()) -- once set, this
+// never calls `create` again until the caller resets it back to null.
+export function resolveSpectraCustomer(
+  existing: SpectraCustomer | null,
+  create: () => Promise<SpectraCustomer>,
+): Promise<SpectraCustomer> {
+  return existing ? Promise.resolve(existing) : create()
+}
+
 export function createHostedCheckoutSession(input: {
   customerId: string
   amount: number
