@@ -129,6 +129,26 @@ export function createHostedCheckoutSession(input: {
   })
 }
 
+export function createEmbeddedFieldsCheckoutSession(input: {
+  customerId: string
+  amount: number
+  currency?: string
+  language?: string
+  projectId?: string
+}): Promise<SpectraCheckoutSession> {
+  return spectraFetch('/checkout-sessions', {
+    method: 'POST',
+    body: JSON.stringify({
+      project_id: input.projectId ?? SPECTRA_PROJECT_ID,
+      customer_id: input.customerId,
+      amount: input.amount.toFixed(2),
+      currency: input.currency ?? 'ILS',
+      checkout_mode: 'embedded_fields',
+      language: input.language ?? 'he',
+    }),
+  })
+}
+
 export function getCheckoutSession(
   checkoutSessionId: string,
   projectId: string = SPECTRA_PROJECT_ID,

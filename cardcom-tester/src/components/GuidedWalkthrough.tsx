@@ -20,6 +20,7 @@ import {
 } from './previewVersions'
 import {
   createCustomer,
+  createEmbeddedFieldsCheckoutSession,
   createHostedCheckoutSession,
   getPayment,
   verifyCheckoutSession,
@@ -131,6 +132,9 @@ type Copy = {
   doneRecapSp: ReactNode
   doneStatusSp: (status: string) => string
   errSpectra: (message: string) => string
+  presentationLabel: string
+  presentationHosted: string
+  presentationEmbedded: string
 }
 
 const COPY: Record<Lang, Copy> = {
@@ -429,6 +433,9 @@ const COPY: Record<Lang, Copy> = {
     ),
     doneStatusSp: (status) => ` — Payment ${status}`,
     errSpectra: (message) => `Could not reach spectra-payments: ${message}`,
+    presentationLabel: 'Checkout presentation',
+    presentationHosted: 'Hosted',
+    presentationEmbedded: 'Embedded fields',
   },
   he: {
     dots: ['עסק', 'בחירה', 'סכום', 'יצירה', 'תשלום', 'אימות'],
@@ -712,6 +719,9 @@ const COPY: Record<Lang, Copy> = {
     ),
     doneStatusSp: (status) => ` — תשלום ${status}`,
     errSpectra: (message) => `לא הצלחנו להגיע ל-spectra-payments: ${message}`,
+    presentationLabel: 'הצגת התשלום',
+    presentationHosted: 'מתארח',
+    presentationEmbedded: 'שדות מוטמעים',
   },
 }
 
@@ -842,6 +852,9 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   const [spectraSession, setSpectraSession] = useState<SpectraCheckoutSession | null>(null)
   const [spectraVerify, setSpectraVerify] = useState<SpectraVerifyResult | null>(null)
   const [spectraPayment, setSpectraPayment] = useState<SpectraPayment | null>(null)
+  const [spectraPresentation, setSpectraPresentation] = useState<'hosted' | 'embedded_fields'>(
+    'hosted',
+  )
 
   const t = COPY[lang]
   // One choice drives both the walkthrough interface AND the payment page.
@@ -857,8 +870,18 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   // through our own API are a later slice) -- it never gates the Spectra path.
   const receiptReady = isSpectra || !wantReceipt || receiptEmail.includes('@')
 
+  const spectraSessionReference = spectraSession?.bootstrap?.session_reference ?? ''
   const payUrl = isSpectra
-    ? asText(spectraSession?.checkout_url)
+    ? spectraPresentation === 'embedded_fields'
+      ? spectraSessionReference
+        ? openFieldsUrl(language, {
+            lpid: spectraSessionReference,
+            region,
+            amount: amountNumber,
+            brand: profile.id,
+          })
+        : ''
+      : asText(spectraSession?.checkout_url)
     : isOpenFields
       ? lowProfileId
         ? openFieldsUrl(language, { lpid: lowProfileId, region, amount: amountNumber, brand: profile.id })
@@ -921,19 +944,29 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
     setPayOpened(false)
     if (isSpectra) {
       // Our own Payment API does the Cardcom call for us -- two requests, both to
-      // spectra-payments, zero raw-Cardcom fields in either direction.
+      // spectra-payments, zero raw-Cardcom fields in either direction. spectra-payments
+      // is the ONLY creator of the LowProfile session for either presentation -- no
+      // /payment, no /lab/create, ever, from this branch.
       try {
         const customer = await createCustomer(
           { displayName: 'Guided Tester' },
           profile.spectraProjectId,
         )
         setSpectraCustomer(customer)
-        const created = await createHostedCheckoutSession({
-          customerId: customer.id,
-          amount: amountNumber,
-          language,
-          projectId: profile.spectraProjectId,
-        })
+        const created =
+          spectraPresentation === 'embedded_fields'
+            ? await createEmbeddedFieldsCheckoutSession({
+                customerId: customer.id,
+                amount: amountNumber,
+                language,
+                projectId: profile.spectraProjectId,
+              })
+            : await createHostedCheckoutSession({
+                customerId: customer.id,
+                amount: amountNumber,
+                language,
+                projectId: profile.spectraProjectId,
+              })
         setSpectraSession(created)
       } catch (cause) {
         setError(t.errSpectra(cause instanceof Error ? cause.message : ''))
@@ -1116,7 +1149,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
         customer_id: spectraCustomer.id,
         amount: amountNumber.toFixed(2),
         currency: 'ILS',
-        checkout_mode: 'hosted',
+        checkout_mode: spectraPresentation,
       }
     : null
   const spectraGotPreview = spectraSession
@@ -1125,7 +1158,13 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
         status: spectraSession.status,
         payment_id: spectraSession.payment_id,
         payment_status: spectraSession.payment_status,
-        checkout_url: asText(spectraSession.checkout_url).slice(0, 60) + '…',
+        // Shown exactly as the response actually shapes it per presentation -- hosted
+        // gets checkout_url, embedded_fields gets bootstrap.session_reference (the one
+        // Cardcom-adjacent value the API deliberately DOES expose, opaquely, since the
+        // embedded presentation genuinely needs it to initialize).
+        ...(spectraSession.checkout_mode === 'embedded_fields'
+          ? { bootstrap: spectraSession.bootstrap }
+          : { checkout_url: asText(spectraSession.checkout_url).slice(0, 60) + '…' }),
       }
     : null
   const spectraCheckPreview = spectraPayment
@@ -1314,7 +1353,30 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
                 onChange={(event) => setAmount(event.target.value)}
               />
             </label>
-            {isOpenFields ? (
+            {isSpectra ? (
+              <div className="gw-field">
+                {t.presentationLabel}
+                <div className="seg" role="radiogroup" aria-label={t.presentationLabel}>
+                  <button
+                    type="button"
+                    className={`seg-btn${spectraPresentation === 'hosted' ? ' is-on' : ''}`}
+                    disabled={disabled}
+                    onClick={() => setSpectraPresentation('hosted')}
+                  >
+                    {t.presentationHosted}
+                  </button>
+                  <button
+                    type="button"
+                    className={`seg-btn${spectraPresentation === 'embedded_fields' ? ' is-on' : ''}`}
+                    disabled={disabled}
+                    onClick={() => setSpectraPresentation('embedded_fields')}
+                  >
+                    {t.presentationEmbedded}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            {isOpenFields || (isSpectra && spectraPresentation === 'embedded_fields') ? (
               <div className="gw-field">
                 {t.templateLabel}
                 <div className="seg" role="radiogroup" aria-label={t.templateLabel}>

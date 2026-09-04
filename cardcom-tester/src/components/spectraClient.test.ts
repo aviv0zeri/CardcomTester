@@ -3,6 +3,7 @@ import {
   SPECTRA_PROJECT_ID,
   checkSpectraHealth,
   createCustomer,
+  createEmbeddedFieldsCheckoutSession,
   createHostedCheckoutSession,
   getCheckoutSession,
   getPayment,
@@ -82,6 +83,38 @@ describe('createHostedCheckoutSession', () => {
     })
     expect(result.payment_id).toBe('pay-1')
     expect(result.checkout_url).toBe('https://secure.cardcom.solutions/example')
+  })
+})
+
+describe('createEmbeddedFieldsCheckoutSession', () => {
+  it('always sends checkout_mode embedded_fields and the fixed project_id', async () => {
+    const fetchMock = mockFetchOnce(200, {
+      checkout_session_id: 'cs-2',
+      checkout_mode: 'embedded_fields',
+      status: 'OPEN',
+      payment_id: 'pay-2',
+      payment_status: 'PENDING',
+      bootstrap: { session_reference: 'lp-session-2' },
+    })
+    const result = await createEmbeddedFieldsCheckoutSession({ customerId: 'cust-1', amount: 10 })
+
+    const [path, init] = fetchMock.mock.calls[0]
+    expect(path).toBe('/spectra-api/checkout-sessions')
+    expect(init.method).toBe('POST')
+    const body = JSON.parse(init.body as string)
+    expect(body).toEqual({
+      project_id: SPECTRA_PROJECT_ID,
+      customer_id: 'cust-1',
+      amount: '10.00',
+      currency: 'ILS',
+      checkout_mode: 'embedded_fields',
+      language: 'he',
+    })
+    expect(result.payment_id).toBe('pay-2')
+    expect(result.bootstrap?.session_reference).toBe('lp-session-2')
+    // The response carries no checkout_url for this mode -- session_reference (via
+    // bootstrap) is the only thing the embedded presentation needs.
+    expect(result.checkout_url).toBeUndefined()
   })
 })
 
