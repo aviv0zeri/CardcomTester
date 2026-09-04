@@ -7,6 +7,8 @@
 //     CheckoutSession and Payment row is partitioned by it, so each business
 //     owns its own data on our side.
 //   - logo: the brand shown on the checkout pages (Open Fields brand header).
+//   - accent: the checkout page's default accent colour for this business
+//     (the walkthrough lets you override it per run to try others).
 // Today there is exactly one business, GateOpen. Adding another is one entry
 // here, its profile on the server, and its own Cardcom terminal.
 export type BusinessProfile = {
@@ -16,6 +18,7 @@ export type BusinessProfile = {
   spectraProjectId: string
   logoLight: string
   logoDark: string
+  accent: string
 }
 
 export const PROFILES: BusinessProfile[] = [
@@ -26,6 +29,7 @@ export const PROFILES: BusinessProfile[] = [
     spectraProjectId: 'gateopen',
     logoLight: '/cardcom-preview/brand/gateopen-light.svg',
     logoDark: '/cardcom-preview/brand/gateopen-dark.svg',
+    accent: '#3d5580',
   },
 ]
 

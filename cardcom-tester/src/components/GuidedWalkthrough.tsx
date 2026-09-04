@@ -16,7 +16,9 @@ import {
 import {
   OPEN_FIELDS_REGIONS,
   openFieldsUrl,
+  PAGE_THEMES,
   type OpenFieldsRegion,
+  type PageTheme,
 } from './previewVersions'
 import {
   createCustomer,
@@ -32,7 +34,7 @@ import {
 } from './spectraClient'
 import { MenuSelect } from './MenuSelect'
 import { playClick, playError, playStep, playSuccess } from './sfx'
-import { PROFILES, type BusinessProfile } from './profiles'
+import { PROFILES, profileById, type BusinessProfile } from './profiles'
 
 // One screen at a time, one action at a time. The whole point of this tab is
 // that nothing scrolls and nothing competes for attention -- the full ApiLab
@@ -57,6 +59,10 @@ type Copy = {
   profileBubble: ReactNode
   profileLabel: string
   profileLong: (name: string) => ReactNode
+  // Payment-page look (Open Fields only): theme switch + accent colour.
+  lookLabel: string
+  themeLabels: Record<PageTheme, string>
+  accentLabel: string
   lpTitle: string
   lpShort: ReactNode
   ofTitle: string
@@ -162,6 +168,9 @@ const COPY: Record<Lang, Copy> = {
       </>
     ),
     profileLabel: 'Business',
+    lookLabel: 'Payment page look',
+    themeLabels: { system: 'System', light: 'Light', dark: 'Dark' },
+    accentLabel: 'Accent',
     profileLong: (name) => (
       <>
         From here on everything runs as <strong>{name}</strong>: sessions go to its Cardcom
@@ -461,6 +470,9 @@ const COPY: Record<Lang, Copy> = {
       </>
     ),
     profileLabel: 'עסק',
+    lookLabel: 'מראה דף התשלום',
+    themeLabels: { system: 'מערכת', light: 'בהיר', dark: 'כהה' },
+    accentLabel: 'צבע מבטא',
     profileLong: (name) => (
       <>
         מכאן והלאה הכול רץ בתור <strong>{name}</strong>: הסשנים הולכים למסוף שלו, הלוגו שלו
@@ -856,6 +868,10 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   const [spectraPresentation, setSpectraPresentation] = useState<'hosted' | 'embedded_fields'>(
     'hosted',
   )
+  // Payment-page look (our Open Fields page only -- Cardcom's hosted page
+  // can't be themed from here). Accent starts from the business's own colour.
+  const [pageTheme, setPageTheme] = useState<PageTheme>('system')
+  const [accent, setAccent] = useState(profile.accent)
 
   const t = COPY[lang]
   // One choice drives both the walkthrough interface AND the payment page.
@@ -880,14 +896,59 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             region,
             amount: amountNumber,
             brand: profile.id,
+            theme: pageTheme,
+            accent,
           })
         : ''
       : asText(spectraSession?.checkout_url)
     : isOpenFields
       ? lowProfileId
-        ? openFieldsUrl(language, { lpid: lowProfileId, region, amount: amountNumber, brand: profile.id })
+        ? openFieldsUrl(language, {
+            lpid: lowProfileId,
+            region,
+            amount: amountNumber,
+            brand: profile.id,
+            theme: pageTheme,
+            accent,
+          })
         : ''
       : asText(session?.Url || session?.url)
+  // Only our own Open Fields page takes the theme/accent above.
+  const themedPage = isOpenFields || (isSpectra && spectraPresentation === 'embedded_fields')
+  const lookControls = (
+    <div className="gw-field">
+      {t.lookLabel}
+      <div className="gw-look">
+        <div className="seg seg--small" role="radiogroup" aria-label={t.lookLabel}>
+          {PAGE_THEMES.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={`seg-btn${pageTheme === option ? ' is-on' : ''}`}
+              disabled={disabled}
+              onClick={() => {
+                playClick()
+                setPageTheme(option)
+              }}
+            >
+              {t.themeLabels[option]}
+            </button>
+          ))}
+        </div>
+        <label className="gw-accent">
+          <input
+            type="color"
+            value={accent}
+            disabled={disabled}
+            aria-label={t.accentLabel}
+            onChange={(event) => setAccent(event.target.value)}
+          />
+          {t.accentLabel}
+          <code dir="ltr">{accent}</code>
+        </label>
+      </div>
+    </div>
+  )
   // "Session created" for whichever path is active -- drives the create step.
   const createOk = isSpectra ? Boolean(spectraSession) : sessionCode === 0
 
@@ -1243,11 +1304,13 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
                     // could reuse a Customer that belongs to the OLD
                     // business's project.
                     clearRun()
+                    setAccent(profileById(next).accent)
                     onProfileChange(next)
                   }}
                 />
               </div>
             </div>
+            {lookControls}
           </div>
           <div className="gw-picked-reveal" key={profile.id}>
             <Bubble>{t.profileLong(profile.name)}</Bubble>
@@ -1541,6 +1604,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
               .
             </p>
           ) : null}
+          {themedPage ? <div className="gw-form">{lookControls}</div> : null}
           <div className="gw-actions">
             <button type="button" className="text-btn" onClick={() => goTo('create')}>
               {t.backBtn}

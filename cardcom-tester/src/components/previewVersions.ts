@@ -13,6 +13,11 @@ export type PreviewVersion = {
 // Open Fields billing templates: which country's form layout to show.
 export type OpenFieldsRegion = 'il' | 'us' | 'eu'
 
+// Open Fields page theme: follow the viewer's OS, or force one to preview it.
+export type PageTheme = 'system' | 'light' | 'dark'
+
+export const PAGE_THEMES: PageTheme[] = ['system', 'light', 'dark']
+
 export const OPEN_FIELDS_REGIONS: { value: OpenFieldsRegion; label: string }[] = [
   { value: 'il', label: 'Israel' },
   { value: 'us', label: 'US' },
@@ -28,7 +33,9 @@ export const OPEN_FIELDS_REGIONS: { value: OpenFieldsRegion; label: string }[] =
 // and short credits so the page fits a sized iframe without scrolling;
 // screen=checkout -> skip the page's own cart screen (the tester's two-panel
 // view shows its own order summary instead). brand -> which business's logo the
-// page shows (an allowlisted id the page maps itself; never a URL).
+// page shows (an allowlisted id the page maps itself; never a URL). theme ->
+// force light/dark instead of following the OS ('system' sends nothing).
+// accent -> the page's accent colour as six hex digits (the page validates).
 export function openFieldsUrl(
   language: Language,
   opts: {
@@ -39,6 +46,8 @@ export function openFieldsUrl(
     embed?: boolean
     screen?: 'checkout'
     brand?: string
+    theme?: PageTheme
+    accent?: string
   } = {},
 ) {
   const lang = language === 'en' ? 'en' : 'he'
@@ -50,6 +59,8 @@ export function openFieldsUrl(
   if (opts.embed) params.set('embed', '1')
   if (opts.screen) params.set('screen', opts.screen)
   if (opts.brand) params.set('brand', opts.brand)
+  if (opts.theme && opts.theme !== 'system') params.set('theme', opts.theme)
+  if (opts.accent) params.set('accent', opts.accent.replace(/^#/, ''))
   return `/cardcom-preview/open-fields/form.html?${params}`
 }
 
