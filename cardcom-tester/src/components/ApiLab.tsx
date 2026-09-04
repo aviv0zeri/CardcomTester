@@ -2,6 +2,11 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { LANGUAGES, type Language } from './CheckoutControls'
 import { MenuSelect } from './MenuSelect'
 import {
+  OPEN_FIELDS_REGIONS,
+  openFieldsUrl,
+  type OpenFieldsRegion,
+} from './previewVersions'
+import {
   asRecord,
   asText,
   chargeStoredToken,
@@ -24,6 +29,13 @@ import {
   type LabScenario,
   type WebhookHit,
 } from './labClient'
+
+type Integration = 'lowprofile' | 'openfields'
+
+const INTEGRATIONS: { value: Integration; label: string }[] = [
+  { value: 'lowprofile', label: 'Low Profile' },
+  { value: 'openfields', label: 'Open Fields' },
+]
 
 const SCENARIOS: { value: LabScenario; label: string }[] = [
   { value: 'charge', label: 'Charge' },
@@ -113,6 +125,8 @@ type ApiLabProps = {
 }
 
 export function ApiLab({ disabled }: ApiLabProps) {
+  const [integration, setIntegration] = useState<Integration>('lowprofile')
+  const [region, setRegion] = useState<OpenFieldsRegion>('il')
   const [language, setLanguage] = useState<Language>('he')
   const [scenario, setScenario] = useState<LabScenario>('charge')
   const [amount, setAmount] = useState('10')
@@ -153,11 +167,24 @@ export function ApiLab({ disabled }: ApiLabProps) {
   const createStatus = statusLabel(createCode)
   const resultStatus = statusLabel(resultCode)
   const checkoutUrl = asText(createCardcom?.Url || createCardcom?.url)
+  // Open Fields ignores the hosted-page Url entirely -- it reuses the
+  // created session's LowProfileId on our own merchant-owned form page.
+  // Deliberately keyed off THIS create (not the stored/typed lowProfileId),
+  // so a stale id from a previous run can't look payable.
+  const openFieldsPayUrl =
+    integration === 'openfields' && asText(createCardcom?.LowProfileId)
+      ? openFieldsUrl(language, {
+          lpid: asText(createCardcom?.LowProfileId),
+          region,
+          amount: total,
+        })
+      : ''
+  const payUrl = integration === 'openfields' ? openFieldsPayUrl : checkoutUrl
   const blocked = disabled || Boolean(busy)
   // Token experiments don't want an invoice muddying the result — only
   // document/customer opt into Document, same rule as labClient.ts.
   const includeDocument = scenario === 'document' || scenario === 'customer'
-  const canPay = Boolean(checkoutUrl)
+  const canPay = Boolean(payUrl)
   const canCheck = Boolean(lowProfileId.trim())
   const created = Boolean(createCardcom)
   const checked = Boolean(resultCardcom)
@@ -257,6 +284,43 @@ export function ApiLab({ disabled }: ApiLabProps) {
   return (
     <div className="lab-layout">
       <div className="lab-setup">
+        <p className="seg-legend">Checkout</p>
+        <div className="seg" role="radiogroup" aria-label="Checkout">
+          {INTEGRATIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={`seg-btn${integration === option.value ? ' is-on' : ''}`}
+              disabled={blocked}
+              aria-pressed={integration === option.value}
+              onClick={() => setIntegration(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        {integration === 'openfields' ? (
+          <>
+            <p className="lab-later">
+              Same LowProfile/Create as Low Profile — but step 2 opens our own Open Fields page
+              (card/CVV are Cardcom iframes) reusing this session, instead of the hosted checkout.
+              Whether Cardcom accepts every lab-built session through Open Fields is exactly what
+              this is here to find out.
+            </p>
+            <div className="lab-grid">
+              <Field label="Template">
+                <MenuSelect
+                  aria-label="Template"
+                  value={region}
+                  options={OPEN_FIELDS_REGIONS}
+                  disabled={blocked}
+                  onChange={setRegion}
+                />
+              </Field>
+            </div>
+          </>
+        ) : null}
+
         <p className="seg-legend">Test</p>
         <div className="seg" role="radiogroup" aria-label="Test">
           {SCENARIOS.map((option) => (
@@ -494,15 +558,21 @@ export function ApiLab({ disabled }: ApiLabProps) {
           <li className={`step${canPay ? ' is-now' : ' is-wait'}${canPay && checked ? ' is-done' : ''}`}>
             <span className="step-index">2</span>
             <div className="step-body">
-              <p className="step-title">Pay on Cardcom</p>
-              <p className="cta-hint">Opens the hosted checkout. Come back here after paying.</p>
+              <p className="step-title">
+                {integration === 'openfields' ? 'Pay with Open Fields' : 'Pay on Cardcom'}
+              </p>
+              <p className="cta-hint">
+                {integration === 'openfields'
+                  ? 'Opens our Open Fields page on this session. Come back here after paying.'
+                  : 'Opens the hosted checkout. Come back here after paying.'}
+              </p>
               {canPay ? (
-                <a className="cta-button" href={checkoutUrl} target="_blank" rel="noopener noreferrer">
-                  Pay on Cardcom
+                <a className="cta-button" href={payUrl} target="_blank" rel="noopener noreferrer">
+                  {integration === 'openfields' ? 'Pay with Open Fields' : 'Pay on Cardcom'}
                 </a>
               ) : (
                 <button type="button" className="cta-button" disabled>
-                  Pay on Cardcom
+                  {integration === 'openfields' ? 'Pay with Open Fields' : 'Pay on Cardcom'}
                 </button>
               )}
             </div>

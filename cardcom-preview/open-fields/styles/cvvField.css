@@ -1,0 +1,22 @@
+body {
+    margin: 0;
+}
+
+#cvvField {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    height: 35px;
+    margin: 0;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}

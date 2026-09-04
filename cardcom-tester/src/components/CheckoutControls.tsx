@@ -1,6 +1,7 @@
 import { MenuSelect } from './MenuSelect'
+import { OPEN_FIELDS_REGIONS, type OpenFieldsRegion } from './previewVersions'
 
-export type Design = 'old' | 'new'
+export type Design = 'old' | 'new' | 'openfields'
 export type Language = 'he' | 'en' | 'ar' | 'ru'
 export type Device = 'mobile' | 'desktop'
 export type Mode = 'redirect' | 'iframe'
@@ -9,6 +10,7 @@ export type OpenAs = 'page' | 'iframe' | 'phone'
 export const DESIGNS: { value: Design; label: string }[] = [
   { value: 'new', label: 'New version' },
   { value: 'old', label: 'Old version' },
+  { value: 'openfields', label: 'Open Fields' },
 ]
 
 export const LANGUAGES: { value: Language; label: string }[] = [
@@ -39,22 +41,31 @@ export function deviceModeFrom(openAs: OpenAs): { device: Device; mode: Mode } {
 type CheckoutControlsProps = {
   design: Design
   language: Language
+  region: OpenFieldsRegion
   openAs: OpenAs
   disabled?: boolean
   onDesignChange: (design: Design) => void
   onLanguageChange: (language: Language) => void
+  onRegionChange: (region: OpenFieldsRegion) => void
   onOpenAsChange: (openAs: OpenAs) => void
 }
 
 export function CheckoutControls({
   design,
   language,
+  region,
   openAs,
   disabled,
   onDesignChange,
   onLanguageChange,
+  onRegionChange,
   onOpenAsChange,
 }: CheckoutControlsProps) {
+  // Open Fields' credits iframe only supports he/en upstream.
+  const languageOptions =
+    design === 'openfields'
+      ? LANGUAGES.filter((option) => option.value === 'he' || option.value === 'en')
+      : LANGUAGES
   return (
     <div className="cta-fields">
       <div className="cta-field">
@@ -73,11 +84,24 @@ export function CheckoutControls({
         <MenuSelect
           aria-label="Language"
           value={language}
-          options={LANGUAGES}
+          options={languageOptions}
           disabled={disabled}
           onChange={onLanguageChange}
         />
       </div>
+
+      {design === 'openfields' ? (
+        <div className="cta-field">
+          Template
+          <MenuSelect
+            aria-label="Template"
+            value={region}
+            options={OPEN_FIELDS_REGIONS}
+            disabled={disabled}
+            onChange={onRegionChange}
+          />
+        </div>
+      ) : null}
 
       <fieldset className="cta-field" disabled={disabled}>
         <legend className="seg-legend">Open as</legend>

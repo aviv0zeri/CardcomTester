@@ -9,28 +9,47 @@ import {
   type Mode,
 } from './components/CheckoutControls'
 import { ApiLab } from './components/ApiLab'
+import { GuidedWalkthrough } from './components/GuidedWalkthrough'
 import { SpectraPayments } from './components/SpectraPayments'
 import { VersionMenu } from './components/VersionMenu'
 import { PaymentOverlay } from './components/PaymentOverlay'
 import { createCardcomSession } from './components/createSession'
-import { isRealPhone, localPreviewUrl, type PreviewVersion } from './components/previewVersions'
+import { loadUiLang, saveUiLang, type UiLang } from './components/uiLang'
+import {
+  isRealPhone,
+  localPreviewUrl,
+  openFieldsUrl,
+  type OpenFieldsRegion,
+  type PreviewVersion,
+} from './components/previewVersions'
 
 type Overlay = {
   src: string
   width?: number
   height?: number
   scroll?: boolean
+  summarySrc?: string
 }
 
-type Tab = 'lab' | 'design' | 'spectra'
+type Tab = 'guide' | 'lab' | 'design' | 'spectra'
 type DeviceError = 'needs-computer' | 'needs-phone'
 
+// One toggle, whole platform: tab names and the Guided tab follow it today;
+// the Design/API-lab body copy is still English and can join later.
+const TAB_LABELS: Record<UiLang, Record<Tab, string>> = {
+  en: { guide: 'Guided', design: 'Design', lab: 'API lab', spectra: 'Spectra Payments' },
+  he: { guide: 'מודרך', design: 'עיצוב', lab: 'מעבדת API', spectra: 'Spectra Payments' },
+}
+
 function App() {
-  const [tab, setTab] = useState<Tab>('lab')
+  const [tab, setTab] = useState<Tab>('guide')
+  const [uiLang, setUiLang] = useState<UiLang>(loadUiLang)
   const [design, setDesign] = useState<Design>('new')
   const [language, setLanguage] = useState<Language>('he')
+  const [region, setRegion] = useState<OpenFieldsRegion>('il')
   const [device, setDevice] = useState<Device>('desktop')
   const [mode, setMode] = useState<Mode>('redirect')
+  const [doubleView, setDoubleView] = useState(false)
   const [overlay, setOverlay] = useState<Overlay | null>(null)
   const [deviceError, setDeviceError] = useState<DeviceError | null>(null)
   const [busy, setBusy] = useState(false)
@@ -49,6 +68,12 @@ function App() {
     const mapped = deviceModeFrom(next)
     setDevice(mapped.device)
     setMode(mapped.mode)
+  }
+
+  const handleDesignChange = (next: Design) => {
+    setDesign(next)
+    // Open Fields' credits iframe only speaks he/en (Cardcom's own limit).
+    if (next === 'openfields' && language !== 'he' && language !== 'en') setLanguage('he')
   }
 
   const guardDevice = (): boolean => {
@@ -70,6 +95,7 @@ function App() {
       width: version.width,
       height: version.height,
       scroll: design === 'new' ? true : version.scroll,
+      summarySrc: design === 'new' && doubleView ? '/cardcom-preview/order-summary.html' : undefined,
     })
     setStatusUrl(null)
     setStatus(`open ${label} · ${version.note}`)
@@ -78,7 +104,7 @@ function App() {
   const openLocal = (version?: PreviewVersion) => {
     if (!guardDevice()) return
     const embed = Boolean(version?.embed)
-    const src = localPreviewUrl(language, embed, design)
+    const src = localPreviewUrl(language, embed, design, region)
     // The guard above already confirmed device matches reality, so on mobile
     // this is a real phone — show the real page, not a scaled-down box.
     // Boxing is only useful as a desktop-side simulation of the Iframe mode.
@@ -95,6 +121,15 @@ function App() {
   const openCardcom = async (version?: PreviewVersion) => {
     if (busy) return
     if (!guardDevice()) return
+    if (design === 'openfields') {
+      // No session is created here -- the Open Fields page itself calls
+      // LowProfile/Create when its "Continue to checkout" is pressed.
+      const src = openFieldsUrl(language, { region })
+      const tabWindow = window.open(src, '_blank', 'noopener,noreferrer')
+      setStatusUrl(tabWindow ? null : src)
+      setStatus(tabWindow ? 'opened Open Fields (live) in a new tab' : 'Popup blocked. Open the live page:')
+      return
+    }
     const realTab = device === 'mobile' || !version
     if (realTab) version = undefined
     const tabWindow = version ? null : window.open('', '_blank')
@@ -123,6 +158,23 @@ function App() {
   return (
     <main className="app">
       <section className="start">
+        <div className="page-bar">
+          <div className="seg seg--small" role="radiogroup" aria-label="Interface language">
+            {(['en', 'he'] as UiLang[]).map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={`seg-btn${uiLang === option ? ' is-on' : ''}`}
+                onClick={() => {
+                  setUiLang(option)
+                  saveUiLang(option)
+                }}
+              >
+                {option === 'en' ? 'English' : 'עברית'}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="shell">
           <header className="shell-head">
             <div>
@@ -131,38 +183,27 @@ function App() {
               </h1>
               <p className="shell-sub">Visual API laboratory</p>
             </div>
-            <div className="seg" role="tablist" aria-label="Tester">
-              <button
-                type="button"
-                role="tab"
-                className={`seg-btn${tab === 'design' ? ' is-on' : ''}`}
-                aria-selected={tab === 'design'}
-                onClick={() => setTab('design')}
-              >
-                Design
-              </button>
-              <button
-                type="button"
-                role="tab"
-                className={`seg-btn${tab === 'lab' ? ' is-on' : ''}`}
-                aria-selected={tab === 'lab'}
-                onClick={() => setTab('lab')}
-              >
-                API lab
-              </button>
-              <button
-                type="button"
-                role="tab"
-                className={`seg-btn${tab === 'spectra' ? ' is-on' : ''}`}
-                aria-selected={tab === 'spectra'}
-                onClick={() => setTab('spectra')}
-              >
-                Spectra Payments
-              </button>
+            <div className="shell-head-controls">
+              <div className="seg" role="tablist" aria-label="Tester">
+                {(['guide', 'design', 'lab', 'spectra'] as Tab[]).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    role="tab"
+                    className={`seg-btn${tab === option ? ' is-on' : ''}`}
+                    aria-selected={tab === option}
+                    onClick={() => setTab(option)}
+                  >
+                    {TAB_LABELS[uiLang][option]}
+                  </button>
+                ))}
+              </div>
             </div>
           </header>
 
-          {tab === 'lab' ? (
+          {tab === 'guide' ? (
+            <GuidedWalkthrough disabled={overlayOpen} lang={uiLang} />
+          ) : tab === 'lab' ? (
             <ApiLab disabled={overlayOpen} />
           ) : tab === 'spectra' ? (
             <SpectraPayments disabled={overlayOpen} />
@@ -175,10 +216,12 @@ function App() {
               <CheckoutControls
                 design={design}
                 language={language}
+                region={region}
                 openAs={openAs}
                 disabled={overlayOpen || busy}
-                onDesignChange={setDesign}
+                onDesignChange={handleDesignChange}
                 onLanguageChange={setLanguage}
+                onRegionChange={setRegion}
                 onOpenAsChange={handleOpenAs}
               />
               <VersionMenu
@@ -189,6 +232,8 @@ function App() {
                 mode={mode}
                 busy={busy}
                 disabled={overlayOpen}
+                doubleView={doubleView}
+                onDoubleViewChange={setDoubleView}
                 onLocal={openLocal}
                 onCardcom={(version) => void openCardcom(version)}
               />
@@ -245,6 +290,7 @@ function App() {
           width={overlay.width}
           height={overlay.height}
           scroll={overlay.scroll}
+          summarySrc={overlay.summarySrc}
           rtl={language === 'he' || language === 'ar'}
           onClose={() => {
             setOverlay(null)

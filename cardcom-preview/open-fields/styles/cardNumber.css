@@ -1,0 +1,11 @@
+body {
+    margin: 0;
+}
+#cardNumber {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    width: 100%;
+    height: 39px;
+    margin: 0;
+    padding: 0 35px;
+}

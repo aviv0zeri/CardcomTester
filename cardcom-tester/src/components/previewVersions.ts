@@ -10,11 +10,43 @@ export type PreviewVersion = {
   embed: boolean
 }
 
+// Open Fields billing templates: which country's form layout to show.
+export type OpenFieldsRegion = 'il' | 'us' | 'eu'
+
+export const OPEN_FIELDS_REGIONS: { value: OpenFieldsRegion; label: string }[] = [
+  { value: 'il', label: 'Israel' },
+  { value: 'us', label: 'US' },
+  { value: 'eu', label: 'Europe' },
+]
+
+// A different Cardcom integration entirely (merchant-owned form + two of
+// Cardcom's own iframes via postMessage, not a hosted page). Its page reads:
+// preview=1 -> never touches the API; lpid -> reuses a session created
+// elsewhere (the API lab); neither -> creates its own session on Continue.
+// region picks the billing template; amount only matters for the invoice
+// document's product line (il template, checkbox on).
+export function openFieldsUrl(
+  language: Language,
+  opts: { preview?: boolean; lpid?: string; region?: OpenFieldsRegion; amount?: number } = {},
+) {
+  const lang = language === 'en' ? 'en' : 'he'
+  const params = new URLSearchParams({ lang })
+  if (opts.region) params.set('region', opts.region)
+  if (opts.preview) params.set('preview', '1')
+  if (opts.lpid) params.set('lpid', opts.lpid)
+  if (opts.amount && Number.isFinite(opts.amount)) params.set('amount', String(opts.amount))
+  return `/cardcom-preview/open-fields/form.html?${params}`
+}
+
 export function localPreviewUrl(
   language: Language,
   embed: boolean,
-  design: 'old' | 'new',
+  design: 'old' | 'new' | 'openfields',
+  region?: OpenFieldsRegion,
 ) {
+  if (design === 'openfields') {
+    return openFieldsUrl(language, { preview: true, region })
+  }
   const kind = embed ? `${language}/embed` : language
   const params = new URLSearchParams({
     v: `low-profile/${kind}`,
@@ -52,7 +84,13 @@ const NEW_DESKTOP_IFRAME: PreviewVersion[] = [
   { id: 'brand-tall', label: 'Tall', note: '520×850', width: 520, height: 850, scroll: true, embed: true },
 ]
 
-export function versionsFor(device: Device, mode: Mode, design: 'old' | 'new' = 'old'): PreviewVersion[] {
+export function versionsFor(
+  device: Device,
+  mode: Mode,
+  design: 'old' | 'new' | 'openfields' = 'old',
+): PreviewVersion[] {
+  // No framed/sized variants upstream yet -- always a plain page open.
+  if (design === 'openfields') return []
   if (device === 'mobile') return [...MOBILE_REDIRECT, ...MOBILE_IFRAME]
   if (mode === 'redirect') return MOBILE_REDIRECT
   if (design === 'new') return NEW_DESKTOP_IFRAME
