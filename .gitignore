@@ -7,3 +7,4 @@ dist/
 .engine/
 *.local
 .vercel
+.env*

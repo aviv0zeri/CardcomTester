@@ -33,15 +33,22 @@ function fakeUpstream(status, body) {
 }
 
 describe('buildUpstreamPath', () => {
-  it('joins catch-all path segments and preserves other query params', () => {
+  // `path` is the regex-captured sub-path from the vercel.json rewrite
+  // (/spectra-api/(.*) -> /api/spectra-proxy?path=$1) -- always a single
+  // string in production, e.g. "customers/27deaf53-...".
+  it('re-splits the captured sub-path and preserves other query params', () => {
     const path = buildUpstreamPath({
-      path: ['customers', '27deaf53-c43d-4d10-b2e4-5415e2f3c699'],
+      path: 'customers/27deaf53-c43d-4d10-b2e4-5415e2f3c699',
       project_id: 'cardcom-tester',
     })
     expect(path).toBe('/customers/27deaf53-c43d-4d10-b2e4-5415e2f3c699?project_id=cardcom-tester')
   })
 
   it('handles a bare single-segment path with no extra query params', () => {
+    expect(buildUpstreamPath({ path: 'health' })).toBe('/health')
+  })
+
+  it('also accepts an array (defensive -- not the real production shape)', () => {
     expect(buildUpstreamPath({ path: ['health'] })).toBe('/health')
   })
 })
@@ -54,7 +61,7 @@ describe('createSpectraProxyHandler -- upstream target and auth', () => {
       token: 'test-token',
       fetchImpl,
     })
-    const req = { method: 'GET', query: { path: ['health'] } }
+    const req = { method: 'GET', query: { path: 'health' } }
     await handler(req, mockRes())
     expect(fetchImpl).toHaveBeenCalledWith(
       'https://payments.avivozeri.com/health',
@@ -65,7 +72,7 @@ describe('createSpectraProxyHandler -- upstream target and auth', () => {
   it('injects the server-side Bearer token, constructed only from configuration', async () => {
     const fetchImpl = fakeUpstream(200, {})
     const handler = createSpectraProxyHandler({ token: 'server-secret-value', fetchImpl })
-    const req = { method: 'GET', query: { path: ['health'] } }
+    const req = { method: 'GET', query: { path: 'health' } }
     await handler(req, mockRes())
     const [, init] = fetchImpl.mock.calls[0]
     expect(init.headers.Authorization).toBe('Bearer server-secret-value')
@@ -76,7 +83,7 @@ describe('createSpectraProxyHandler -- upstream target and auth', () => {
     const handler = createSpectraProxyHandler({ token: 'server-secret-value', fetchImpl })
     const req = {
       method: 'GET',
-      query: { path: ['health'] },
+      query: { path: 'health' },
       headers: { authorization: 'Bearer attacker-supplied-credential' },
     }
     await handler(req, mockRes())
@@ -88,7 +95,7 @@ describe('createSpectraProxyHandler -- upstream target and auth', () => {
   it('fails closed with 500 when no token is configured, without calling upstream', async () => {
     const fetchImpl = fakeUpstream(200, {})
     const handler = createSpectraProxyHandler({ token: undefined, fetchImpl })
-    const req = { method: 'GET', query: { path: ['health'] } }
+    const req = { method: 'GET', query: { path: 'health' } }
     const res = mockRes()
     await handler(req, res)
     expect(fetchImpl).not.toHaveBeenCalled()
@@ -98,7 +105,7 @@ describe('createSpectraProxyHandler -- upstream target and auth', () => {
   it('rejects an unsupported method before ever calling upstream', async () => {
     const fetchImpl = fakeUpstream(200, {})
     const handler = createSpectraProxyHandler({ token: 'test-token', fetchImpl })
-    const req = { method: 'DELETE', query: { path: ['customers', 'abc'] } }
+    const req = { method: 'DELETE', query: { path: 'customers/abc' } }
     const res = mockRes()
     await handler(req, res)
     expect(fetchImpl).not.toHaveBeenCalled()
@@ -108,7 +115,7 @@ describe('createSpectraProxyHandler -- upstream target and auth', () => {
   it('propagates the upstream status code and JSON body unchanged', async () => {
     const fetchImpl = fakeUpstream(403, { error: 'project proj-b does not belong to the requesting project' })
     const handler = createSpectraProxyHandler({ token: 'test-token', fetchImpl })
-    const req = { method: 'GET', query: { path: ['customers', 'x'], project_id: 'proj-b' } }
+    const req = { method: 'GET', query: { path: 'customers/x', project_id: 'proj-b' } }
     const res = mockRes()
     await handler(req, res)
     expect(res.statusCode).toBe(403)
@@ -120,7 +127,7 @@ describe('createSpectraProxyHandler -- upstream target and auth', () => {
     const handler = createSpectraProxyHandler({ token: 'test-token', fetchImpl })
     const req = {
       method: 'POST',
-      query: { path: ['customers'] },
+      query: { path: 'customers' },
       body: { project_id: 'cardcom-tester', display_name: 'Someone' },
     }
     await handler(req, mockRes())
@@ -131,7 +138,7 @@ describe('createSpectraProxyHandler -- upstream target and auth', () => {
   it('never returns the credential to the caller in the response body', async () => {
     const fetchImpl = fakeUpstream(200, { status: 'ok' })
     const handler = createSpectraProxyHandler({ token: 'super-secret-value', fetchImpl })
-    const req = { method: 'GET', query: { path: ['health'] } }
+    const req = { method: 'GET', query: { path: 'health' } }
     const res = mockRes()
     await handler(req, res)
     expect(JSON.stringify(res.body)).not.toContain('super-secret-value')

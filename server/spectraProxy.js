@@ -17,8 +17,15 @@ const DEFAULT_BASE_URL = 'https://payments.avivozeri.com'
 const ALLOWED_METHODS = new Set(['GET', 'POST'])
 
 function buildUpstreamPath(query) {
-  const rawPath = query && query.path
-  const segments = Array.isArray(rawPath) ? rawPath : rawPath ? [rawPath] : []
+  // `path` is the regex-captured sub-path from vercel.json's rewrite
+  // (/spectra-api/(.*) -> /api/spectra-proxy?path=$1) -- a single string,
+  // e.g. "customers/27deaf53-...". Re-split and re-encode per segment
+  // rather than trusting it verbatim, matching how every other query value
+  // here is handled.
+  const rawPath = (query && query.path) || ''
+  const segments = Array.isArray(rawPath)
+    ? rawPath
+    : String(rawPath).split('/').filter(Boolean)
   const pathPart = '/' + segments.map(encodeURIComponent).join('/')
 
   const rest = { ...query }
