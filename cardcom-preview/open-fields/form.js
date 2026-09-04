@@ -1,3 +1,70 @@
+// Presentation knobs the tester passes on the query string. Applied while
+// this script runs in <head>, so the first paint is already themed.
+const PAGE_PARAMS = new URLSearchParams(location.search);
+
+// ?theme=dark|light forces a theme through data-theme (form.css pairs every
+// dark token block with both guards); anything else follows the OS.
+const FORCED_THEME = ['dark', 'light'].includes(PAGE_PARAMS.get('theme')) ? PAGE_PARAMS.get('theme') : null;
+if (FORCED_THEME) document.documentElement.dataset.theme = FORCED_THEME;
+
+function isDarkTheme() {
+    return FORCED_THEME ? FORCED_THEME === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+// ?accent=rrggbb (strict six-hex, nothing else) recolours the page's accent.
+// The hover shade and soft tint are derived from it, so one value is enough.
+const ACCENT = /^#?([0-9a-f]{6})$/i.exec(PAGE_PARAMS.get('accent') || '');
+if (ACCENT) applyAccent('#' + ACCENT[1].toLowerCase());
+
+function applyAccent(hex) {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    // Hover shade goes darker on light and lighter on dark, like the stock tokens.
+    const towards = isDarkTheme() ? 255 : 0;
+    const amount = isDarkTheme() ? 0.3 : 0.5;
+    const strong = [r, g, b].map((c) => Math.round(c + (towards - c) * amount));
+    const root = document.documentElement.style;
+    root.setProperty('--accent', hex);
+    root.setProperty('--accent-strong', '#' + strong.map((c) => c.toString(16).padStart(2, '0')).join(''));
+    root.setProperty('--accent-soft-bg', `rgba(${r}, ${g}, ${b}, 0.18)`);
+}
+
+// Google Pay button design. Cardcom's master frame reads `googlePayButton`
+// off our init message (its OpenFields.js: state.googlePayButtonConfig =
+// data.googlePayButton) and forwards it to the wallet iframe's createButton,
+// so these are Google's own ButtonOptions.
+//   type: 'pay' ("Pay with G Pay") -- matches the page's own "Pay now" and,
+//   unlike Google's default 'buy', never takes the Chrome-only dynamic
+//   card-info rendering that draws a second outlined frame around the pill.
+//   colour: black on BOTH themes. Google's guidance is white on dark
+//   backgrounds, but with the pay.js Cardcom bundles today buttonColor
+//   'white' paints Google's current (black) pill asset over a white square,
+//   which looks broken -- verified live, so white stays off until Cardcom's
+//   bundle catches up.
+// ?gpay=<buttonType> and ?gpaycolor=black|white let the tester compare
+// Google's variants; only documented values pass.
+const GPAY_BUTTON_TYPES = ['buy', 'pay', 'plain', 'checkout', 'order', 'book', 'donate', 'subscribe'];
+const GPAY_BUTTON_LOCALES = ['en', 'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'hr', 'id', 'it',
+    'ja', 'ko', 'ms', 'nl', 'no', 'pl', 'pt', 'ru', 'sk', 'sl', 'sr', 'sv', 'th', 'tr', 'uk', 'zh'];
+
+function googlePayButtonConfig() {
+    const config = {
+        buttonColor: 'black',
+        buttonType: 'pay',
+        buttonSizeMode: 'fill',
+    };
+    const type = PAGE_PARAMS.get('gpay');
+    if (GPAY_BUTTON_TYPES.includes(type)) config.buttonType = type;
+    const colour = PAGE_PARAMS.get('gpaycolor');
+    if (colour === 'black' || colour === 'white') config.buttonColor = colour;
+    // Button text follows the page language where Google ships that
+    // language. Hebrew is not in Google's list (en, ar, bg, ca, cs, da, de,
+    // el, es, et, fi, fr, hr, id, it, ja, ko, ms, nl, no, pl, pt, ru, sk,
+    // sl, sr, sv, th, tr, uk, zh), so a Hebrew page gets Google's fallback
+    // (browser language, else English) rather than a made-up locale.
+    const lang = PAGE_PARAMS.get('lang');
+    if (GPAY_BUTTON_LOCALES.includes(lang)) config.buttonLocale = lang;
+    return config;
+}
 
 // Which billing template to show: us (Cardcom's original example), il, or eu.
 function currentRegion() {
@@ -27,6 +94,7 @@ const HEBREW_LABELS = {
     exp_month: 'חודש',
     exp_year: 'שנה',
     submit: 'בצע תשלום',
+    secure_payment: 'תשלום מאובטח',
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -98,8 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     const brand = BRANDS[new URLSearchParams(location.search).get('brand')];
     if (brand) {
-        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.getElementById('brandLogo').src = dark ? brand.logoDark : brand.logo;
+        document.getElementById('brandLogo').src = isDarkTheme() ? brand.logoDark : brand.logo;
         document.getElementById('brandName').textContent = brand.name;
         document.getElementById('brand').hidden = false;
     }
@@ -183,27 +250,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 1.Fetching CSS from files
         const cardCSSPromise = await fetch('styles/cardNumber.css');
-        const cardCssText = await cardCSSPromise.text();
 
         //2.In template element
         const template = document.getElementById('css_template').content.querySelector('style')
 
-        //3.Store your CSS in a string variable 
+        //3.Store your CSS in a string variable
         const inlineCSS = `body {
                             margin: 0;
                             padding:0;
                             display: flex;
                         }`
 
+        // Cardcom's card-number/CVV boxes are separate documents, so the
+        // page theme can't reach them through CSS. Their colours are read
+        // off our resolved tokens (theme and accent already applied) and
+        // appended as overrides to the CSS text we send them.
+        const tokens = getComputedStyle(document.documentElement);
+        const tok = (name) => tokens.getPropertyValue(name).trim();
+        const themedField = `border-color: ${tok('--border-strong')}; color: ${tok('--text')}; background: ${tok('--surface')};`;
+        // The boxes are 39px inside 41px iframes; a transparent document
+        // background keeps that 2px edge from showing as a light seam on dark.
+        const themedDoc = 'html, body { background: transparent; }';
+        const cardCssText = `${await cardCSSPromise.text()}\n${themedDoc}\n#cardNumber { ${themedField} }`;
+        const cvvCssText = `${template.innerText.toString()}\n${themedDoc}\n.cvvField { ${themedField} }\n.cvvField.invalid { border-color: ${tok('--danger')}; }`;
+
         //Note: props names are important
         iframeMessage = {
             action: 'init',
             cardFieldCSS: cardCssText,
-            cvvFieldCSS: template.innerText.toString(),
+            cvvFieldCSS: cvvCssText,
             reCaptchaFieldCSS: inlineCSS,
             placeholder: "1111-2222-3333-4444",
             cvvPlaceholder: "123",
             lowProfileCode: lowProfileCode,
+            googlePayButton: googlePayButtonConfig(),
             //language: "he"
         }
 

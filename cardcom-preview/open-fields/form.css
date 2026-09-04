@@ -8,6 +8,7 @@
    form.html) and must stay visually identical to input[type="text"] here. */
 
 :root {
+  color-scheme: light;
   --surface: #fff;
   --surface-alt: #eef0f6;
   --border: #e1e4ee;
@@ -27,8 +28,14 @@
   --shell-shadow-lg: 0 10px 30px rgba(20, 22, 28, 0.08), 0 2px 6px rgba(20, 22, 28, 0.05);
 }
 
+/* Dark tokens apply from the OS preference (unless an explicit
+   data-theme="light" says otherwise) or from an explicit data-theme="dark"
+   -- the same two guards in both directions, so whichever wins is
+   unambiguous. form.js sets the attribute from ?theme=dark|light; with no
+   param the page simply follows the OS. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --surface: #171c27;
     --surface-alt: #1e2531;
     --border: #2a3242;
@@ -49,6 +56,27 @@
   }
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #171c27;
+  --surface-alt: #1e2531;
+  --border: #2a3242;
+  --border-strong: #39435a;
+  --text: #eef0f5;
+  --text-secondary: #b7bdcc;
+  --text-muted: #8991a6;
+  --text-faint: #656d80;
+  --accent: #5c78a8;
+  --accent-strong: #8fa8d1;
+  --accent-soft-bg: rgba(92, 120, 168, 0.18);
+  --accent-contrast: #fff;
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.14);
+  --success: #34d399;
+  --shell-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shell-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -65,9 +93,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* color-scheme: light on the iframes matches Cardcom's (light-scheme)
+   documents. When an iframe's scheme differs from its document's, Chrome
+   paints the iframe canvas opaque white instead of transparent -- on the
+   dark theme that showed as a pale box around the Google Pay pill and a
+   white rim around the card/CVV boxes. */
 iframe {
   display: block;
   border: 0;
+  color-scheme: light;
 }
 
 /* ---- app shell (brand + cart/checkout + powered-by footer, one card) ---- */
@@ -87,9 +121,12 @@ iframe {
   color: var(--text);
 }
 
+/* "<Business> · Secure Payment" on one line, the subtitle beside the name. */
 .brand-text {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
   line-height: 1.2;
 }
 
@@ -103,9 +140,16 @@ iframe {
 }
 
 .brand-suffix {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.brand-suffix::before {
+  content: "·";
+  margin-inline-end: 8px;
+  color: var(--text-faint);
 }
 
 .brand img {
@@ -331,6 +375,10 @@ input[type="text"]::placeholder {
   background: var(--accent-strong);
 }
 
+#submit-btn {
+  margin-top: 26px;
+}
+
 /* Flex-wrap, not a fixed grid: with flex-basis 50% and flex-grow 1, a lone
    item has no sibling to share its row with, so it grows to fill the full
    width; an odd leftover on the last row does the same instead of sitting
@@ -349,6 +397,16 @@ input[type="text"]::placeholder {
   min-width: min(200px, 100%);
 }
 
+/* A single wallet doesn't need the whole row: 80% wide and centred keeps it
+   a button rather than a banner. Two or more still share the row above. */
+.wallet-item:only-child {
+  flex: 0 1 80%;
+  margin: 0 auto;
+}
+
+/* Google's current pill has a hard 48px minimum height inside Cardcom's
+   iframe -- anything shorter clips its bottom edge (verified live at 40px),
+   so the height is Google's, not ours to shrink. */
 .wallet-item iframe {
   display: block;
   width: 100%;
@@ -464,8 +522,11 @@ input[type="text"]::placeholder {
   justify-content: center;
 }
 
+/* The card fills the tester's iframe height, so the footer is pushed to
+   the card's bottom edge rather than hanging right under the form. */
 .embed .footer {
-  margin-top: 8px;
+  margin-top: auto;
+  padding-top: 8px;
 }
 
 /* ---- loading overlay ----------------------------------------------------- */
