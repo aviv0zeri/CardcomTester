@@ -84,9 +84,28 @@ iframe {
   align-items: center;
   gap: 10px;
   margin: 0 0 12px;
+  color: var(--text);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+/* TODO: swap in GateOpen's own dashboard font once we have its name/URL --
+   placeholder is the page's own font (Inter) so #brandName reads correctly
+   in the meantime, just not yet in the real brand typeface. */
+#brandName {
+  font-family: var(--brand-font, inherit);
   font-size: 15px;
   font-weight: 600;
-  color: var(--text);
+}
+
+.brand-suffix {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .brand img {
@@ -312,15 +331,27 @@ input[type="text"]::placeholder {
   background: var(--accent-strong);
 }
 
+/* Flex-wrap, not a fixed grid: with flex-basis 50% and flex-grow 1, a lone
+   item has no sibling to share its row with, so it grows to fill the full
+   width; an odd leftover on the last row does the same instead of sitting
+   next to a blank cell. No JS needed to special-case the 1-wallet state --
+   same technique as templates/cardcom/low-profile's compact
+   .payment-methods-grid. Handles 1-4 .wallet-item children (2 per row). */
 .wallet {
   display: flex;
-  justify-content: center;
-  margin-top: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px;
 }
 
-.wallet iframe {
+.wallet-item {
+  flex: 1 1 calc(50% - 5px);
+  min-width: min(200px, 100%);
+}
+
+.wallet-item iframe {
+  display: block;
   width: 100%;
-  max-width: 277px;
   height: 48px;
 }
 
@@ -379,10 +410,14 @@ input[type="text"]::placeholder {
   flex: none;
 }
 
-/* Cardcom's short credit, shown whole but scaled down -- never cropped. */
+/* Cardcom's short credit, shown whole but scaled down -- never cropped.
+   No align-items here, deliberately: it shifts the flex item's cross-axis
+   position, which -- combined with transform-origin: top right on the
+   iframe below and overflow:hidden here -- changes which slice of the
+   scaled badge is actually visible and clips its top. Left at the
+   original (default/stretch) behavior on purpose. */
 .credits {
   display: flex;
-  align-items: center;
   justify-content: flex-end;
   flex: none;
   width: 150px;

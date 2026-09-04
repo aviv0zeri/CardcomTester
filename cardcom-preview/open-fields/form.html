@@ -30,7 +30,10 @@
              in form.js -- the tester's business profiles use the same ids). -->
         <header class="brand" id="brand" hidden>
             <img id="brandLogo" alt="" width="32" height="32">
-            <span id="brandName"></span>
+            <span class="brand-text">
+                <span id="brandName"></span>
+                <span class="brand-suffix">Secure Payment</span>
+            </span>
         </header>
         <div id="first-screen">
             <div class="summary-container">
@@ -48,6 +51,19 @@
         </div>
         <div id="second-screen" style="display: none;">
             <div class="checkout">
+                <!-- Wallet buttons up top, ahead of manual card entry -- each
+                     wallet gets its own .wallet-item so the row's flex-wrap
+                     layout (see form.css) spreads 1-4 of them evenly with no
+                     JS needed: a lone item grows to fill the row, an odd
+                     leftover stretches its own row instead of leaving a gap
+                     (same technique as templates/cardcom/low-profile's
+                     compact .payment-methods-grid). -->
+                <div class="wallet" id="walletRow">
+                    <div class="wallet-item">
+                        <iframe allow="payment" id="CardComGooglePay" name="CardComGooglePay"
+                            src="https://secure.cardcom.solutions/api/openfields/GooglePay?terminalNumber=1000"></iframe>
+                    </div>
+                </div>
                 <form action="" id="form">
                 <!-- Billing templates: exactly one is shown, picked by the
                      ?region= query param (us | il | eu). form.js does the
@@ -213,10 +229,6 @@
                 </section>
                 <!-- Shared across all three billing templates. -->
                 <input type="submit" id="submit-btn" value="Pay now" class="btn" data-i18n-value="submit">
-                <div class="wallet" id="walletRow">
-                    <iframe allow="payment" id="CardComGooglePay" name="CardComGooglePay"
-                        src="https://secure.cardcom.solutions/api/openfields/GooglePay?terminalNumber=1000"></iframe>
-                </div>
             </form>
         </div>
         </div>
