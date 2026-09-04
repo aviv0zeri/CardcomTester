@@ -9,6 +9,7 @@ import {
   type Mode,
 } from './components/CheckoutControls'
 import { ApiLab } from './components/ApiLab'
+import { SpectraPayments } from './components/SpectraPayments'
 import { VersionMenu } from './components/VersionMenu'
 import { PaymentOverlay } from './components/PaymentOverlay'
 import { createCardcomSession } from './components/createSession'
@@ -21,7 +22,7 @@ type Overlay = {
   scroll?: boolean
 }
 
-type Tab = 'lab' | 'design'
+type Tab = 'lab' | 'design' | 'spectra'
 type DeviceError = 'needs-computer' | 'needs-phone'
 
 function App() {
@@ -149,11 +150,22 @@ function App() {
               >
                 API lab
               </button>
+              <button
+                type="button"
+                role="tab"
+                className={`seg-btn${tab === 'spectra' ? ' is-on' : ''}`}
+                aria-selected={tab === 'spectra'}
+                onClick={() => setTab('spectra')}
+              >
+                Spectra Payments
+              </button>
             </div>
           </header>
 
           {tab === 'lab' ? (
             <ApiLab disabled={overlayOpen} />
+          ) : tab === 'spectra' ? (
+            <SpectraPayments disabled={overlayOpen} />
           ) : (
             <div className="design-pane">
               <p className="cta-copy">

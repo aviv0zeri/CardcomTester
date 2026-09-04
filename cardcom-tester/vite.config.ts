@@ -16,6 +16,16 @@ export default defineConfig({
       '/cardcom-production': 'http://localhost:3000',
       '/cardcom-hosted': 'http://localhost:3000',
       '/competition-template': 'http://localhost:3000',
+      // Separate process, separate backend: spectra-payments (its own FastAPI
+      // server, its own Postgres, its own Cardcom credentials) -- not proxied
+      // through the Express raw-Cardcom lab above. The prefix is stripped so
+      // spectraClient.ts can call spectra-payments' own paths (e.g. /health)
+      // unchanged.
+      '/spectra-api': {
+        target: 'http://localhost:8099',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/spectra-api/, ''),
+      },
     },
   },
 })
