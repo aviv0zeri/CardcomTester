@@ -10,7 +10,6 @@ import {
 } from './components/CheckoutControls'
 import { ApiLab } from './components/ApiLab'
 import { GuidedWalkthrough } from './components/GuidedWalkthrough'
-import { SpectraPayments } from './components/SpectraPayments'
 import { VersionMenu } from './components/VersionMenu'
 import { PaymentOverlay } from './components/PaymentOverlay'
 import { createCardcomSession } from './components/createSession'
@@ -31,14 +30,14 @@ type Overlay = {
   summarySrc?: string
 }
 
-type Tab = 'guide' | 'lab' | 'design' | 'spectra'
+type Tab = 'guide' | 'lab' | 'design'
 type DeviceError = 'needs-computer' | 'needs-phone'
 
 // One toggle, whole platform: tab names and the Guided tab follow it today;
 // the Design/API-lab body copy is still English and can join later.
 const TAB_LABELS: Record<UiLang, Record<Tab, string>> = {
-  en: { guide: 'Guided', design: 'Design', lab: 'API lab', spectra: 'Spectra Payments' },
-  he: { guide: 'מודרך', design: 'עיצוב', lab: 'מעבדת API', spectra: 'Spectra Payments' },
+  en: { guide: 'Guided', design: 'Design', lab: 'API lab' },
+  he: { guide: 'מודרך', design: 'עיצוב', lab: 'מעבדת API' },
 }
 
 function App() {
@@ -185,7 +184,7 @@ function App() {
             </div>
             <div className="shell-head-controls">
               <div className="seg" role="tablist" aria-label="Tester">
-                {(['guide', 'design', 'lab', 'spectra'] as Tab[]).map((option) => (
+                {(['guide', 'design', 'lab'] as Tab[]).map((option) => (
                   <button
                     key={option}
                     type="button"
@@ -205,8 +204,6 @@ function App() {
             <GuidedWalkthrough disabled={overlayOpen} lang={uiLang} />
           ) : tab === 'lab' ? (
             <ApiLab disabled={overlayOpen} />
-          ) : tab === 'spectra' ? (
-            <SpectraPayments disabled={overlayOpen} />
           ) : (
             <div className="design-pane">
               <p className="cta-copy">

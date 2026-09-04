@@ -18,6 +18,16 @@ import {
   openFieldsUrl,
   type OpenFieldsRegion,
 } from './previewVersions'
+import {
+  createCustomer,
+  createHostedCheckoutSession,
+  getPayment,
+  verifyCheckoutSession,
+  type SpectraCheckoutSession,
+  type SpectraCustomer,
+  type SpectraPayment,
+  type SpectraVerifyResult,
+} from './spectraClient'
 
 // One screen at a time, one action at a time. The whole point of this tab is
 // that nothing scrolls and nothing competes for attention -- the full ApiLab
@@ -27,7 +37,7 @@ import {
 // (HTTP, API, JSON, webhooks) using the REAL payloads from this very run.
 
 type GuidedStep = 'intro' | 'pick' | 'setup' | 'create' | 'pay' | 'check' | 'done'
-type Integration = 'lowprofile' | 'openfields'
+type Integration = 'lowprofile' | 'openfields' | 'spectra'
 type Lang = UiLang
 
 const TEST_CARD_NUMBER = '4580 2800 0000 0008'
@@ -96,6 +106,24 @@ type Copy = {
   err605: string
   errGeneric: (code: string, description: string) => string
   errServer: (message: string) => string
+  // Spectra Payments path -- our own Payment API in front of Cardcom.
+  spTitle: string
+  spShort: ReactNode
+  spLong: ReactNode
+  createBubbleSp: (amount: number) => ReactNode
+  createOkSp: (ticket: ReactNode) => ReactNode
+  techTitleCreateSp: string
+  techCreateIntroSp: ReactNode
+  techCreateSentSp: ReactNode
+  techCreateGotSp: ReactNode
+  checkBubbleSp: ReactNode
+  pendingSp: string
+  techTitleCheckSp: string
+  techCheckIntroSp: ReactNode
+  techCheckContrastSp: ReactNode
+  doneRecapSp: ReactNode
+  doneStatusSp: (status: string) => string
+  errSpectra: (message: string) => string
 }
 
 const COPY: Record<Lang, Copy> = {
@@ -302,6 +330,87 @@ const COPY: Record<Lang, Copy> = {
     errGeneric: (code, description) =>
       `Cardcom answered with an error (code ${code}): ${description || 'no description'}. That answer itself is useful — it is exactly what your app would need to handle.`,
     errServer: (message) => `Could not reach the tester's own server: ${message}`,
+    spTitle: 'Spectra Payments',
+    spShort: (
+      <>
+        Our own Payment API sits in front of Cardcom. Same hosted page — but your app only
+        ever sees Customers and Payments, never raw Cardcom.
+      </>
+    ),
+    spLong: (
+      <>
+        <strong>Spectra Payments is the "put our own API in front" way.</strong> Instead of
+        talking to Cardcom's raw API, your app talks to <em>our</em> Payment API
+        (spectra-payments). It asks Cardcom for the session on your behalf, keeps the
+        secrets and the messy provider details inside, and hands back clean objects with
+        our own names: a Customer, a CheckoutSession, a Payment. This is what GateOpen will
+        use — and it's the same hosted Cardcom page underneath, so compare it with Low
+        Profile and spot what changed.
+      </>
+    ),
+    createBubbleSp: (amount) => (
+      <>
+        First, our app tells <strong>our Payment API</strong>: <em>"this customer is about
+        to pay ₪{amount}"</em>. Behind the scenes it takes the number at Cardcom's bakery
+        for us — but what it hands back is a <strong>Payment</strong> and a{' '}
+        <strong>CheckoutSession</strong> with our own IDs. No money moves yet.
+      </>
+    ),
+    createOkSp: (ticket) => <>Our Payment API said yes! CheckoutSession: {ticket}</>,
+    techTitleCreateSp: '🤓 Under the hood — one API in front of another',
+    techCreateIntroSp: (
+      <>
+        Two HTTP requests went to <strong>our own Payment API</strong> (not to Cardcom):
+        one to create a Customer, one to open a CheckoutSession. Our API then called
+        Cardcom's LowProfile/Create itself, with the secret password that never leaves it.
+      </>
+    ),
+    techCreateSentSp: <>This is what our app sent — notice: no password, no Cardcom fields:</>,
+    techCreateGotSp: (
+      <>
+        And this is what came back. Look for what's <em>missing</em>: no LowProfileId, no
+        ResponseCode. Cardcom's ticket stays inside our API; your app gets a{' '}
+        <strong>payment_id</strong> and a <strong>checkout_url</strong> to send the customer to:
+      </>
+    ),
+    checkBubbleSp: (
+      <>
+        The payment page said "success" — but <strong>we never trust the pretty screen</strong>.
+        So our app asks <strong>our Payment API</strong> to verify. It asks Cardcom
+        server-to-server (the same GetLpResult check as Low Profile), decides what the
+        answer means, and records it as a Payment. The only thing your app believes is the
+        Payment's <strong>status</strong>.
+      </>
+    ),
+    pendingSp:
+      'Our Payment API says: this Payment is still PENDING — no successful attempt recorded yet. Finish the payment page, then verify again.',
+    techTitleCheckSp: '🤓 Under the hood — the normalized answer',
+    techCheckIntroSp: (
+      <>
+        Our app sent one request to our Payment API's <strong>verify</strong> endpoint, then
+        fetched the Payment. Here is what came back:
+      </>
+    ),
+    techCheckContrastSp: (
+      <>
+        Compare this with the Low Profile path: there, <em>your</em> code had to read
+        ResponseCode and TranzactionId and decide what they meant. Here the raw Cardcom
+        answer never reaches your app — spectra-payments already checked it and turned it
+        into one word, <strong>SUCCEEDED</strong>. The provider's IDs and codes live inside
+        our API, so if the provider ever changes, your app doesn't.
+      </>
+    ),
+    doneRecapSp: (
+      <>
+        <strong>What just happened, in one breath:</strong> our app asked our own Payment
+        API to open a checkout (it got Cardcom's ticket for us), the customer paid on
+        Cardcom's hosted page, and then we asked our API to verify — it checked with
+        Cardcom server-to-server and recorded a Payment. Your app never touched a raw
+        Cardcom field.
+      </>
+    ),
+    doneStatusSp: (status) => ` — Payment ${status}`,
+    errSpectra: (message) => `Could not reach spectra-payments: ${message}`,
   },
   he: {
     dots: ['בחירה', 'סכום', 'יצירה', 'תשלום', 'אימות'],
@@ -496,6 +605,85 @@ const COPY: Record<Lang, Copy> = {
     errGeneric: (code, description) =>
       `קארדקום החזירו שגיאה (קוד ${code}): ${description || 'בלי תיאור'}. גם התשובה הזאת שווה זהב — זה בדיוק מה שהאפליקציה שלכם תצטרך לדעת לטפל בו.`,
     errServer: (message) => `לא הצלחנו להגיע לשרת של הטסטר עצמו: ${message}`,
+    spTitle: 'Spectra Payments',
+    spShort: (
+      <>
+        ה-API של התשלומים שלנו עומד לפני קארדקום. אותו דף מתארח — אבל האפליקציה רואה רק
+        לקוחות ותשלומים, אף פעם לא קארדקום גולמי.
+      </>
+    ),
+    spLong: (
+      <>
+        <strong>Spectra Payments היא שיטת "שמים API משלנו מקדימה".</strong> במקום לדבר עם
+        ה-API הגולמי של קארדקום, האפליקציה מדברת עם <em>ה-API של התשלומים שלנו</em>
+        (spectra-payments). הוא מבקש את הסשן מקארדקום בשבילכם, שומר בפנים את הסודות ואת
+        הפרטים המבולגנים של הספק, ומחזיר אובייקטים נקיים עם שמות משלנו: לקוח, סשן תשלום,
+        תשלום. בזה GateOpen ישתמש — ומתחת זה אותו דף קארדקום מתארח, אז השוו ל-Low Profile
+        ושימו לב מה השתנה.
+      </>
+    ),
+    createBubbleSp: (amount) => (
+      <>
+        קודם כול, האפליקציה אומרת ל-<strong>API של התשלומים שלנו</strong>: <em>"הלקוח הזה
+        עומד לשלם {amount} ₪"</em>. מאחורי הקלעים הוא לוקח בשבילנו מספר בתור למאפייה של
+        קארדקום — אבל מה שהוא מחזיר זה <strong>תשלום</strong> ו<strong>סשן תשלום</strong>
+        עם מזהים משלנו. עוד לא זז שקל.
+      </>
+    ),
+    createOkSp: (ticket) => <>ה-API שלנו אמר כן! סשן התשלום: {ticket}</>,
+    techTitleCreateSp: '🤓 מתחת למכסה המנוע — API אחד לפני API אחר',
+    techCreateIntroSp: (
+      <>
+        שתי בקשות HTTP הלכו ל-<strong>API של התשלומים שלנו</strong> (לא לקארדקום): אחת
+        ליצירת לקוח, אחת לפתיחת סשן תשלום. ה-API שלנו קרא בעצמו ל-LowProfile/Create של
+        קארדקום, עם הסיסמה הסודית שאף פעם לא יוצאת ממנו.
+      </>
+    ),
+    techCreateSentSp: <>זה מה שהאפליקציה שלחה — שימו לב: בלי סיסמה, בלי שדות של קארדקום:</>,
+    techCreateGotSp: (
+      <>
+        וזה מה שחזר. חפשו מה <em>חסר</em>: אין LowProfileId, אין ResponseCode. כרטיס התור
+        של קארדקום נשאר בתוך ה-API שלנו; האפליקציה מקבלת <strong>payment_id</strong>{' '}
+        ו-<strong>checkout_url</strong> לשלוח אליו את הלקוח:
+      </>
+    ),
+    checkBubbleSp: (
+      <>
+        דף התשלום אמר "הצלחה" — אבל <strong>אנחנו אף פעם לא סומכים על המסך היפה</strong>.
+        אז האפליקציה מבקשת מ-<strong>API של התשלומים שלנו</strong> לאמת. הוא שואל את
+        קארדקום שרת-מול-שרת (אותה בדיקת GetLpResult כמו ב-Low Profile), מחליט מה התשובה
+        אומרת, ורושם אותה כתשלום. הדבר היחיד שהאפליקציה מאמינה לו הוא ה<strong>סטטוס</strong>
+        של התשלום.
+      </>
+    ),
+    pendingSp:
+      'ה-API שלנו אומר: התשלום עדיין PENDING — עוד לא נרשם ניסיון מוצלח. סיימו את דף התשלום, ואז אמתו שוב.',
+    techTitleCheckSp: '🤓 מתחת למכסה המנוע — התשובה המנורמלת',
+    techCheckIntroSp: (
+      <>
+        האפליקציה שלחה בקשה אחת לנקודת ה-<strong>verify</strong> של ה-API שלנו, ואז משכה
+        את התשלום. זה מה שחזר:
+      </>
+    ),
+    techCheckContrastSp: (
+      <>
+        השוו למסלול Low Profile: שם הקוד <em>שלכם</em> היה צריך לקרוא ResponseCode
+        ו-TranzactionId ולהחליט מה הם אומרים. כאן התשובה הגולמית של קארדקום בכלל לא מגיעה
+        לאפליקציה — spectra-payments כבר בדק אותה והפך אותה למילה אחת,{' '}
+        <strong>SUCCEEDED</strong>. המזהים והקודים של הספק חיים בתוך ה-API שלנו, אז אם
+        הספק ישתנה פעם — האפליקציה לא.
+      </>
+    ),
+    doneRecapSp: (
+      <>
+        <strong>מה קרה פה, בנשימה אחת:</strong> האפליקציה ביקשה מה-API של התשלומים שלנו
+        לפתוח תשלום (הוא השיג בשבילנו את כרטיס התור של קארדקום), הלקוח שילם בדף המתארח של
+        קארדקום, ואז ביקשנו מה-API שלנו לאמת — הוא בדק מול קארדקום שרת-מול-שרת ורשם תשלום.
+        האפליקציה לא נגעה באף שדה גולמי של קארדקום.
+      </>
+    ),
+    doneStatusSp: (status) => ` — תשלום ${status}`,
+    errSpectra: (message) => `לא הצלחנו להגיע ל-spectra-payments: ${message}`,
   },
 }
 
@@ -618,6 +806,11 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
   const [payOverlayOpen, setPayOverlayOpen] = useState(false)
   const [payFallbackUrl, setPayFallbackUrl] = useState('')
   const [copied, setCopied] = useState(false)
+  // Spectra path state -- our own Payment API's objects, never raw Cardcom payloads.
+  const [spectraCustomer, setSpectraCustomer] = useState<SpectraCustomer | null>(null)
+  const [spectraSession, setSpectraSession] = useState<SpectraCheckoutSession | null>(null)
+  const [spectraVerify, setSpectraVerify] = useState<SpectraVerifyResult | null>(null)
+  const [spectraPayment, setSpectraPayment] = useState<SpectraPayment | null>(null)
 
   const t = COPY[lang]
   // One choice drives both the walkthrough interface AND the payment page.
@@ -627,14 +820,21 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
   const sessionCode = responseCode(session)
   const resultCode = responseCode(result)
   const isOpenFields = integration === 'openfields'
+  const isSpectra = integration === 'spectra'
   const amountNumber = Number(amount) || 0
-  const receiptReady = !wantReceipt || receiptEmail.includes('@')
+  // The receipt option belongs to the raw-Cardcom paths only (post-hoc documents
+  // through our own API are a later slice) -- it never gates the Spectra path.
+  const receiptReady = isSpectra || !wantReceipt || receiptEmail.includes('@')
 
-  const payUrl = isOpenFields
-    ? lowProfileId
-      ? openFieldsUrl(language, { lpid: lowProfileId, region, amount: amountNumber })
-      : ''
-    : asText(session?.Url || session?.url)
+  const payUrl = isSpectra
+    ? asText(spectraSession?.checkout_url)
+    : isOpenFields
+      ? lowProfileId
+        ? openFieldsUrl(language, { lpid: lowProfileId, region, amount: amountNumber })
+        : ''
+      : asText(session?.Url || session?.url)
+  // "Session created" for whichever path is active -- drives the create step.
+  const createOk = isSpectra ? Boolean(spectraSession) : sessionCode === 0
 
   const goTo = (next: GuidedStep) => {
     setError('')
@@ -645,6 +845,10 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
     setSession(null)
     setCreateSent(null)
     setResult(null)
+    setSpectraCustomer(null)
+    setSpectraSession(null)
+    setSpectraVerify(null)
+    setSpectraPayment(null)
     setPayOpened(false)
     setPayOverlayOpen(false)
     setPayFallbackUrl('')
@@ -677,7 +881,29 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
     setSession(null)
     setCreateSent(null)
     setResult(null)
+    setSpectraCustomer(null)
+    setSpectraSession(null)
+    setSpectraVerify(null)
+    setSpectraPayment(null)
     setPayOpened(false)
+    if (isSpectra) {
+      // Our own Payment API does the Cardcom call for us -- two requests, both to
+      // spectra-payments, zero raw-Cardcom fields in either direction.
+      try {
+        const customer = await createCustomer({ displayName: 'Guided Tester' })
+        setSpectraCustomer(customer)
+        const created = await createHostedCheckoutSession({
+          customerId: customer.id,
+          amount: amountNumber,
+          language,
+        })
+        setSpectraSession(created)
+      } catch (cause) {
+        setError(t.errSpectra(cause instanceof Error ? cause.message : ''))
+      }
+      setBusy(false)
+      return
+    }
     try {
       const data = await createLabSession({
         language,
@@ -751,7 +977,26 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
         }
 
   const runCheck = async () => {
-    if (busy || !lowProfileId) return
+    if (busy) return
+    if (isSpectra) {
+      if (!spectraSession) return
+      setBusy(true)
+      setError('')
+      try {
+        // Authoritative verification through OUR API (it runs GetLpResult itself),
+        // then the persisted Payment -- the only thing the app should believe.
+        const verified = await verifyCheckoutSession(spectraSession.checkout_session_id)
+        setSpectraVerify(verified)
+        const payment = await getPayment(verified.payment_id)
+        setSpectraPayment(payment)
+        if (payment.status === 'SUCCEEDED') goTo('done')
+      } catch (cause) {
+        setError(t.errSpectra(cause instanceof Error ? cause.message : ''))
+      }
+      setBusy(false)
+      return
+    }
+    if (!lowProfileId) return
     setBusy(true)
     setError('')
     try {
@@ -811,6 +1056,39 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
         TranzactionInfo: transaction
           ? { Amount: transaction.Amount, TranzactionId: transaction.TranzactionId }
           : undefined,
+      }
+    : null
+
+  // Spectra path views: shown exactly as our own API returns them (no Cardcom
+  // vocabulary exists in them to strip -- that absence is the lesson).
+  const spectraSessionId = spectraSession?.checkout_session_id ?? ''
+  const spectraSentPreview = spectraCustomer
+    ? {
+        customer_id: spectraCustomer.id,
+        amount: amountNumber.toFixed(2),
+        currency: 'ILS',
+        checkout_mode: 'hosted',
+      }
+    : null
+  const spectraGotPreview = spectraSession
+    ? {
+        checkout_session_id: spectraSession.checkout_session_id,
+        status: spectraSession.status,
+        payment_id: spectraSession.payment_id,
+        payment_status: spectraSession.payment_status,
+        checkout_url: asText(spectraSession.checkout_url).slice(0, 60) + '…',
+      }
+    : null
+  const spectraCheckPreview = spectraPayment
+    ? {
+        verify: spectraVerify,
+        payment: {
+          id: spectraPayment.id,
+          status: spectraPayment.status,
+          amount: spectraPayment.amount,
+          currency: spectraPayment.currency,
+          source: spectraPayment.source,
+        },
       }
     : null
 
@@ -892,11 +1170,35 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
               <strong>{t.ofTitle}</strong>
               <span>{t.ofShort}</span>
             </button>
+            <button
+              type="button"
+              className={`gw-choice${picked === 'spectra' ? ' is-picked' : ''}`}
+              aria-pressed={picked === 'spectra'}
+              disabled={disabled}
+              onClick={() => {
+                setPicked('spectra')
+                setIntegration('spectra')
+              }}
+            >
+              <svg viewBox="0 0 120 80" aria-hidden="true">
+                <rect x="10" y="8" width="100" height="64" rx="8" fill="var(--accent-soft-bg)" stroke="var(--accent)" strokeWidth="2.5" />
+                <rect x="10" y="8" width="100" height="14" rx="8" fill="var(--accent)" />
+                <circle cx="19" cy="15" r="2.5" fill="#fff" />
+                <circle cx="27" cy="15" r="2.5" fill="#fff" />
+                <rect x="24" y="32" width="72" height="30" rx="6" fill="var(--surface)" stroke="var(--accent)" strokeWidth="2" strokeDasharray="4 3" />
+                <rect x="32" y="40" width="40" height="6" rx="3" fill="var(--accent)" opacity="0.5" />
+                <rect x="32" y="50" width="26" height="6" rx="3" fill="var(--accent)" opacity="0.3" />
+              </svg>
+              <strong>{t.spTitle}</strong>
+              <span>{t.spShort}</span>
+            </button>
           </div>
           {picked ? (
             // Keyed so switching picks replays the pop-in with the new text.
             <div className="gw-picked-reveal" key={picked}>
-              <Bubble>{picked === 'lowprofile' ? t.lpLong : t.ofLong}</Bubble>
+              <Bubble>
+                {picked === 'lowprofile' ? t.lpLong : picked === 'openfields' ? t.ofLong : t.spLong}
+              </Bubble>
               <div className="gw-actions">
                 <button
                   type="button"
@@ -943,16 +1245,18 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
                 </div>
               </div>
             ) : null}
-            <label className="gw-receipt-toggle">
-              <input
-                type="checkbox"
-                checked={wantReceipt}
-                disabled={disabled}
-                onChange={(event) => setWantReceipt(event.target.checked)}
-              />
-              {t.receiptToggle}
-            </label>
-            {wantReceipt ? (
+            {!isSpectra ? (
+              <label className="gw-receipt-toggle">
+                <input
+                  type="checkbox"
+                  checked={wantReceipt}
+                  disabled={disabled}
+                  onChange={(event) => setWantReceipt(event.target.checked)}
+                />
+                {t.receiptToggle}
+              </label>
+            ) : null}
+            {wantReceipt && !isSpectra ? (
               <label className="gw-field">
                 {t.receiptEmailLabel}
                 <input
@@ -985,21 +1289,35 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
       {step === 'create' ? (
         <section className="gw-step" key="create">
           <ArtTicket />
-          <Bubble>{t.createBubble(amountNumber)}</Bubble>
-          {sessionCode === 0 ? (
+          <Bubble>{isSpectra ? t.createBubbleSp(amountNumber) : t.createBubble(amountNumber)}</Bubble>
+          {createOk ? (
             <div className="gw-result gw-result--ok">
               <SuccessCheck />
               <p>
-                {t.createOk(
-                  <code dir="ltr">
-                    {lowProfileId.slice(0, 8)}…{lowProfileId.slice(-4)}
-                  </code>,
-                )}
+                {isSpectra
+                  ? t.createOkSp(
+                      <code dir="ltr">
+                        {spectraSessionId.slice(0, 8)}…{spectraSessionId.slice(-4)}
+                      </code>,
+                    )
+                  : t.createOk(
+                      <code dir="ltr">
+                        {lowProfileId.slice(0, 8)}…{lowProfileId.slice(-4)}
+                      </code>,
+                    )}
               </p>
             </div>
           ) : null}
           {error ? <p className="gw-error">{error}</p> : null}
-          {sessionCode === 0 ? (
+          {createOk && isSpectra ? (
+            <TechCorner title={t.techTitleCreateSp}>
+              <p>{t.techCreateIntroSp}</p>
+              <p>{t.techCreateSentSp}</p>
+              {spectraSentPreview ? <JsonBlock value={spectraSentPreview} /> : null}
+              <p>{t.techCreateGotSp}</p>
+              {spectraGotPreview ? <JsonBlock value={spectraGotPreview} /> : null}
+            </TechCorner>
+          ) : createOk ? (
             <TechCorner title={t.techTitleCreate}>
               <p>{t.techCreateIntro}</p>
               <p>{t.techCreateSent}</p>
@@ -1012,7 +1330,7 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
             <button type="button" className="text-btn" onClick={() => goTo('setup')}>
               {t.backBtn}
             </button>
-            {sessionCode === 0 ? (
+            {createOk ? (
               <button type="button" className="cta-button gw-pulse" onClick={() => goTo('pay')}>
                 {t.continueBtn}
               </button>
@@ -1112,8 +1430,13 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
       {step === 'check' ? (
         <section className="gw-step" key="check">
           <ArtDetective />
-          <Bubble>{t.checkBubble(lowProfileId ? lowProfileId.slice(0, 8) : '')}</Bubble>
-          {result && resultCode !== 0 ? (
+          <Bubble>
+            {isSpectra ? t.checkBubbleSp : t.checkBubble(lowProfileId ? lowProfileId.slice(0, 8) : '')}
+          </Bubble>
+          {isSpectra && spectraPayment && spectraPayment.status !== 'SUCCEEDED' ? (
+            <p className="gw-error">{t.pendingSp}</p>
+          ) : null}
+          {!isSpectra && result && resultCode !== 0 ? (
             <p className="gw-error">
               {resultCode === 5119
                 ? t.pending5119
@@ -1121,7 +1444,14 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
             </p>
           ) : null}
           {error ? <p className="gw-error">{error}</p> : null}
-          {result ? (
+          {isSpectra && spectraCheckPreview ? (
+            <TechCorner title={t.techTitleCheckSp}>
+              <p>{t.techCheckIntroSp}</p>
+              <JsonBlock value={spectraCheckPreview} />
+              <p>{t.techCheckContrastSp}</p>
+            </TechCorner>
+          ) : null}
+          {!isSpectra && result ? (
             <TechCorner title={t.techTitleCheck}>
               <p>{t.techCheckIntro}</p>
               {resultPreview ? <JsonBlock value={resultPreview} /> : null}
@@ -1135,10 +1465,10 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
             <button
               type="button"
               className="cta-button gw-pulse"
-              disabled={disabled || busy || !lowProfileId}
+              disabled={disabled || busy || (isSpectra ? !spectraSession : !lowProfileId)}
               onClick={() => void runCheck()}
             >
-              {busy ? t.asking : result ? t.askAgain : t.askBtn}
+              {busy ? t.asking : result || spectraVerify ? t.askAgain : t.askBtn}
             </button>
           </div>
         </section>
@@ -1151,21 +1481,35 @@ export function GuidedWalkthrough({ disabled, lang }: GuidedWalkthroughProps) {
             <SuccessCheck />
             <p>
               {t.doneConfirmed(
-                <>
-                  {asText(transaction?.Amount) ? t.donePaidAmount(asText(transaction?.Amount)) : ''}
-                  {last4 ? t.doneCardEnding(last4) : ''}
-                  {tranId ? t.doneTransaction(tranId) : ''}.
-                </>,
+                isSpectra ? (
+                  <>
+                    {spectraPayment ? t.donePaidAmount(spectraPayment.amount) : ''}
+                    {spectraPayment ? t.doneStatusSp(spectraPayment.status) : ''}.
+                  </>
+                ) : (
+                  <>
+                    {asText(transaction?.Amount) ? t.donePaidAmount(asText(transaction?.Amount)) : ''}
+                    {last4 ? t.doneCardEnding(last4) : ''}
+                    {tranId ? t.doneTransaction(tranId) : ''}.
+                  </>
+                ),
               )}
             </p>
           </div>
-          {wantReceipt && receiptEmail ? (
+          {!isSpectra && wantReceipt && receiptEmail ? (
             <div className="gw-result gw-result--ok">
               <p>{t.doneReceipt(receiptEmail.trim())}</p>
             </div>
           ) : null}
-          <Bubble>{t.doneRecap(integration)}</Bubble>
-          {result ? (
+          <Bubble>{isSpectra ? t.doneRecapSp : t.doneRecap(integration)}</Bubble>
+          {isSpectra && spectraCheckPreview ? (
+            <TechCorner title={t.techTitleCheckSp}>
+              <p>{t.techCheckIntroSp}</p>
+              <JsonBlock value={spectraCheckPreview} />
+              <p>{t.techCheckContrastSp}</p>
+            </TechCorner>
+          ) : null}
+          {!isSpectra && result ? (
             <TechCorner title={t.techTitleCheck}>
               <p>{t.techCheckIntro}</p>
               {resultPreview ? <JsonBlock value={resultPreview} /> : null}
