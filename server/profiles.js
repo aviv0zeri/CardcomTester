@@ -235,8 +235,87 @@ function buildTokenChargeBody(profile, input) {
   assignIfPresent(body, 'ExternalUniqTranId', source.externalUniqTranId)
   assignIfPresent(body, 'CardExpirationMMYY', source.cardExpirationMMYY)
   assignIfPresent(body, 'CVV2', source.cvv2)
+  // Real accepted field name per Cardcom's own v11 Swagger schema (TransactionReq) --
+  // the double "Uniq" is not a docs typo, it's the actual property. Sent as a real
+  // JSON boolean (not via assignIfPresent, which stringifies) since the schema types
+  // it as boolean.
+  if (typeof source.externalUniqTranIdResponse === 'boolean') {
+    body.ExternalUniqUniqTranIdResponse = source.externalUniqTranIdResponse
+  }
 
   return body
+}
+
+// Lookup only (POST /api/v11/Transactions/GetTransactionByExternalUniqTran) -- no
+// charge operation involved. Per Cardcom's v11 Swagger schema
+// (GetExternalUniqTranIdStatusReq, additionalProperties: false), the accepted fields
+// are only TerminalNumber, ApiName, ExternalUniqTranId, and an ExternalMerchantId we
+// don't use -- there is no ApiPassword field on this request at all, unlike every
+// other endpoint here.
+function buildLookupByExternalUniqTranBody(profile, externalUniqTranId) {
+  const id = String(externalUniqTranId || '').trim()
+  if (!id) {
+    const error = new Error('externalUniqTranId is required')
+    error.statusCode = 400
+    throw error
+  }
+  return {
+    TerminalNumber: profile.terminalNumber,
+    ApiName: profile.apiName,
+    ExternalUniqTranId: id,
+  }
+}
+
+// Post-hoc document creation (POST /api/v11/Documents/CreateDocument) -- creates a
+// document for an EXISTING transaction that has none. Per Cardcom's v11 Swagger
+// (CreateDocumentRequest, additionalProperties: false): ApiName + ApiPassword +
+// Document are required; DealNumbers ([{DealNumber}]) associates the document with the
+// internal transaction number (the Swagger's own "Array of cheques" description there
+// is a copy-paste error -- the support article defines it as the transaction number).
+// Deliberately narrow: one deal number, minimal Document, no Cash/Cheques/SMS.
+function buildCreateDocumentBody(profile, input) {
+  const source = input && typeof input === 'object' ? input : {}
+
+  const dealNumber = Number(source.dealNumber)
+  if (!Number.isInteger(dealNumber) || dealNumber <= 0) {
+    const error = new Error('dealNumber must be a positive integer')
+    error.statusCode = 400
+    throw error
+  }
+  const amount = Number(source.amount)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    const error = new Error('amount must be a number greater than 0')
+    error.statusCode = 400
+    throw error
+  }
+  if (!profile.apiPassword) {
+    const error = new Error('this endpoint requires ApiPassword on the profile')
+    error.statusCode = 400
+    throw error
+  }
+
+  const document = {
+    DocumentTypeToCreate: String(source.documentType || 'TaxInvoiceAndReceipt'),
+    Name: String(source.name || 'Test'),
+    IsSendByEmail: false,
+    Products: [{
+      Description: String(source.productDescription || 'Order'),
+      Quantity: 1,
+      UnitCost: amount,
+      TotalLineCost: amount,
+    }],
+  }
+  if (source.email && String(source.email).trim()) {
+    document.Email = String(source.email).trim()
+    document.IsSendByEmail = Boolean(source.isSendByEmail)
+  }
+
+  return {
+    ApiName: profile.apiName,
+    ApiPassword: profile.apiPassword,
+    DealNumbers: [{ DealNumber: dealNumber }],
+    Document: document,
+  }
 }
 
 function buildLabResultBody(profile, lowProfileId) {
@@ -263,6 +342,8 @@ module.exports = {
   buildLowProfileBody,
   buildLabCreateBody,
   buildTokenChargeBody,
+  buildLookupByExternalUniqTranBody,
+  buildCreateDocumentBody,
   buildLabResultBody,
   productTotal,
   parseProducts,

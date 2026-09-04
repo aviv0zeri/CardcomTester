@@ -1,6 +1,8 @@
 const CREATE_URL = 'https://secure.cardcom.solutions/api/v11/LowProfile/Create'
 const RESULT_URL = 'https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult'
 const TRANSACTION_URL = 'https://secure.cardcom.solutions/api/v11/Transactions/Transaction'
+const LOOKUP_BY_EXTERNAL_URL = 'https://secure.cardcom.solutions/api/v11/Transactions/GetTransactionByExternalUniqTran'
+const CREATE_DOCUMENT_URL = 'https://secure.cardcom.solutions/api/v11/Documents/CreateDocument'
 
 // ApiPassword must never reach the browser — stripped here before the debug
 // echo goes back to React. ApiName currently still leaks into that debug
@@ -52,6 +54,14 @@ function chargeToken(body) {
   return postCardcom(TRANSACTION_URL, body)
 }
 
+function lookupByExternalUniqTran(body) {
+  return postCardcom(LOOKUP_BY_EXTERNAL_URL, body)
+}
+
+function createDocument(body) {
+  return postCardcom(CREATE_DOCUMENT_URL, body)
+}
+
 // Lab webhook inspector only. Cardcom documents no signature/HMAC on the
 // WebHookUrl callback, so every hit is an untrusted observation, never
 // authoritative — GetLpResult stays the source of truth. This allowlist is
@@ -78,10 +88,14 @@ module.exports = {
   CREATE_URL,
   RESULT_URL,
   TRANSACTION_URL,
+  LOOKUP_BY_EXTERNAL_URL,
+  CREATE_DOCUMENT_URL,
   publicPayload,
   responseSummary,
   summarizeWebhookPayload,
   createLowProfile,
   getLpResult,
   chargeToken,
+  lookupByExternalUniqTran,
+  createDocument,
 }

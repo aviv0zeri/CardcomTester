@@ -1,5 +1,5 @@
-require('dotenv').config();
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const {
@@ -7,12 +7,16 @@ const {
   buildLowProfileBody,
   buildLabCreateBody,
   buildTokenChargeBody,
+  buildLookupByExternalUniqTranBody,
+  buildCreateDocumentBody,
   buildLabResultBody,
 } = require('./profiles');
 const {
   createLowProfile,
   getLpResult,
   chargeToken,
+  lookupByExternalUniqTran,
+  createDocument,
   publicPayload,
   responseSummary,
 } = require('./cardcom');
@@ -189,6 +193,59 @@ app.post('/lab/charge-token', async (req, res) => {
 
     const cardcom = await chargeToken(body);
     console.log({ lab: 'charge-token', cardcom: responseSummary(cardcom) });
+
+    res.json({ cardcom });
+  } catch (error) {
+    console.log(error);
+    if (error.statusCode === 400) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    res.status(error.statusCode === 502 ? 502 : 500).json({
+      message: error.message || 'Cardcom request failed',
+      raw: error.raw,
+    });
+  }
+});
+
+app.post('/lab/lookup-tran', async (req, res) => {
+  try {
+    const profile = getProfile(req.body && req.body.profileId);
+    const body = buildLookupByExternalUniqTranBody(profile, req.body && req.body.externalUniqTranId);
+
+    console.log({ lab: 'lookup-tran', profileId: profile.id, ExternalUniqTranId: body.ExternalUniqTranId });
+
+    const cardcom = await lookupByExternalUniqTran(body);
+    console.log({ lab: 'lookup-tran', cardcom: responseSummary(cardcom) });
+
+    res.json({ cardcom });
+  } catch (error) {
+    console.log(error);
+    if (error.statusCode === 400) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    res.status(error.statusCode === 502 ? 502 : 500).json({
+      message: error.message || 'Cardcom request failed',
+      raw: error.raw,
+    });
+  }
+});
+
+app.post('/lab/create-document', async (req, res) => {
+  try {
+    const profile = getProfile(req.body && req.body.profileId);
+    const body = buildCreateDocumentBody(profile, req.body);
+
+    console.log({
+      lab: 'create-document',
+      profileId: profile.id,
+      DealNumbers: body.DealNumbers,
+      DocumentTypeToCreate: body.Document.DocumentTypeToCreate,
+    });
+
+    const cardcom = await createDocument(body);
+    console.log({ lab: 'create-document', cardcom: responseSummary(cardcom) });
 
     res.json({ cardcom });
   } catch (error) {
