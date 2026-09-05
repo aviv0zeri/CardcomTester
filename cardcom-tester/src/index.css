@@ -1845,3 +1845,40 @@ a.cta-button[aria-disabled="true"] {
   font-size: 0.76rem;
   color: var(--text-muted);
 }
+
+.gw-accent-title {
+  padding-inline-start: 6px;
+}
+
+/* Preset dots; the picked one gets a ring in the text colour. */
+.gw-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gw-swatch {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border-strong);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.gw-swatch:hover:not(:disabled) {
+  transform: scale(1.12);
+}
+
+.gw-swatch.is-on {
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+.gw-accent-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}

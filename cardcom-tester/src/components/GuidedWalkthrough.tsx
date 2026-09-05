@@ -49,6 +49,11 @@ type GuidedStep = 'intro' | 'profile' | 'pick' | 'device' | 'setup' | 'create' |
 // bezel, and (in-app) the payment page's embedded layout.
 type DeviceChoice = 'phone-app' | 'phone-web' | 'tablet' | 'desktop'
 const DEVICE_CHOICES: DeviceChoice[] = ['phone-app', 'phone-web', 'tablet', 'desktop']
+
+// Quick accent picks (the business's own blue first); the native colour input
+// stays for anything else. Presets also sidestep Safari's colour input, which
+// only reports a pick once the macOS colour panel is closed.
+const ACCENT_PRESETS = ['#3d5580', '#0e7c66', '#c2410c', '#b91c1c', '#6d28d9', '#111827']
 type Integration = 'lowprofile' | 'openfields' | 'spectra'
 type Lang = UiLang
 
@@ -1126,17 +1131,37 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             </button>
           ))}
         </div>
-        <label className="gw-accent">
-          <input
-            type="color"
-            value={accent}
-            disabled={disabled}
-            aria-label={t.accentLabel}
-            onChange={(event) => setAccent(event.target.value)}
-          />
-          {t.accentLabel}
-          <code dir="ltr">{accent}</code>
-        </label>
+        <div className="gw-accent">
+          <span className="gw-accent-title">{t.accentLabel}</span>
+          <div className="gw-swatches" role="radiogroup" aria-label={t.accentLabel}>
+            {ACCENT_PRESETS.map((hex) => (
+              <button
+                key={hex}
+                type="button"
+                className={`gw-swatch${accent === hex ? ' is-on' : ''}`}
+                style={{ background: hex }}
+                aria-label={hex}
+                aria-pressed={accent === hex}
+                disabled={disabled}
+                onClick={() => {
+                  playClick()
+                  setAccent(hex)
+                }}
+              />
+            ))}
+          </div>
+          <label className="gw-accent-custom" title={t.accentLabel}>
+            <input
+              type="color"
+              value={accent}
+              disabled={disabled}
+              aria-label={t.accentLabel}
+              onInput={(event) => setAccent((event.target as HTMLInputElement).value)}
+              onChange={(event) => setAccent(event.target.value)}
+            />
+            <code dir="ltr">{accent}</code>
+          </label>
+        </div>
         <div className="seg seg--small" role="radiogroup" aria-label={t.walletsLabel}>
           <span className="seg-label">{t.walletsLabel}</span>
           {[1, 2, 3, 4].map((count) => (
