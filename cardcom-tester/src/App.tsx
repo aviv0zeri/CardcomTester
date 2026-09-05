@@ -105,7 +105,11 @@ function App() {
       width: version.width,
       height: version.height,
       scroll: isNewDesign(design) ? true : version.scroll,
-      summarySrc: dualView ? '/cardcom-preview/order-summary.html' : undefined,
+      // The summary column follows the tester's language and business; the
+      // Design tab has no amount or theme controls, so those stay default.
+      summarySrc: dualView
+        ? `/cardcom-preview/order-summary.html?${new URLSearchParams({ lang: language === 'en' ? 'en' : 'he', brand: profile.id })}`
+        : undefined,
     })
     setStatusUrl(null)
     setStatus(`open ${label} · ${version.note}`)
