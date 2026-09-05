@@ -36,6 +36,7 @@ export const OPEN_FIELDS_REGIONS: { value: OpenFieldsRegion; label: string }[] =
 // page shows (an allowlisted id the page maps itself; never a URL). theme ->
 // force light/dark instead of following the OS ('system' sends nothing).
 // accent -> the page's accent colour as six hex digits (the page validates).
+// testFill -> show the page's tester-only "Fill test details" button.
 export function openFieldsUrl(
   language: Language,
   opts: {
@@ -48,6 +49,7 @@ export function openFieldsUrl(
     brand?: string
     theme?: PageTheme
     accent?: string
+    testFill?: boolean
   } = {},
 ) {
   const lang = language === 'en' ? 'en' : 'he'
@@ -61,6 +63,7 @@ export function openFieldsUrl(
   if (opts.brand) params.set('brand', opts.brand)
   if (opts.theme && opts.theme !== 'system') params.set('theme', opts.theme)
   if (opts.accent) params.set('accent', opts.accent.replace(/^#/, ''))
+  if (opts.testFill) params.set('testfill', '1')
   return `/cardcom-preview/open-fields/form.html?${params}`
 }
 
@@ -117,12 +120,12 @@ const NEW_DESKTOP_IFRAME: PreviewVersion[] = [
 ]
 
 // Single-column checkout (Stripe/Shopify-style), sized to the tallest state
-// measured in embed mode -- the US/EU templates (address rows + name on
-// card, ~737px with the preview caption) beat Israel with its invoice
-// fields open (~703px) -- so nothing inside ever needs to scroll. 500 wide
-// leaves the page's 460px card centered with its own padding.
+// measured in embed mode so nothing inside ever needs to scroll: Israel
+// with the invoice fields open plus the brand header, the wallet row and
+// an inline payment-status line under Pay now (~830px at 500 wide). 500
+// wide leaves the page's 460px card centered with its own padding.
 const OPEN_FIELDS_IFRAME: PreviewVersion[] = [
-  { id: 'of-frame', label: 'Checkout', note: '500×760', width: 500, height: 760, scroll: false, embed: true },
+  { id: 'of-frame', label: 'Checkout', note: '500×860', width: 500, height: 860, scroll: false, embed: true },
 ]
 
 export function versionsFor(

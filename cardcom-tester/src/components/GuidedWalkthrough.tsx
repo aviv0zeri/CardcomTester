@@ -898,6 +898,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             brand: profile.id,
             theme: pageTheme,
             accent,
+            testFill: true,
           })
         : ''
       : asText(spectraSession?.checkout_url)
@@ -910,11 +911,12 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             brand: profile.id,
             theme: pageTheme,
             accent,
+            testFill: true,
           })
         : ''
       : asText(session?.Url || session?.url)
-  // Only our own Open Fields page takes the theme/accent above.
-  const themedPage = isOpenFields || (isSpectra && spectraPresentation === 'embedded_fields')
+  // Payment-page look controls -- shown once, on the business step (only
+  // our own Open Fields page takes them; Cardcom's hosted page ignores them).
   const lookControls = (
     <div className="gw-field">
       {t.lookLabel}
@@ -1604,7 +1606,6 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
               .
             </p>
           ) : null}
-          {themedPage ? <div className="gw-form">{lookControls}</div> : null}
           <div className="gw-actions">
             <button type="button" className="text-btn" onClick={() => goTo('create')}>
               {t.backBtn}
