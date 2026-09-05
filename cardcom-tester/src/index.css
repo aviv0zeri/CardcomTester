@@ -1017,12 +1017,35 @@ a.cta-button[aria-disabled="true"] {
   overflow: auto;
 }
 
-/* Design-tab-only "double view": your-own-app order summary next to the
-   real payment panel. Always light, matching the checkout box itself (see
-   .checkout-close's own note) -- this box mimics Cardcom's page chrome
-   regardless of the tester's own light/dark theme. */
+/* Two-panel checkout (Stripe-style): the merchant's own order summary as
+   the first column, the real payment frame as the second, one hairline
+   divider between them. Two layouts: side-by-side (both visible at once)
+   or continue (summary first, the payment column slides in). The stage
+   follows the payment page's theme via .checkout-stage--dark. */
+.checkout-stage {
+  --co-surface: #fff;
+  --co-border: #e1e4ee;
+  --co-muted: #6b7280;
+  --co-divider-shadow: rgba(20, 22, 28, 0.08);
+}
+
+.checkout-stage--dark {
+  --co-surface: #171c27;
+  --co-border: #2a3242;
+  --co-muted: #8991a6;
+  --co-divider-shadow: rgba(0, 0, 0, 0.5);
+}
+
+.checkout-stage--dark .checkout-sheet,
+.checkout-stage--dark .checkout-loading,
+.checkout-stage--dark .payment-frame {
+  background: var(--co-surface);
+  color: var(--co-muted);
+}
+
 .checkout-sheet--dual {
   flex-direction: row;
+  background: var(--co-surface);
 }
 
 .checkout-panel {
@@ -1030,28 +1053,39 @@ a.cta-button[aria-disabled="true"] {
   flex-direction: column;
   min-width: 0;
   height: 100%;
+  will-change: transform, opacity;
 }
 
 .checkout-panel--summary {
-  flex: 0 0 340px;
-  gap: 12px;
-  padding: 20px 16px;
-  background: #f4f5f8;
-  border-inline-end: 1px solid #e1e4ee;
+  flex: 0 0 420px;
+  background: transparent;
 }
 
 .checkout-panel--payment {
   flex: 1;
   min-width: 0;
+  background: var(--co-surface);
 }
 
-.checkout-panel-label {
-  margin: 0;
-  color: #5a5e6e;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.checkout-panel--pending {
+  align-items: center;
+  justify-content: center;
+  color: var(--co-muted);
+  font-size: 0.9rem;
+}
+
+.checkout-panel--pending svg {
+  width: 44px;
+  height: 44px;
+  opacity: 0.35;
+}
+
+.checkout-divider {
+  flex: 0 0 1px;
+  align-self: stretch;
+  background: var(--co-border);
+  box-shadow: 0 0 28px 6px var(--co-divider-shadow);
+  will-change: transform;
 }
 
 .checkout-panel-frame {
@@ -1063,9 +1097,31 @@ a.cta-button[aria-disabled="true"] {
 }
 
 .checkout-panel--summary .checkout-panel-frame {
-  border-radius: 10px;
-  border: 1px solid #e1e4ee;
-  background: #fff;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* "Continue to payment" sits at the foot of the summary column. */
+.checkout-continue {
+  margin: 0 40px 36px;
+}
+
+@media (max-width: 900px) {
+  .checkout-sheet--dual {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .checkout-panel--summary {
+    flex: 0 0 auto;
+    min-height: 320px;
+  }
+
+  .checkout-divider {
+    flex: 0 0 1px;
+    width: 100%;
+  }
 }
 
 .device-modal {
@@ -1881,4 +1937,13 @@ a.cta-button[aria-disabled="true"] {
   align-items: center;
   gap: 6px;
   cursor: pointer;
+}
+
+/* A walkthrough field centred under a reveal bubble (device step's layout switch). */
+.gw-field--center {
+  align-items: center;
+}
+
+.gw-field--center .seg {
+  align-self: center;
 }

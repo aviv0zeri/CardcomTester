@@ -12,6 +12,8 @@ type VersionMenuProps = {
   disabled?: boolean
   doubleView: boolean
   onDoubleViewChange: (value: boolean) => void
+  dualMode: 'side-by-side' | 'continue'
+  onDualModeChange: (mode: 'side-by-side' | 'continue') => void
   onLocal: (version?: PreviewVersion) => void
   onCardcom: (version?: PreviewVersion) => void
 }
@@ -25,6 +27,8 @@ export function VersionMenu({
   disabled,
   doubleView,
   onDoubleViewChange,
+  dualMode,
+  onDualModeChange,
   onLocal,
   onCardcom,
 }: VersionMenuProps) {
@@ -83,6 +87,21 @@ export function VersionMenu({
           />
           Show order summary next to it (2 panels)
         </label>
+      ) : null}
+      {canDoubleView && doubleView ? (
+        <div className="seg seg--small" role="radiogroup" aria-label="Two-panel layout">
+          {(['side-by-side', 'continue'] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={`seg-btn${dualMode === option ? ' is-on' : ''}`}
+              disabled={blocked}
+              onClick={() => onDualModeChange(option)}
+            >
+              {option === 'side-by-side' ? 'Side by side' : 'Summary, then payment'}
+            </button>
+          ))}
+        </div>
       ) : null}
 
       <div className="cta-actions cta-actions--go">

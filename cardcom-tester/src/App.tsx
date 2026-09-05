@@ -58,6 +58,7 @@ function App() {
   const [device, setDevice] = useState<Device>('desktop')
   const [mode, setMode] = useState<Mode>('redirect')
   const [doubleView, setDoubleView] = useState(false)
+  const [dualMode, setDualMode] = useState<'side-by-side' | 'continue'>('side-by-side')
   const [overlay, setOverlay] = useState<Overlay | null>(null)
   const [deviceError, setDeviceError] = useState<DeviceError | null>(null)
   const [busy, setBusy] = useState(false)
@@ -302,6 +303,8 @@ function App() {
                 busy={busy}
                 disabled={overlayOpen}
                 doubleView={doubleView}
+                dualMode={dualMode}
+                onDualModeChange={setDualMode}
                 onDoubleViewChange={setDoubleView}
                 onLocal={openLocal}
                 onCardcom={(version) => void openCardcom(version)}
@@ -360,6 +363,7 @@ function App() {
           height={overlay.height}
           scroll={overlay.scroll}
           summarySrc={overlay.summarySrc}
+          dualMode={dualMode}
           rtl={language === 'he' || language === 'ar'}
           onClose={() => {
             setOverlay(null)

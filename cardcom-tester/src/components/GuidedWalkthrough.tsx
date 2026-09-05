@@ -54,6 +54,11 @@ const DEVICE_CHOICES: DeviceChoice[] = ['phone-app', 'phone-web', 'tablet', 'des
 // stays for anything else. Presets also sidestep Safari's colour input, which
 // only reports a pick once the macOS colour panel is closed.
 const ACCENT_PRESETS = ['#3d5580', '#0e7c66', '#c2410c', '#b91c1c', '#6d28d9', '#111827']
+
+// Desktop two-panel layouts: both columns at once, or summary first with a
+// Continue that slides the payment column in.
+type DualMode = 'side-by-side' | 'continue'
+const DUAL_MODES: DualMode[] = ['side-by-side', 'continue']
 type Integration = 'lowprofile' | 'openfields' | 'spectra'
 type Lang = UiLang
 
@@ -73,6 +78,8 @@ type Copy = {
   // Pay step, desktop: your-own-app order summary shown beside the payment frame.
   sideBySideLabel: string
   sideBySideContinue: string
+  layoutLabel: string
+  layoutLabels: Record<DualMode, string>
   // Business step: which business (Cardcom terminal + Spectra project + brand).
   profileBubble: ReactNode
   profileLabel: string
@@ -175,6 +182,8 @@ const COPY: Record<Lang, Copy> = {
     ),
     sideBySideLabel: "Your app's screen",
     sideBySideContinue: 'Continue to payment →',
+    layoutLabel: 'Desktop layout',
+    layoutLabels: { 'side-by-side': 'Side by side', continue: 'Summary, then payment' },
     deviceTitles: {
       'phone-app': 'Phone · in your app',
       'phone-web': 'Phone · in the browser',
@@ -523,6 +532,8 @@ const COPY: Record<Lang, Copy> = {
     ),
     sideBySideLabel: 'המסך של האפליקציה שלך',
     sideBySideContinue: 'המשך לתשלום ←',
+    layoutLabel: 'פריסה במחשב',
+    layoutLabels: { 'side-by-side': 'זה לצד זה', continue: 'סיכום ואז תשלום' },
     deviceTitles: {
       'phone-app': 'טלפון · בתוך האפליקציה',
       'phone-web': 'טלפון · בדפדפן',
@@ -1062,6 +1073,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   const [accent, setAccent] = useState(profile.accent)
   // 1 = the real Google Pay only; 2-4 add mock wallets to preview the row.
   const [mockWallets, setMockWallets] = useState(1)
+  const [dualMode, setDualMode] = useState<DualMode>('side-by-side')
 
   const t = COPY[lang]
   // One choice drives both the walkthrough interface AND the payment page.
@@ -1077,6 +1089,11 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   // through our own API are a later slice) -- it never gates the Spectra path.
   const receiptReady = isSpectra || !wantReceipt || receiptEmail.includes('@')
 
+  // Desktop: the two-panel view -- your-own-app order summary beside the real
+  // payment frame (the same panel the Design tab's "double view" uses), so the
+  // Open Fields page skips its own cart screen. Phones and tablets have no
+  // room for it.
+  const sideBySide = device === 'desktop' && viewport.device !== 'mobile'
   const spectraSessionReference = spectraSession?.bootstrap?.session_reference ?? ''
   const payUrl = isSpectra
     ? spectraPresentation === 'embedded_fields'
@@ -1090,7 +1107,9 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             accent,
             testFill: true,
             wallets: mockWallets,
-            embed: device === 'phone-app',
+            embed: device === 'phone-app' || sideBySide,
+            screen: sideBySide ? 'checkout' : undefined,
+            layout: sideBySide ? 'split' : undefined,
           })
         : ''
       : asText(spectraSession?.checkout_url)
@@ -1105,7 +1124,9 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             accent,
             testFill: true,
             wallets: mockWallets,
-            embed: device === 'phone-app',
+            embed: device === 'phone-app' || sideBySide,
+            screen: sideBySide ? 'checkout' : undefined,
+            layout: sideBySide ? 'split' : undefined,
           })
         : ''
       : asText(session?.Url || session?.url)
@@ -1354,7 +1375,9 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
           : device === 'tablet'
             ? { width: 768, height: 1024 }
             : {
-                width: Math.min(1000, viewport.width - 40),
+                // The payment column; PaymentOverlay adds the 420px summary
+                // column beside it -- ~1080px in all, like a Stripe checkout.
+                width: Math.min(660, viewport.width - 40),
                 height: Math.min(940, viewport.height - 40),
               }
   const deviceFrame =
@@ -1365,11 +1388,21 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
         : device === 'tablet'
           ? 'tablet'
           : undefined
-  // Desktop: the two-panel view -- your-own-app order summary beside the real
-  // payment frame (the same panel the Design tab's "double view" uses), so the
-  // Open Fields page skips its own cart screen. Phones and tablets have no
-  // room for it.
-  const sideBySide = device === 'desktop' && viewport.device !== 'mobile'
+  // The stage and the summary column follow the payment page's theme/accent,
+  // so the two panels read as one page.
+  const resolvedTheme: 'light' | 'dark' =
+    pageTheme === 'system'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
+      : pageTheme
+  const summarySrc = `/cardcom-preview/order-summary.html?${new URLSearchParams({
+    amount: String(amountNumber),
+    brand: profile.id,
+    lang: language === 'en' ? 'en' : 'he',
+    theme: resolvedTheme,
+    accent: accent.replace(/^#/, ''),
+  })}`
 
   const runCheck = async () => {
     if (busy) return
@@ -1695,6 +1728,27 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
           {device ? (
             <div className="gw-picked-reveal" key={device}>
               <Bubble>{t.deviceLong[device]}</Bubble>
+              {device === 'desktop' ? (
+                <div className="gw-field gw-field--center">
+                  {t.layoutLabel}
+                  <div className="seg seg--small" role="radiogroup" aria-label={t.layoutLabel}>
+                    {DUAL_MODES.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`seg-btn${dualMode === option ? ' is-on' : ''}`}
+                        disabled={disabled}
+                        onClick={() => {
+                          playClick()
+                          setDualMode(option)
+                        }}
+                      >
+                        {t.layoutLabels[option]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               <div className="gw-actions">
                 <button type="button" className="text-btn" onClick={() => goTo('pick')}>
                   {t.backBtn}
@@ -1942,8 +1996,9 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
                   rtl={lang === 'he'}
                   scroll
                   frame={deviceFrame}
-                  summarySrc={sideBySide ? '/cardcom-preview/order-summary.html' : undefined}
-                  summaryLabel={t.sideBySideLabel}
+                  summarySrc={sideBySide ? summarySrc : undefined}
+                  dualMode={dualMode}
+                  theme={resolvedTheme}
                   continueLabel={t.sideBySideContinue}
                   {...overlaySize}
                 />,

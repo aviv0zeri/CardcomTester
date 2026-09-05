@@ -15,6 +15,11 @@ function isDarkTheme() {
 const FIELDS_BOX = PAGE_PARAMS.get('fields') === 'box';
 if (FIELDS_BOX) document.documentElement.classList.add('fields-box');
 
+// ?layout=split: this page is the second column of a two-panel checkout
+// (the tester's order summary is the first) -- plain column background, the
+// form aligned to the column's start, next to the divider (form.css).
+if (PAGE_PARAMS.get('layout') === 'split') document.documentElement.classList.add('split');
+
 // ?accent=rrggbb (strict six-hex, nothing else) recolours the page's accent.
 // The hover shade and soft tint are derived from it, so one value is enough.
 const ACCENT = /^#?([0-9a-f]{6})$/i.exec(PAGE_PARAMS.get('accent') || '');

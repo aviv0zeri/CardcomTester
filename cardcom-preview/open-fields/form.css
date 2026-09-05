@@ -972,13 +972,16 @@ html.fields-box .card-box .cvv-hint {
 .embed body {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: 100vh;
   padding: 16px 14px;
 }
 
+/* margin:auto centres the card when there is room and simply scrolls when
+   there is not -- justify-content:center would clip the top instead. */
 .embed .app-shell {
   flex: 0 0 auto;
+  margin: auto 0;
 }
 
 .embed .brand {
@@ -1065,6 +1068,33 @@ html.fields-box .card-box .cvv-hint {
 
 .dialog-btn {
   margin-top: 20px;
+}
+
+/* ---- split: second column of the tester's two-panel checkout -------------
+   Stripe-style: no card chrome, no page gradient -- the form sits directly
+   on the column, aligned to its start (the divider side), with generous
+   padding. The embed rules above still apply for the tight inner spacing. */
+html.split body {
+  align-items: flex-start;
+  padding: 44px 40px 32px 48px;
+  background: var(--surface);
+}
+
+html.split .app-shell {
+  width: min(440px, 100%);
+  margin: auto 0;
+}
+
+html.split .container {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.split .brand {
+  margin-bottom: 18px;
 }
 
 /* ---- loading overlay ----------------------------------------------------- */

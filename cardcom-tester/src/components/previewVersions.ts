@@ -54,6 +54,8 @@ export function openFieldsUrl(
     wallets?: number
     // 'box' -> Open Fields 2.1: number | expiry / CVV in one bordered box.
     fields?: 'box'
+    // 'split' -> the page is the second column of the two-panel checkout.
+    layout?: 'split'
   } = {},
 ) {
   const lang = language === 'en' ? 'en' : 'he'
@@ -70,6 +72,7 @@ export function openFieldsUrl(
   if (opts.testFill) params.set('testfill', '1')
   if (opts.wallets && opts.wallets > 1) params.set('wallets', String(Math.min(4, opts.wallets)))
   if (opts.fields) params.set('fields', opts.fields)
+  if (opts.layout) params.set('layout', opts.layout)
   return `/cardcom-preview/open-fields/form.html?${params}`
 }
 
@@ -87,6 +90,9 @@ export function localPreviewUrl(
       screen: opts.screen,
       brand: opts.brand,
       fields: design === 'openfields21' ? 'box' : undefined,
+      // screen=checkout is only set for the two-panel view, so it doubles as
+      // the "second column" signal here.
+      layout: opts.screen === 'checkout' ? 'split' : undefined,
     })
   }
   const kind = embed ? `${language}/embed` : language

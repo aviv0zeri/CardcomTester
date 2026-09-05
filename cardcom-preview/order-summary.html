@@ -4,99 +4,207 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Order summary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0;
-    height: 100%;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    background: #f4f5f8;
-    color: #14161c;
+  /* The merchant's own summary column, shown beside the payment frame in the
+     tester's two-panel views. Query params: amount, brand, lang (he|en),
+     theme (light|dark), accent (rrggbb). Tokens mirror the Open Fields page. */
+  :root {
+    color-scheme: light;
+    --bg: #f5f6fa;
+    --surface: #fff;
+    --text: #14161c;
+    --text-secondary: #2f3646;
+    --text-muted: #555b6c;
+    --text-faint: #8b90a0;
+    --border: #e1e4ee;
+    --accent: #3d5580;
   }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #131822;
+    --surface: #171c27;
+    --text: #eef0f5;
+    --text-secondary: #b7bdcc;
+    --text-muted: #8991a6;
+    --text-faint: #656d80;
+    --border: #2a3242;
+    --accent: #5c78a8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
   body {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 32px 24px;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 44px 48px 32px 40px;
+    background:
+      radial-gradient(680px 380px at 0% 0%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%),
+      linear-gradient(180deg, var(--bg), color-mix(in srgb, var(--bg) 88%, var(--accent)));
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
   }
-  .card {
-    width: 100%;
-    max-width: 320px;
-    background: #fff;
-    border: 1px solid #e1e4ee;
-    border-radius: 14px;
-    padding: 24px 22px;
-    box-shadow: 0 1px 2px rgba(20, 22, 28, 0.05);
-  }
+  /* The content column keeps a readable width and sits against the divider
+     (its inline-end), like Stripe's summary column. */
+  .col { display: flex; flex-direction: column; flex: 1; width: 100%; max-width: 360px; margin-inline-start: auto; }
+  .brand { display: flex; align-items: center; gap: 10px; margin: 0 0 30px; }
+  .brand img { width: 34px; height: 34px; border-radius: 9px; }
+  .brand-name { font-size: 15px; font-weight: 700; }
   .badge {
-    display: inline-block;
-    margin: 0 0 14px;
+    display: inline-flex;
+    margin-inline-start: auto;
     padding: 3px 9px;
     border-radius: 999px;
-    background: #eef1f7;
-    color: #3d5580;
-    font-size: 0.68rem;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+    font-size: 10.5px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
+    white-space: nowrap;
   }
-  h1 {
-    margin: 0 0 18px;
-    font-size: 1.15rem;
-    font-weight: 700;
+  [dir="rtl"] .badge { letter-spacing: 0; font-size: 11px; }
+  .pay-to { margin: 0; color: var(--text-muted); font-size: 15px; }
+  .amount {
+    margin: 4px 0 30px;
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+    text-align: start;
   }
+  [dir="rtl"] .amount { text-align: right; }
   .row {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
     gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid #eef0f6;
-    font-size: 0.92rem;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
   }
-  .row .name { color: #14161c; }
-  .row .qty { color: #8b90a0; font-size: 0.8rem; margin-inline-start: 6px; }
-  .row .price { color: #3d4456; white-space: nowrap; }
-  .total {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-top: 14px;
+  .row .name { font-weight: 600; }
+  .row .desc { display: block; margin-top: 2px; color: var(--text-muted); font-size: 12.5px; }
+  .row .price { color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; direction: ltr; }
+  .totals { margin-top: 10px; }
+  .totals .row { border: 0; padding: 8px 0; color: var(--text-muted); }
+  .totals .row.total {
+    margin-top: 6px;
     padding-top: 14px;
-    border-top: 2px solid #14161c;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 700;
   }
-  .total .label { font-size: 0.95rem; color: #3d4456; font-weight: 600; }
-  .total .amount { font-size: 1.5rem; font-weight: 800; }
-  .hint {
-    margin: 22px 0 0;
-    padding: 12px 14px;
-    border-radius: 8px;
-    background: #eef1f7;
-    color: #3d5580;
-    font-size: 0.78rem;
-    line-height: 1.45;
+  .totals .row.total .price { color: var(--text); }
+  .foot {
+    margin: auto 0 0;
+    padding-top: 28px;
+    color: var(--text-faint);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .in { animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    .in:nth-child(2) { animation-delay: 0.06s; }
+    .in:nth-child(3) { animation-delay: 0.12s; }
+    .in:nth-child(4) { animation-delay: 0.18s; }
+    .in:nth-child(5) { animation-delay: 0.24s; }
+    .in:nth-child(6) { animation-delay: 0.3s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   }
 </style>
 </head>
 <body>
-  <div class="card">
-    <span class="badge">Your app's own screen</span>
-    <h1>Order summary</h1>
-    <div class="row">
-      <span><span class="name">Monthly plan</span><span class="qty">× 1</span></span>
-      <span class="price">₪7.90</span>
-    </div>
-    <div class="row">
-      <span><span class="name">Setup fee</span><span class="qty">× 1</span></span>
-      <span class="price">₪2.10</span>
-    </div>
-    <div class="total">
-      <span class="label">Total</span>
-      <span class="amount">₪10.00</span>
-    </div>
-    <p class="hint">
-      This screen is yours to design — GateOpen (or any merchant) owns everything up to
-      this point. Only the payment step, next to this panel, actually belongs to Cardcom.
-    </p>
+  <div class="col">
+  <header class="brand in">
+    <img id="brandLogo" alt="" width="34" height="34" hidden>
+    <span class="brand-name" id="brandName">Your store</span>
+    <span class="badge" id="badge">Your app's own screen</span>
+  </header>
+  <p class="pay-to in" id="payTo">Pay Your store</p>
+  <div class="amount in" id="amount">₪0.00</div>
+  <div class="lines in" id="lines"></div>
+  <div class="totals in">
+    <div class="row"><span id="subtotalLabel">Subtotal</span><span class="price" id="subtotal">₪0.00</span></div>
+    <div class="row total"><span id="totalLabel">Total due today</span><span class="price" id="total">₪0.00</span></div>
   </div>
+  <p class="foot in" id="foot">This screen is yours to design — the merchant owns everything up to this point. Only the payment step beside it belongs to Cardcom.</p>
+  </div>
+<script>
+  (function () {
+    var p = new URLSearchParams(location.search);
+    var he = p.get('lang') !== 'en';
+    var theme = p.get('theme');
+    var root = document.documentElement;
+    if (theme === 'dark' || theme === 'light') root.dataset.theme = theme;
+    else if (window.matchMedia('(prefers-color-scheme: dark)').matches) root.dataset.theme = 'dark';
+    var accent = /^#?([0-9a-f]{6})$/i.exec(p.get('accent') || '');
+    if (accent) root.style.setProperty('--accent', '#' + accent[1]);
+    if (he) { root.dir = 'rtl'; root.lang = 'he'; }
+
+    var BRANDS = {
+      gateopen: { name: 'GateOpen', logo: '/cardcom-preview/brand/gateopen-light.svg', logoDark: '/cardcom-preview/brand/gateopen-dark.svg' }
+    };
+    var brand = BRANDS[p.get('brand')];
+    var name = brand ? brand.name : (he ? 'החנות שלך' : 'Your store');
+    if (brand) {
+      var img = document.getElementById('brandLogo');
+      img.src = root.dataset.theme === 'dark' ? brand.logoDark : brand.logo;
+      img.hidden = false;
+    }
+    var T = he ? {
+      badge: 'המסך של האפליקציה שלך', payTo: 'תשלום ל', plan: 'מנוי חודשי', planDesc: 'חיוב חודשי, ניתן לבטל בכל עת',
+      setup: 'דמי הקמה', setupDesc: 'חד-פעמי', subtotal: 'סכום ביניים', total: 'לתשלום היום',
+      foot: 'המסך הזה שלכם לעיצוב — העסק שולט בכל מה שעד כאן. רק שלב התשלום שלצדו שייך לקארדקום.'
+    } : {
+      badge: "Your app's own screen", payTo: 'Pay', plan: 'Monthly plan', planDesc: 'Billed monthly, cancel anytime',
+      setup: 'Setup fee', setupDesc: 'One time', subtotal: 'Subtotal', total: 'Total due today',
+      foot: 'This screen is yours to design — the merchant owns everything up to this point. Only the payment step beside it belongs to Cardcom.'
+    };
+    document.getElementById('brandName').textContent = name;
+    document.getElementById('badge').textContent = T.badge;
+    document.getElementById('payTo').textContent = T.payTo + ' ' + name;
+    document.getElementById('subtotalLabel').textContent = T.subtotal;
+    document.getElementById('totalLabel').textContent = T.total;
+    document.getElementById('foot').textContent = T.foot;
+
+    var amount = Number(p.get('amount'));
+    if (!isFinite(amount) || amount <= 0) amount = 10;
+    var fmt = function (n) { return '₪' + n.toFixed(2); };
+    // Two lines that add up to the session amount exactly.
+    var plan = Math.round(amount * 0.79 * 100) / 100;
+    var setup = Math.round((amount - plan) * 100) / 100;
+    var lines = document.getElementById('lines');
+    [[T.plan, T.planDesc, plan], [T.setup, T.setupDesc, setup]].forEach(function (item) {
+      var row = document.createElement('div'); row.className = 'row';
+      var left = document.createElement('span');
+      var n = document.createElement('span'); n.className = 'name'; n.textContent = item[0];
+      var d = document.createElement('span'); d.className = 'desc'; d.textContent = item[1];
+      left.appendChild(n); left.appendChild(d);
+      var price = document.createElement('span'); price.className = 'price'; price.textContent = fmt(item[2]);
+      row.appendChild(left); row.appendChild(price); lines.appendChild(row);
+    });
+    document.getElementById('subtotal').textContent = fmt(amount);
+    document.getElementById('total').textContent = fmt(amount);
+
+    // Count the headline amount up (skipped under reduced motion).
+    var el = document.getElementById('amount');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = fmt(amount); return; }
+    var start = null, dur = 750;
+    function step(ts) {
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur), e = 1 - Math.pow(1 - t, 3);
+      el.textContent = fmt(amount * e);
+      if (t < 1) requestAnimationFrame(step); else el.textContent = fmt(amount);
+    }
+    requestAnimationFrame(step);
+  })();
+</script>
 </body>
 </html>
