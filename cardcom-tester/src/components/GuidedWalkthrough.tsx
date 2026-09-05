@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import type { Language } from './CheckoutControls'
 import { PaymentOverlay } from './PaymentOverlay'
 import { GuidedCart } from './GuidedCart'
-import { DEFAULT_CART, cartTotal, resolveItems, type CartItem } from './cart'
+import { DEFAULT_CART, apiLineItems, cartTotal, resolveItems, type CartItem } from './cart'
 import type { UiLang } from './uiLang'
 import { useViewport } from './useViewport'
 import {
@@ -120,6 +120,7 @@ type Copy = {
   cardId: string
   copyBtn: string
   copied: string
+  copyFailed: string
   openPayBtn: string
   openAgain: string
   paidContinue: string
@@ -346,6 +347,7 @@ const COPY: Record<Lang, Copy> = {
     cardId: 'ID',
     copyBtn: 'Copy number',
     copied: 'Copied!',
+    copyFailed: 'Copy is blocked here — select the number above and copy it by hand (⌘/Ctrl+C).',
     openPayBtn: 'Open the payment page',
     openAgain: 'Open it again',
     paidContinue: 'I paid — continue',
@@ -688,6 +690,7 @@ const COPY: Record<Lang, Copy> = {
     cardId: 'ת.ז.',
     copyBtn: 'העתקת מספר',
     copied: 'הועתק!',
+    copyFailed: 'ההעתקה חסומה כאן — סמנו את המספר למעלה והעתיקו ידנית (⌘/Ctrl+C).',
     openPayBtn: 'פתחו את דף התשלום',
     openAgain: 'לפתוח שוב',
     paidContinue: 'שילמתי — המשך',
@@ -1050,6 +1053,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   const [cartItems, setCartItems] = useState<CartItem[]>(DEFAULT_CART)
   const amount = cartTotal(cartItems).toFixed(2)
   const cartLang = lang === 'he' ? ('he' as const) : ('en' as const)
+  const cartLineItems = apiLineItems(cartItems, cartLang)
   const [wantReceipt, setWantReceipt] = useState(false)
   const [receiptEmail, setReceiptEmail] = useState('')
   const [busy, setBusy] = useState(false)
@@ -1282,12 +1286,14 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
                 amount: amountNumber,
                 language,
                 projectId: profile.spectraProjectId,
+                lineItems: cartLineItems,
               })
             : await createHostedCheckoutSession({
                 customerId: customer.id,
                 amount: amountNumber,
                 language,
                 projectId: profile.spectraProjectId,
+                lineItems: cartLineItems,
               })
         setSpectraSession(created)
       } catch (cause) {
@@ -1448,13 +1454,43 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   }
 
   const copyCard = async () => {
+    // Always the RAW digits (no spaces) -- Cardcom's card field rejects a
+    // pasted "4580 2800 ..." with spaces. The async Clipboard API is blocked in
+    // some browsers/privacy modes and rejects silently; fall back to a hidden
+    // textarea + execCommand so the button never appears to do nothing.
+    let ok = false
     try {
-      await navigator.clipboard.writeText(TEST_CARD_RAW)
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(TEST_CARD_RAW)
+        ok = true
+      }
+    } catch {
+      ok = false
+    }
+    if (!ok) {
+      try {
+        const textarea = document.createElement('textarea')
+        textarea.value = TEST_CARD_RAW
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.focus()
+        textarea.select()
+        ok = document.execCommand('copy')
+        textarea.remove()
+      } catch {
+        ok = false
+      }
+    }
+    if (ok) {
       playClick()
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1600)
-    } catch {
-      // Clipboard can be blocked -- the number is printed right there anyway.
+    } else {
+      // Both paths blocked: tell the tester to select the number by hand rather
+      // than leave a dead button and a stale clipboard.
+      setError(t.copyFailed)
+      playError()
     }
   }
 
@@ -1774,8 +1810,16 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
       {step === 'setup' ? (
         <section className="gw-step" key="setup">
           <Bubble>{t.setupBubble}</Bubble>
-          <div className="gw-form gw-form--cart">
-            <GuidedCart lang={cartLang} items={cartItems} onChange={setCartItems} disabled={disabled} />
+          <GuidedCart
+            lang={cartLang}
+            items={cartItems}
+            onChange={setCartItems}
+            disabled={disabled}
+            brandName={profile.name}
+            onBack={() => goTo('pick')}
+            onCheckout={() => goTo('create')}
+            checkoutDisabled={disabled || !(amountNumber > 0) || !receiptReady}
+            options={<div className="gw-form">
             {isSpectra ? (
               <div className="gw-field">
                 {t.presentationLabel}
@@ -1841,20 +1885,8 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
                 />
               </label>
             ) : null}
-          </div>
-          <div className="gw-actions">
-            <button type="button" className="text-btn" onClick={() => goTo('pick')}>
-              {t.backBtn}
-            </button>
-            <button
-              type="button"
-              className="cta-button gw-pulse"
-              disabled={disabled || !(amountNumber > 0) || !receiptReady}
-              onClick={() => goTo('create')}
-            >
-              {t.continueBtn}
-            </button>
-          </div>
+          </div>}
+          />
         </section>
       ) : null}
 

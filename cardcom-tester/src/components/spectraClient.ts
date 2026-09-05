@@ -81,6 +81,7 @@ export type SpectraCustomer = {
 }
 
 export type SpectraCheckoutSession = {
+  line_items?: SpectraLineItem[]
   checkout_session_id: string
   checkout_mode: string
   status: string
@@ -114,6 +115,11 @@ export type SpectraPayment = {
   created_at: string
   updated_at: string
 }
+
+// What POST /checkout-sessions accepts as line_items (must sum to amount exactly)
+// and what every read of the Payment/CheckoutSession echoes back (with line_total).
+export type SpectraLineItemInput = { name: string; unit_price: string; quantity: number }
+export type SpectraLineItem = SpectraLineItemInput & { line_total: string }
 
 export function checkSpectraHealth(): Promise<SpectraHealth> {
   return spectraFetch('/health')
@@ -154,6 +160,7 @@ export function createHostedCheckoutSession(input: {
   currency?: string
   language?: string
   projectId?: string
+  lineItems?: SpectraLineItemInput[]
 }): Promise<SpectraCheckoutSession> {
   return spectraFetch('/checkout-sessions', {
     method: 'POST',
@@ -164,6 +171,8 @@ export function createHostedCheckoutSession(input: {
       currency: input.currency ?? 'ILS',
       checkout_mode: 'hosted',
       language: input.language ?? 'he',
+      // Absent (not null) when there are none, so the field never shows up empty.
+      line_items: input.lineItems?.length ? input.lineItems : undefined,
     }),
   })
 }
@@ -174,6 +183,7 @@ export function createEmbeddedFieldsCheckoutSession(input: {
   currency?: string
   language?: string
   projectId?: string
+  lineItems?: SpectraLineItemInput[]
 }): Promise<SpectraCheckoutSession> {
   return spectraFetch('/checkout-sessions', {
     method: 'POST',
@@ -184,6 +194,8 @@ export function createEmbeddedFieldsCheckoutSession(input: {
       currency: input.currency ?? 'ILS',
       checkout_mode: 'embedded_fields',
       language: input.language ?? 'he',
+      // Absent (not null) when there are none, so the field never shows up empty.
+      line_items: input.lineItems?.length ? input.lineItems : undefined,
     }),
   })
 }

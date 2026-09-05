@@ -1061,6 +1061,34 @@ a.cta-button[aria-disabled="true"] {
   background: transparent;
 }
 
+/* Only the stacked layout shows this (see the <=900px block). */
+.checkout-summary-toggle {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--co-border, var(--border));
+  background: var(--co-surface-alt, var(--surface-alt));
+  color: var(--co-text, var(--text));
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: start;
+}
+
+.checkout-summary-toggle b {
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.checkout-summary-chevron {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  color: var(--co-text-muted, var(--text-muted));
+}
+
 .checkout-panel--payment {
   flex: 1;
   min-width: 0;
@@ -1140,10 +1168,30 @@ a.cta-button[aria-disabled="true"] {
     flex: none;
   }
 
+  /* Stripe-style: a one-line "Order summary ₪X ▾" bar; the summary itself
+     only takes room once opened. */
   .checkout-sheet--dual .checkout-panel--summary {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .checkout-sheet--dual .checkout-summary-toggle {
+    display: flex;
+  }
+
+  .checkout-sheet--dual .checkout-panel--summary .checkout-panel-frame {
+    display: none;
     height: 40vh;
-    min-height: 320px;
-    overflow: auto;
+    min-height: 300px;
+  }
+
+  .checkout-sheet--dual .checkout-panel--summary.is-open .checkout-panel-frame {
+    display: block;
+  }
+
+  .checkout-sheet--dual .checkout-panel--summary.is-open .checkout-summary-chevron {
+    transform: rotate(180deg);
   }
 
   .checkout-sheet--dual .checkout-panel--payment {

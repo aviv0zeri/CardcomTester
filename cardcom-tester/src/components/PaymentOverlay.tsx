@@ -48,6 +48,20 @@ export function PaymentOverlay({
   const [summaryReady, setSummaryReady] = useState(false)
   const dual = Boolean(summarySrc)
   const [revealed, setRevealed] = useState(!dual || dualMode === 'side-by-side')
+  // Stacked (narrow) layout: the summary collapses to a one-line bar with the
+  // total, Stripe-style, and expands on tap. Label/amount come from summarySrc's
+  // own query (the summary page is ours; its URL carries amount + lang).
+  const [summaryOpen, setSummaryOpen] = useState(false)
+  const summaryMeta = (() => {
+    if (!summarySrc) return null
+    try {
+      const params = new URL(summarySrc, window.location.origin).searchParams
+      const amount = Number(params.get('amount'))
+      return { he: params.get('lang') === 'he', amount: Number.isFinite(amount) && amount > 0 ? amount : null }
+    } catch {
+      return null
+    }
+  })()
   const stageRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   const paymentRef = useRef<HTMLDivElement>(null)
@@ -213,7 +227,19 @@ export function PaymentOverlay({
           </button>
           {dual ? (
             <>
-              <div className="checkout-panel checkout-panel--summary">
+              <div className={`checkout-panel checkout-panel--summary${summaryOpen ? ' is-open' : ''}`}>
+                <button
+                  type="button"
+                  className="checkout-summary-toggle"
+                  aria-expanded={summaryOpen}
+                  onClick={() => setSummaryOpen((value) => !value)}
+                >
+                  <span>{summaryMeta?.he ? 'סיכום הזמנה' : 'Order summary'}</span>
+                  {summaryMeta?.amount != null ? <b dir="ltr">₪{summaryMeta.amount.toFixed(2)}</b> : null}
+                  <span className="checkout-summary-chevron" aria-hidden="true">
+                    ▾
+                  </span>
+                </button>
                 <div className="checkout-panel-frame">
                   {summaryReady ? null : (
                     <div className="checkout-loading">
