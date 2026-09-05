@@ -268,6 +268,18 @@
         </div>
 
     </div>
+    <!-- Payment result window (error / success): a centred dialog with a
+         title, Cardcom's message and an OK button -- what alert() used to
+         be, but ours, themed, and never swallowed by an embedding browser. -->
+    <div id="payDialog" class="dialog-backdrop" hidden>
+        <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="payDialogTitle"
+            aria-describedby="payDialogText">
+            <div class="dialog-icon" aria-hidden="true"></div>
+            <h2 class="dialog-title" id="payDialogTitle"></h2>
+            <p class="dialog-text" id="payDialogText"></p>
+            <button type="button" class="btn dialog-btn" id="payDialogClose" data-i18n="dialog_ok">OK</button>
+        </div>
+    </div>
     <div id="loading" style="display: none;">
         <!-- Credit to https://loading.io/css/ -->
         <div class="lds-spinner">

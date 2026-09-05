@@ -97,7 +97,11 @@ const HEBREW_LABELS = {
     secure_payment: 'תשלום מאובטח',
     test_fill: 'מלא פרטי בדיקה',
     pay_failed: 'התשלום נכשל',
-    pay_done: 'התשלום הושלם',
+    pay_failed_text: 'לא ניתן היה להשלים את התשלום. בדקו את הפרטים ונסו שוב.',
+    pay_done: 'התשלום בוצע בהצלחה',
+    pay_done_text: 'תודה, התשלום התקבל.',
+    check_card: 'בדקו את פרטי הכרטיס',
+    dialog_ok: 'אישור',
     cvv_hint: '3 הספרות שבגב הכרטיס',
     card_required: 'נא להזין מספר כרטיס תקין',
     cvv_required: 'נא להזין CVV תקין',
@@ -110,15 +114,43 @@ const HEBREW_LABELS = {
 const IS_HEBREW = currentRegion() === 'il' && PAGE_PARAMS.get('lang') !== 'en';
 const label = (key, fallback) => (IS_HEBREW && HEBREW_LABELS[key]) || fallback;
 
-// Payment outcome, inline under the Pay button. Cardcom's original example
-// used alert() here, which embedded browsers and some iframe hosts swallow
-// -- so a failed attempt looked like "nothing happened".
+// Inline note under the Pay button (used for the tester's fill hint).
 function showPayStatus(text, kind) {
     const status = document.getElementById('payStatus');
     status.textContent = text;
     status.className = `pay-status is-${kind}`;
     status.hidden = false;
 }
+
+// Payment outcome window (error / success). Cardcom's original example used
+// alert() here, which embedded browsers and some iframe hosts swallow -- so
+// a failed attempt looked like "nothing happened". Closes on OK, backdrop
+// click or Escape.
+function showPayDialog(kind, title, text) {
+    const backdrop = document.getElementById('payDialog');
+    const dialog = backdrop.querySelector('.dialog');
+    dialog.className = `dialog dialog--${kind}`;
+    document.getElementById('payDialogTitle').textContent = title;
+    document.getElementById('payDialogText').textContent = text;
+    const status = document.getElementById('payStatus');
+    if (status) status.hidden = true;
+    backdrop.hidden = false;
+    document.getElementById('payDialogClose').focus();
+}
+
+function closePayDialog() {
+    document.getElementById('payDialog').hidden = true;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('payDialogClose').addEventListener('click', closePayDialog);
+    document.getElementById('payDialog').addEventListener('click', (event) => {
+        if (event.target === event.currentTarget) closePayDialog();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closePayDialog();
+    });
+});
 
 // Cardcom sends `message` as a string or an array of strings.
 function errorText(message, fallback) {
@@ -451,7 +483,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Preview has no lowProfileCode on purpose -- the master
                 // frame's "required parameter" complaint is expected noise
                 // there, not something to show the user.
-                if (!isPreview) showPayStatus(errorText(msg.message, label('pay_failed', 'Payment failed')), 'error');
+                if (!isPreview) showPayDialog('error', label('pay_failed', 'Payment failed'), errorText(msg.message, label('pay_failed_text', 'The payment could not be completed. Please check the details and try again.')));
                 break;
             case "handleValidations":
                 // (Cardcom's example had a stray ';' after each if, which ran
@@ -494,9 +526,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function handleSubmitResult(data) {
         loading.style.display = 'none'
         if (data.IsSuccess)
-            showPayStatus(data.Description || label('pay_done', 'Payment completed'), 'success');
+            showPayDialog('success', label('pay_done', 'Payment successful'), data.Description || label('pay_done_text', 'Thank you -- your payment was received.'));
         else
-            showPayStatus(errorText(data.Description, label('pay_failed', 'Payment failed')), 'error');
+            showPayDialog('error', label('pay_failed', 'Payment failed'), errorText(data.Description, label('pay_failed_text', 'The payment could not be completed. Please check the details and try again.')));
     }
 
     function handleFormSubmit() {
@@ -579,7 +611,7 @@ async function submitForm(e) {
     const missing = validation ? missingCardFieldsText(validation) : '';
     if (missing) {
         loading.style.display = 'none';
-        showPayStatus(missing, 'error');
+        showPayDialog('error', label('check_card', 'Check the card details'), missing);
         return;
     }
 
