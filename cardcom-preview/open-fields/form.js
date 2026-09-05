@@ -42,6 +42,28 @@ function applyAccent(hex) {
     root.setProperty('--accent-contrast', luminance > 0.4 ? '#111827' : '#ffffff');
 }
 
+// One currency for every amount on the page (cart lines, total, Pay button).
+// ?currency=<ISO code> labels the display -- the charge itself is in the
+// terminal's currency, fixed by the session -- ILS by default because that
+// is what CardcomTester's terminals bill in. Known codes get their symbol;
+// anything else shows the code, so it is at least never a wrong symbol.
+const CURRENCY_SYMBOLS = { ILS: '₪', USD: '$', EUR: '€' };
+const CURRENCY = /^[A-Za-z]{3}$/.test(PAGE_PARAMS.get('currency') || '')
+    ? PAGE_PARAMS.get('currency').toUpperCase()
+    : 'ILS';
+
+// ?amount= is what the tester created (or will create) the session with.
+// Absent, the page's own LowProfile/Create sends 3 -- so 3 is also what the
+// cart and the invoice line show, keeping the screen and the charge in step.
+const parsedAmount = Number(PAGE_PARAMS.get('amount'));
+const AMOUNT_PARAM = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null;
+const AMOUNT = AMOUNT_PARAM === null ? 3 : AMOUNT_PARAM;
+
+function formatAmount(value) {
+    const symbol = CURRENCY_SYMBOLS[CURRENCY];
+    return symbol ? `${symbol}${value.toFixed(2)}` : `${CURRENCY} ${value.toFixed(2)}`;
+}
+
 // Google Pay button design. Cardcom's master frame reads `googlePayButton`
 // off our init message (its OpenFields.js: state.googlePayButtonConfig =
 // data.googlePayButton) and forwards it to the wallet iframe's createButton,
@@ -122,6 +144,16 @@ const HEBREW_LABELS = {
     cvv_required: 'נא להזין CVV תקין',
     card_cvv_required: 'נא להזין מספר כרטיס ו-CVV תקינים',
     fill_hint: 'הפרטים מולאו. עכשיו הקלידו את כרטיס הבדיקה בשדות הכרטיס (שדות מאובטחים של קארדקום שלא ניתן למלא מכאן): 4580 2800 0000 0008 · 12/30 · כל CVV',
+    or_card: 'או שלמו בכרטיס',
+    optional: '(לא חובה)',
+    demo: 'הדגמה',
+    wallet_demo: 'ארנק לדוגמה — בתצוגה זו לא מתבצע חיוב.',
+    err_required: 'שדה חובה',
+    err_email: 'נא להזין כתובת אימייל תקינה',
+    err_phone: 'נא להזין מספר טלפון נייד תקין',
+    err_id: 'נא להזין מספר תעודת זהות בן 9 ספרות',
+    err_exp_month: 'נא להזין חודש בין 01 ל-12',
+    err_exp_year: 'נא להזין שנת תוקף שטרם עברה',
 };
 
 // Hebrew UI = the Israel template in anything but English (the us/eu
@@ -210,6 +242,98 @@ function missingCardFieldsText(results) {
     return '';
 }
 
+// Inline validation of this page's OWN inputs. Cardcom's card-number and CVV
+// boxes are cross-origin iframes that validate themselves (validateCardFields
+// above), so they are deliberately absent here. English copy lives in this
+// map; Hebrew under the same keys in HEBREW_LABELS.
+const FIELD_ERRORS = {
+    err_required: 'This field is required',
+    err_email: 'Enter a valid email address',
+    err_phone: 'Enter a valid Israeli mobile number',
+    err_id: 'Enter a 9-digit ID number',
+    err_exp_month: 'Enter a month from 01 to 12',
+    err_exp_year: 'Enter a year that has not passed',
+};
+
+// Our inputs that are actually on screen. The other regions' billing
+// templates, the il template's hidden Name-on-card row and the closed
+// invoice box are display:none, which offsetParent reports as null.
+function visibleOwnInputs() {
+    return Array.from(document.querySelectorAll('#form input:not([type="checkbox"])'))
+        .filter((input) => input.offsetParent !== null);
+}
+
+// The error key for one input, or null when it passes. Optional fields pass
+// when empty; the format rules only judge what was actually typed.
+function fieldErrorKey(input) {
+    const value = input.value.trim();
+    if (!value) return input.required ? 'err_required' : null;
+    if (input.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'err_email';
+    switch (input.id) {
+        case 'ilPhone': {
+            // 05x-xxx-xxxx or +972 5x ...: 9-10 digits once the separators
+            // and the country code are gone (strip separators first so a
+            // "+972-50" prefix is still recognised).
+            const digits = value.replace(/[\s-]/g, '').replace(/^\+972/, '');
+            return /^\d{9,10}$/.test(digits) ? null : 'err_phone';
+        }
+        case 'ilIdNumber':
+            return /^\d{9}$/.test(value) ? null : 'err_id';
+        case 'expirationMonth':
+            // Two digits, as Cardcom's doTransaction takes it.
+            return /^(0[1-9]|1[0-2])$/.test(value) ? null : 'err_exp_month';
+        case 'expirationYear':
+            // YY, this year or later; the month within the current year is
+            // left to the issuer, which knows the real expiry.
+            return /^\d{2}$/.test(value) && Number(value) >= new Date().getFullYear() % 100 ? null : 'err_exp_year';
+        default:
+            return null;
+    }
+}
+
+// Marks or clears one input: aria-invalid plus a role=alert line right after
+// it, linked through aria-describedby so a reader gets the message with the
+// field, not as a stray announcement.
+function setFieldError(input, key) {
+    const errorId = `${input.id}-error`;
+    let error = document.getElementById(errorId);
+    if (!key) {
+        if (error) error.remove();
+        input.removeAttribute('aria-invalid');
+        input.removeAttribute('aria-describedby');
+        return;
+    }
+    if (!error) {
+        error = document.createElement('p');
+        error.className = 'field-error';
+        error.id = errorId;
+        error.setAttribute('role', 'alert');
+        input.insertAdjacentElement('afterend', error);
+    }
+    error.textContent = label(key, FIELD_ERRORS[key]);
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', errorId);
+}
+
+// Re-check a field only once it has been marked, so the message clears the
+// moment the user fixes it without nagging while they are still typing.
+function revalidateIfMarked(input) {
+    if (input.getAttribute('aria-invalid') === 'true') setFieldError(input, fieldErrorKey(input));
+}
+
+// Checks every visible own input, marks the failures and focuses the first.
+// True means the form may go on to Cardcom's card pre-check.
+function validateOwnFields() {
+    let firstInvalid = null;
+    visibleOwnInputs().forEach((input) => {
+        const key = fieldErrorKey(input);
+        setFieldError(input, key);
+        if (key && !firstInvalid) firstInvalid = input;
+    });
+    if (firstInvalid) firstInvalid.focus();
+    return !firstInvalid;
+}
+
 // Test details per billing template, keyed by field id -- the same values
 // the placeholders show (the invoice fields too, for when that box is
 // ticked). Card number and CVV are Cardcom's iframes and are deliberately
@@ -282,12 +406,36 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Amount on the Pay button. ?amount= is what the tester created the
-    // session with; the charge itself is whatever the LowProfile holds.
-    const amountParam = Number(PAGE_PARAMS.get('amount'));
-    if (Number.isFinite(amountParam) && amountParam > 0) {
-        document.getElementById('payAmount').textContent = `₪${amountParam.toFixed(2)}`;
+    // Mock cart: the example's four lines, each its share of AMOUNT (the sum
+    // the session is, or will be, created with). The last line takes the
+    // rounding remainder so the lines always add up to the printed total.
+    const shares = Array.from(document.querySelectorAll('#cart [data-cart-share]'));
+    const shareTotal = shares.reduce((sum, el) => sum + Number(el.dataset.cartShare), 0);
+    let remainder = AMOUNT;
+    shares.forEach((el, i) => {
+        const value = i === shares.length - 1
+            ? remainder
+            : Math.round((AMOUNT * Number(el.dataset.cartShare) / shareTotal) * 100) / 100;
+        remainder = Math.round((remainder - value) * 100) / 100;
+        el.textContent = formatAmount(value);
+    });
+    document.getElementById('cartTotal').textContent = formatAmount(AMOUNT);
+
+    // The Pay button shows the amount when it is known to be the charge:
+    // passed in by the tester (?amount=), or the page's own fallback when it
+    // creates the session itself. A session made elsewhere (?lpid) with no
+    // amount holds a sum this page can't see, so it says nothing over guessing.
+    if (AMOUNT_PARAM !== null || (!isPreview && !PAGE_PARAMS.get('lpid'))) {
+        document.getElementById('payAmount').textContent = formatAmount(AMOUNT);
     }
+
+    // Inline validation: a field is checked when the user leaves it; once
+    // marked, every keystroke re-checks it so the message clears as soon as
+    // the value is right. The submit pass (validateOwnFields) covers the rest.
+    document.querySelectorAll('#form input:not([type="checkbox"])').forEach((input) => {
+        input.addEventListener('blur', () => setFieldError(input, fieldErrorKey(input)));
+        input.addEventListener('input', () => revalidateIfMarked(input));
+    });
 
     // Credits iframe supports en/he only (per Cardcom's own comment in the
     // HTML). Always the short variant, kept small at the footer's right;
@@ -318,20 +466,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Tester-only: ?wallets=<2-4> pads the wallet row with mock Apple Pay /
     // Bit / PayPal buttons after the real Google Pay, to preview how the
-    // flex-wrap layout spreads several wallets. Pure CSS look-alikes -- not
-    // wired to anything (Cardcom Open Fields here only provides Google Pay).
+    // flex-wrap layout spreads several wallets. CSS look-alikes -- not wired
+    // to any payment (Cardcom Open Fields here only provides Google Pay); a
+    // corner tag says so, and a tap explains it, because a button that does
+    // nothing reads as a broken checkout. The real Google Pay frame is never
+    // touched by any of this.
+    const WALLET_NAMES = { applepay: 'Apple Pay', bit: 'Bit', paypal: 'PayPal' };
     const walletCount = Math.min(4, Math.max(1, Number(PAGE_PARAMS.get('wallets')) || 1));
     if (walletCount > 1) {
         const row = document.getElementById('walletRow');
         ['applepay', 'bit', 'paypal'].slice(0, walletCount - 1).forEach((kind) => {
             const item = document.createElement('div');
-            item.className = 'wallet-item';
+            item.className = 'wallet-item wallet-item--mock';
             const mock = document.createElement('button');
             mock.type = 'button';
             mock.className = `wallet-mock wallet-mock--${kind}`;
-            mock.setAttribute('aria-label', `${kind} (mock)`);
-            mock.title = 'Mock button (layout preview only)';
-            item.appendChild(mock);
+            mock.setAttribute('aria-label', `${WALLET_NAMES[kind]} (${label('demo', 'demo')})`);
+            mock.addEventListener('click', () => showPayDialog('info', WALLET_NAMES[kind],
+                label('wallet_demo', 'Demo wallet — nothing is charged in this preview.')));
+            const tag = document.createElement('span');
+            tag.className = 'wallet-demo-tag';
+            tag.textContent = label('demo', 'demo');
+            item.append(mock, tag);
             row.appendChild(item);
         });
     }
@@ -347,7 +503,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const values = TEST_DETAILS[region] || {};
             Object.keys(values).forEach((id) => {
                 const el = document.getElementById(id);
-                if (el) el.value = values[id];
+                if (!el) return;
+                el.value = values[id];
+                // Setting .value fires no input event, so clear any earlier
+                // "required" mark by hand.
+                revalidateIfMarked(el);
             });
             setCardOwnerDetails();
             // The card itself has to be typed: card number and CVV are
@@ -369,8 +529,12 @@ document.addEventListener("DOMContentLoaded", () => {
     async function showFields() {
         firstSceen.style.display = 'none';
         secondSceen.style.display = 'block';
-        // Google Pay needs a real session; without one its frame is a blank box.
-        if (isPreview) document.getElementById('walletRow').style.display = 'none';
+        // Google Pay needs a real session; without one its frame is a blank
+        // box -- and with no wallets there is nothing for the "or" to divide.
+        if (isPreview) {
+            document.getElementById('walletRow').style.display = 'none';
+            document.getElementById('orDivider').style.display = 'none';
+        }
         // Bind submit + start listening BEFORE the awaits below: the checkout
         // is already visible (screen=checkout shows it at load), and the form
         // has a real submit button, so an Enter/click during loadIframesCss's
@@ -407,11 +571,12 @@ document.addEventListener("DOMContentLoaded", () => {
         //create a low profile deal -- CardcomTester's own /payment route (same
         //LowProfile/Create call every other tab in this app uses), not the
         //standalone example backend this file originally shipped with. The
-        //business's own terminal (its brand's profileId) takes the session.
+        //business's own terminal (its brand's profileId) takes the session,
+        //for the same amount the cart and the Pay button already show.
         fetch('/payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ profileId: brand ? brand.profileId : 'gateopen', amount: 3, language }),
+            body: JSON.stringify({ profileId: brand ? brand.profileId : 'gateopen', amount: AMOUNT, language }),
         }).then(async res => {
             const json = await res.json();
             lowProfileCode = json.LowProfileId
@@ -614,7 +779,6 @@ function setCardOwnerDetails(e) {
 // example, no sample Receipt is attached to every charge (its fake 9.99
 // product line wouldn't match the session's real amount anyway).
 function buildInvoiceDocument() {
-    const amount = Number(new URLSearchParams(location.search).get('amount')) || 3;
     const email = fieldValue('ilInvoiceEmail') || fieldValue('ilEmail');
     return {
         Name: fieldValue('ilInvoiceName') || fieldValue('ilFullName') || 'Test',
@@ -626,8 +790,8 @@ function buildInvoiceDocument() {
         Products: [{
             Description: 'Order',
             Quantity: 1,
-            UnitCost: amount,
-            TotalLineCost: amount,
+            UnitCost: AMOUNT,
+            TotalLineCost: AMOUNT,
         }],
     };
 }
@@ -636,10 +800,15 @@ async function submitForm(e) {
     const loading = document.getElementById('loading')
     const iframe = document.querySelector('#CardComMasterFrame')
     e.preventDefault()
-    //Add your loading gif and start it here
-    loading.style.display = 'flex'
     const status = document.getElementById('payStatus');
     if (status) status.hidden = true;
+
+    // Our own fields first, inline, before the spinner and before asking
+    // Cardcom's frames: a missing email is ours to point at, not a dialog's.
+    if (!validateOwnFields()) return;
+
+    //Add your loading gif and start it here
+    loading.style.display = 'flex'
 
     // An empty card otherwise travels to the server and comes back as a
     // generic "Charge failed" -- ask Cardcom's frames first and say which

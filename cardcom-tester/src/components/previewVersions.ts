@@ -143,6 +143,12 @@ const OPEN_FIELDS_IFRAME: PreviewVersion[] = [
   { id: 'of-frame', label: 'Checkout', note: '500×860', width: 500, height: 860, scroll: false, embed: true },
 ]
 
+// Two-panel view: the same page as the payment column beside the 420px
+// summary, at the Guided walkthrough's desktop width. The 500px single-column
+// box above is too narrow for the split layout's padding and, being
+// unscrollable, cuts the form off -- so the dual view sizes itself instead.
+export const OPEN_FIELDS_DUAL_WIDTH = 660
+
 export function versionsFor(
   device: Device,
   mode: Mode,

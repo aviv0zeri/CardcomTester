@@ -1080,6 +1080,19 @@ a.cta-button[aria-disabled="true"] {
   opacity: 0.35;
 }
 
+/* After ~15s without the payment page's load event (PaymentOverlay): a way
+   out of a stalled frame -- the same URL as a plain tab. */
+.checkout-loading-slow {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--co-muted);
+}
+
+.checkout-loading-slow a {
+  color: inherit;
+  text-decoration: underline;
+}
+
 .checkout-divider {
   flex: 0 0 1px;
   align-self: stretch;
@@ -1108,19 +1121,41 @@ a.cta-button[aria-disabled="true"] {
 }
 
 @media (max-width: 900px) {
+  /* Stacked: the panels stop claiming the sheet's full height (the desktop
+     .checkout-panel { height: 100% } pushed the payment column below the
+     fold). The summary takes a fixed slice -- a definite height, not just a
+     cap, so its iframe's percentage height still resolves -- the payment
+     column takes the rest, and the sheet scrolls when that is not enough. */
+  .checkout-stage--dual {
+    overflow-y: auto;
+  }
+
   .checkout-sheet--dual {
     flex-direction: column;
     overflow: auto;
   }
 
-  .checkout-panel--summary {
-    flex: 0 0 auto;
+  .checkout-sheet--dual .checkout-panel {
+    height: auto;
+    flex: none;
+  }
+
+  .checkout-sheet--dual .checkout-panel--summary {
+    height: 40vh;
     min-height: 320px;
+    overflow: auto;
+  }
+
+  .checkout-sheet--dual .checkout-panel--payment {
+    flex: 1 1 auto;
+    min-height: 480px;
   }
 
   .checkout-divider {
     flex: 0 0 1px;
+    align-self: auto;
     width: 100%;
+    height: 1px;
   }
 }
 

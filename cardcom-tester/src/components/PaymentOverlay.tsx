@@ -60,6 +60,18 @@ export function PaymentOverlay({
   useEffect(() => setFrameReady(false), [src])
   useEffect(() => setSummaryReady(false), [summarySrc])
 
+  // A payment frame that never fires load (a stalled third-party script, a
+  // blocked request) would leave the spinner up forever with no way out; after
+  // 15s offer the same URL as a plain tab. Re-armed for each src, dropped the
+  // moment the frame is ready or the overlay unmounts.
+  const [frameSlow, setFrameSlow] = useState(false)
+  useEffect(() => {
+    setFrameSlow(false)
+    if (frameReady) return
+    const timer = window.setTimeout(() => setFrameSlow(true), 15_000)
+    return () => window.clearTimeout(timer)
+  }, [src, frameReady])
+
   // Modal contract: focus the close button on open, trap Tab within the sheet,
   // close on Escape, and restore focus to whatever was focused before.
   useEffect(() => {
@@ -146,6 +158,14 @@ export function PaymentOverlay({
         <div className="checkout-loading">
           <div className="checkout-spinner" />
           <p>Loading payment…</p>
+          {frameSlow ? (
+            <p className="checkout-loading-slow">
+              Still loading…{' '}
+              <a href={src} target="_blank" rel="noreferrer">
+                open in a new tab
+              </a>
+            </p>
+          ) : null}
         </div>
       )}
       <iframe

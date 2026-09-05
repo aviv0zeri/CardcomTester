@@ -41,14 +41,19 @@
         </header>
         <div id="first-screen">
             <div class="summary-container">
-                <div class="cart">
+                <!-- Mock cart. The prices are filled by form.js: each line is a
+                     share (data-cart-share, the example's original 15/5/8/2) of
+                     the amount the session is created with, in the page's one
+                     currency -- so the cart total, the Pay button and the charge
+                     can never disagree. -->
+                <div class="cart" id="cart">
                     <h4>Cart <span class="price"><i class="fa fa-shopping-cart"></i> <b>4</b></span></h4>
-                    <p><a href="#">Product 1</a> <span class="price">$15</span></p>
-                    <p><a href="#">Product 2</a> <span class="price">$5</span></p>
-                    <p><a href="#">Product 3</a> <span class="price">$8</span></p>
-                    <p><a href="#">Product 4</a> <span class="price">$2</span></p>
+                    <p><a href="#">Product 1</a> <span class="price" data-cart-share="15"></span></p>
+                    <p><a href="#">Product 2</a> <span class="price" data-cart-share="5"></span></p>
+                    <p><a href="#">Product 3</a> <span class="price" data-cart-share="8"></span></p>
+                    <p><a href="#">Product 4</a> <span class="price" data-cart-share="2"></span></p>
                     <hr>
-                    <p class="cart-total">Total <span class="price"><b>$30</b></span></p>
+                    <p class="cart-total">Total <span class="price"><b id="cartTotal"></b></span></p>
                 </div>
             </div>
             <input type="button" id="continue" value="Continue to checkout" class="btn">
@@ -71,7 +76,15 @@
                             src="https://secure.cardcom.solutions/api/openfields/GooglePay?terminalNumber=1000"></iframe>
                     </div>
                 </div>
-                <form action="" id="form">
+                <!-- Hairline "or" between the wallets and the card form; hidden
+                     together with the wallet row (form.js), so it never floats
+                     alone above the form. -->
+                <div class="or-divider" id="orDivider"><span data-i18n="or_card">or pay with card</span></div>
+                <!-- novalidate: this page draws its own inline field errors
+                     (form.js), so the browser's native bubbles must not fire
+                     on top of them; `required` stays on the inputs for
+                     semantics and for the validator to read. -->
+                <form action="" id="form" novalidate>
                 <!-- Billing templates: exactly one is shown, picked by the
                      ?region= query param (us | il | eu). form.js does the
                      switching; us is the default and matches Cardcom's
@@ -81,28 +94,28 @@
                     <div class="fields">
                         <div class="field">
                             <label for="cname">Full name</label>
-                            <input type="text" id="cname" name="fname" autocomplete="name" placeholder="John M. Doe">
+                            <input type="text" id="cname" name="fname" autocomplete="name" placeholder="John M. Doe" required>
                         </div>
                         <div class="field">
                             <label for="cardOwnerEmail">Email</label>
                             <input type="email" inputmode="email" autocomplete="email" id="cardOwnerEmail" name="email" onblur="setCardOwnerDetails()"
-                                placeholder="john@example.com">
+                                placeholder="john@example.com" required>
                         </div>
                         <div class="field field--full">
-                            <label for="adr">Address</label>
+                            <label for="adr">Address <span class="label-optional" data-i18n="optional">(optional)</span></label>
                             <input type="text" id="adr" name="address" autocomplete="street-address" placeholder="542 W. 15th Street">
                         </div>
                         <div class="field--full fields fields--3">
                             <div class="field">
-                                <label for="city">City</label>
+                                <label for="city">City <span class="label-optional" data-i18n="optional">(optional)</span></label>
                                 <input type="text" id="city" name="city" autocomplete="address-level2" placeholder="New York">
                             </div>
                             <div class="field">
-                                <label for="state">State</label>
+                                <label for="state">State <span class="label-optional" data-i18n="optional">(optional)</span></label>
                                 <input type="text" id="state" name="state" autocomplete="address-level1" placeholder="NY">
                             </div>
                             <div class="field">
-                                <label for="zip">ZIP</label>
+                                <label for="zip">ZIP <span class="label-optional" data-i18n="optional">(optional)</span></label>
                                 <input type="text" id="zip" name="zip" inputmode="numeric" autocomplete="postal-code" placeholder="10001">
                             </div>
                         </div>
@@ -118,22 +131,22 @@
                         <div class="field">
                             <label for="ilFullName"><span data-i18n="il_full_name">Full name</span></label>
                             <input type="text" id="ilFullName" name="ilFullName" autocomplete="name" onblur="setCardOwnerDetails()"
-                                placeholder="ישראל ישראלי">
+                                placeholder="ישראל ישראלי" required>
                         </div>
                         <div class="field">
                             <label for="ilIdNumber"><span data-i18n="il_id">ID number</span></label>
-                            <input type="text" id="ilIdNumber" name="ilIdNumber" inputmode="numeric"
-                                placeholder="000000000">
+                            <input type="text" id="ilIdNumber" name="ilIdNumber" inputmode="numeric" maxlength="9"
+                                placeholder="000000000" required>
                         </div>
                         <div class="field">
                             <label for="ilPhone"><span data-i18n="il_phone">Phone</span></label>
                             <input type="tel" id="ilPhone" name="ilPhone" inputmode="tel" autocomplete="tel" onblur="setCardOwnerDetails()"
-                                placeholder="0501234567">
+                                placeholder="0501234567" required>
                         </div>
                         <div class="field">
                             <label for="ilEmail"><span data-i18n="il_email">Email</span></label>
                             <input type="email" inputmode="email" autocomplete="email" id="ilEmail" name="ilEmail" onblur="setCardOwnerDetails()"
-                                placeholder="israel@example.com">
+                                placeholder="israel@example.com" required>
                         </div>
                         <label class="checkbox field--full" for="ilInvoiceToggle">
                             <input type="checkbox" id="ilInvoiceToggle" name="ilInvoiceToggle">
@@ -142,12 +155,12 @@
                         <div class="field--full fields" id="il-invoice-fields" style="display: none;">
                             <div class="field">
                                 <label for="ilInvoiceName"><span data-i18n="il_invoice_name">Name on
-                                        invoice</span></label>
+                                        invoice</span> <span class="label-optional" data-i18n="optional">(optional)</span></label>
                                 <input type="text" id="ilInvoiceName" name="ilInvoiceName" autocomplete="name" placeholder="ישראל ישראלי">
                             </div>
                             <div class="field">
                                 <label for="ilInvoiceEmail"><span data-i18n="il_invoice_email">Email for the
-                                        invoice</span></label>
+                                        invoice</span> <span class="label-optional" data-i18n="optional">(optional)</span></label>
                                 <input type="email" inputmode="email" autocomplete="email" id="ilInvoiceEmail" name="ilInvoiceEmail"
                                     placeholder="israel@example.com">
                             </div>
@@ -161,28 +174,28 @@
                     <div class="fields">
                         <div class="field">
                             <label for="euFullName">Full name</label>
-                            <input type="text" id="euFullName" name="euFullName" autocomplete="name" placeholder="Anna Schmidt">
+                            <input type="text" id="euFullName" name="euFullName" autocomplete="name" placeholder="Anna Schmidt" required>
                         </div>
                         <div class="field">
                             <label for="euEmail">Email</label>
                             <input type="email" inputmode="email" autocomplete="email" id="euEmail" name="euEmail" onblur="setCardOwnerDetails()"
-                                placeholder="anna@example.com">
+                                placeholder="anna@example.com" required>
                         </div>
                         <div class="field field--full">
-                            <label for="euAddress">Address</label>
+                            <label for="euAddress">Address <span class="label-optional" data-i18n="optional">(optional)</span></label>
                             <input type="text" id="euAddress" name="euAddress" autocomplete="street-address" placeholder="Hauptstraße 12">
                         </div>
                         <div class="field--full fields fields--3">
                             <div class="field">
-                                <label for="euCity">City</label>
+                                <label for="euCity">City <span class="label-optional" data-i18n="optional">(optional)</span></label>
                                 <input type="text" id="euCity" name="euCity" autocomplete="address-level2" placeholder="Berlin">
                             </div>
                             <div class="field">
-                                <label for="euPostal">Postal code</label>
+                                <label for="euPostal">Postal code <span class="label-optional" data-i18n="optional">(optional)</span></label>
                                 <input type="text" id="euPostal" name="euPostal" inputmode="numeric" autocomplete="postal-code" placeholder="10115">
                             </div>
                             <div class="field">
-                                <label for="euCountry">Country</label>
+                                <label for="euCountry">Country <span class="label-optional" data-i18n="optional">(optional)</span></label>
                                 <input type="text" id="euCountry" name="euCountry" autocomplete="country-name" placeholder="Germany">
                             </div>
                         </div>
@@ -194,7 +207,7 @@
                         <div class="field field--full" id="nameOnCardRow">
                             <label for="cardOwnerName">Name on card</label>
                             <input type="text" id="cardOwnerName" name="cardOwnerName" autocomplete="cc-name" onblur="setCardOwnerDetails()"
-                                placeholder="John More Doe">
+                                placeholder="John More Doe" required>
                         </div>
                         <!-- .card-box groups number + expiry + CVV. Plain layout by
                              default (display: contents); with ?fields=box (Open Fields
@@ -225,12 +238,12 @@
                             <div class="field expMonth">
                                 <label for="expirationMonth"><span data-i18n="exp_month">Month</span></label>
                                 <input type="text" id="expirationMonth" name="expirationMonth" value="12" inputmode="numeric" maxlength="2" autocomplete="cc-exp-month"
-                                    placeholder="12">
+                                    placeholder="12" required>
                             </div>
                             <div class="field expYear">
                                 <label for="expirationYear"><span data-i18n="exp_year">Year</span></label>
                                 <input type="text" id="expirationYear" name="expirationYear" value="30" inputmode="numeric" maxlength="2" autocomplete="cc-exp-year"
-                                    placeholder="30">
+                                    placeholder="30" required>
                             </div>
                             </div>
                             <div class="field cvv">

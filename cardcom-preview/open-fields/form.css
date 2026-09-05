@@ -311,12 +311,22 @@ h3 {
   display: none;
 }
 
+/* Month / Year / CVV align to the top of their row, not stretched to the
+   tallest cell: an inline error under Month or Year would otherwise stretch
+   the CVV cell too and drag its bottom-anchored card icon down. (Box layout
+   keeps stretch -- there the cells must share one height for the hairlines.) */
+html:not(.fields-box) .expDate {
+  align-items: start;
+}
+
 /* Expiry: a "/" sits in the gap between Month and Year, level with the
-   inputs (inline-start of Year is the Month side in both directions). */
+   inputs (inline-start of Year is the Month side in both directions).
+   Anchored to the top -- one label line plus its margin -- rather than the
+   bottom, so an error line under the input can't push the slash down. */
 .expYear::before {
   content: "/";
   position: absolute;
-  bottom: 0;
+  top: calc(13px * 1.45 + 6px);
   inset-inline-start: -12px;
   display: flex;
   align-items: center;
@@ -440,7 +450,11 @@ a {
 
 /* ---- inputs --------------------------------------------------------------- */
 
-input[type="text"] {
+/* email/tel are the same box as text: the type only changes the keyboard
+   and autofill, never the look. */
+input[type="text"],
+input[type="email"],
+input[type="tel"] {
   width: 100%;
   height: 41px;
   margin: 0;
@@ -454,14 +468,49 @@ input[type="text"] {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-input[type="text"]:focus {
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft-bg);
 }
 
-input[type="text"]::placeholder {
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="tel"]::placeholder {
   color: var(--text-faint);
+}
+
+/* Inline validation of this page's own inputs (form.js sets aria-invalid and
+   inserts the message after the input). The same red Cardcom's card/CVV
+   boxes take, so one failed field looks like another. The ring keeps the
+   error colour while the field is being corrected. */
+input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+input[aria-invalid="true"]:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-bg);
+}
+
+.field-error {
+  margin: 5px 0 0;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: start;
+}
+
+/* Optional fields are the exception here, so they carry the mark (Baymard:
+   marking only "required" on a mostly-required form is what shoppers miss). */
+.label-optional {
+  margin-inline-start: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
 }
 
 /* Cardcom's card-number/CVV frames are 3px larger than the box on every
@@ -674,9 +723,34 @@ input[type="text"]::placeholder {
   height: 52px;
 }
 
+/* Stripe-style "or" between the wallet row and the card form: a hairline
+   either side of muted text. Shown only with the wallet row (form.js). */
+.or-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.or-divider::before,
+.or-divider::after {
+  content: "";
+  flex: 1 1 0;
+  height: 1px;
+  background: var(--border);
+}
+
 /* Mock wallets (tester-only, ?wallets=n): the real Google Pay pill's
    proportions in each brand's colours, so the row can be previewed with
-   2-4 wallets before the others are wired. */
+   2-4 wallets before the others are wired. Clicking one opens the page's
+   info dialog (form.js), so it must read as a button, not a dead pill. */
+.wallet-item--mock {
+  position: relative;
+}
+
 .wallet-mock {
   display: flex;
   align-items: center;
@@ -691,7 +765,30 @@ input[type="text"]::placeholder {
   font-size: 17px;
   font-weight: 600;
   line-height: 1;
-  cursor: default;
+  cursor: pointer;
+}
+
+/* Corner tag so a mock is never mistaken for a wired wallet in a screenshot.
+   Not clickable itself -- the click belongs to the button underneath. */
+.wallet-demo-tag {
+  position: absolute;
+  top: 4px;
+  inset-inline-end: 4px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 1px var(--border);
+  pointer-events: none;
+}
+
+[dir="rtl"] .wallet-demo-tag {
+  letter-spacing: 0;
 }
 
 .wallet-mock::before,
@@ -831,6 +928,23 @@ html.fields-box .expiry-cell input[type="text"] {
 
 html.fields-box .expiry-cell input[type="text"]:focus {
   box-shadow: none;
+}
+
+/* The box's expiry inputs are 3ch cells in one flex row -- no room for a
+   line of text under them. The message stays for screen readers (it is the
+   input's aria-describedby); sighted users get the state the way Cardcom's
+   own boxes show it in this layout: the digits turn red. */
+html.fields-box .expiry-cell .field-error {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+html.fields-box .expiry-cell input[aria-invalid="true"] {
+  color: var(--danger);
 }
 
 /* The "/" becomes an inline sibling of the year input instead of the
@@ -1052,6 +1166,17 @@ html.fields-box .card-box .cvv-hint {
 
 .dialog--success .dialog-icon::before {
   content: "\f00c";
+}
+
+/* Neutral variant (the mock wallets' "nothing is charged" note): accent
+   tint, same glyph as the info status line under the Pay button. */
+.dialog--info .dialog-icon {
+  background: var(--accent-soft-bg);
+  color: var(--accent);
+}
+
+.dialog--info .dialog-icon::before {
+  content: "\f05a";
 }
 
 .dialog-title {

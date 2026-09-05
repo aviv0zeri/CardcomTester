@@ -22,6 +22,7 @@ import {
   isRealPhone,
   localPreviewUrl,
   openFieldsUrl,
+  OPEN_FIELDS_DUAL_WIDTH,
   type OpenFieldsRegion,
   type PreviewVersion,
 } from './components/previewVersions'
@@ -108,11 +109,14 @@ function App() {
   }
 
   const openFrame = (src: string, version: PreviewVersion, label: string) => {
+    // The two-panel Open Fields view reuses the single-column version entry
+    // (500 wide, no scroll); as a payment column that is cramped and cut off.
+    const dualOpenFields = dualView && isOpenFieldsDesign(design)
     setOverlay({
       src,
-      width: version.width,
+      width: dualOpenFields ? OPEN_FIELDS_DUAL_WIDTH : version.width,
       height: version.height,
-      scroll: isNewDesign(design) ? true : version.scroll,
+      scroll: isNewDesign(design) || dualOpenFields ? true : version.scroll,
       // The summary column follows the tester's language and business; the
       // Design tab has no amount or theme controls, so those stay default.
       summarySrc: dualView
