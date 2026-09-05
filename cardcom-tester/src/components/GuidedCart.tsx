@@ -96,6 +96,7 @@ type GuidedCartProps = {
   onBack: () => void
   onCheckout: () => void
   checkoutDisabled?: boolean
+  onViewChange?: (view: View) => void
 }
 
 export function GuidedCart({
@@ -108,9 +109,13 @@ export function GuidedCart({
   onBack,
   onCheckout,
   checkoutDisabled,
+  onViewChange,
 }: GuidedCartProps) {
   const T = STRINGS[lang]
   const [view, setView] = useState<View>('store')
+  useEffect(() => {
+    onViewChange?.(view)
+  }, [view, onViewChange])
   const [custom, setCustom] = useState({ name: '', price: '' })
   const [showJson, setShowJson] = useState(false)
   const cartBtnRef = useRef<HTMLButtonElement>(null)
@@ -389,14 +394,19 @@ export function GuidedCart({
         </div>
 
         <div className="gs-bar">
-          <span className="gs-bar-summary">
-            {countLabel}
-            {count ? (
-              <>
-                {' · '}
-                <b dir="ltr">{fmtIls(total)}</b>
-              </>
-            ) : null}
+          <span className="gs-bar-left">
+            <button type="button" className="text-btn" onClick={onBack}>
+              {T.back}
+            </button>
+            <span className="gs-bar-summary">
+              {countLabel}
+              {count ? (
+                <>
+                  {' · '}
+                  <b dir="ltr">{fmtIls(total)}</b>
+                </>
+              ) : null}
+            </span>
           </span>
           <button
             type="button"
@@ -405,11 +415,6 @@ export function GuidedCart({
             onClick={() => setView('cart')}
           >
             {T.viewCart} {lang === 'he' ? '←' : '→'}
-          </button>
-        </div>
-        <div className="gw-actions">
-          <button type="button" className="text-btn" onClick={onBack}>
-            {T.back}
           </button>
         </div>
       </div>
@@ -426,8 +431,17 @@ export function GuidedCart({
           </div>
           <span className="gs-card-brand">{brandName}</span>
         </header>
+        <div className="gs-card-toolbar">
+          <button type="button" className="text-btn" onClick={() => setShowJson((value) => !value)} title={T.note}>
+            {showJson ? T.hideJson : T.showJson}
+          </button>
+        </div>
         <div className="gs-card-lines" ref={linesRef}>
-          {resolved.length === 0 ? (
+          {showJson ? (
+            <pre className="gw-json" dir="ltr">
+              {JSON.stringify(cartObject(items, lang), null, 2)}
+            </pre>
+          ) : resolved.length === 0 ? (
             <div className="gs-empty">{T.empty}</div>
           ) : (
             resolved.map((item) => (
@@ -455,19 +469,6 @@ export function GuidedCart({
             {fmtIls(total)}
           </span>
         </footer>
-        <div className="gs-card-json">
-          <button type="button" className="text-btn" onClick={() => setShowJson((value) => !value)}>
-            {showJson ? T.hideJson : T.showJson}
-          </button>
-          {showJson ? (
-            <>
-              <pre className="gw-json" dir="ltr">
-                {JSON.stringify(cartObject(items, lang), null, 2)}
-              </pre>
-              <p className="gs-note">{T.note}</p>
-            </>
-          ) : null}
-        </div>
       </section>
 
       {options ? <div className="gs-options">{options}</div> : null}

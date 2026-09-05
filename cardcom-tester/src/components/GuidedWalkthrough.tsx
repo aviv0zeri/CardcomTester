@@ -1054,6 +1054,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   const amount = cartTotal(cartItems).toFixed(2)
   const cartLang = lang === 'he' ? ('he' as const) : ('en' as const)
   const cartLineItems = apiLineItems(cartItems, cartLang)
+  const [cartView, setCartView] = useState<'store' | 'cart'>('store')
   const [wantReceipt, setWantReceipt] = useState(false)
   const [receiptEmail, setReceiptEmail] = useState('')
   const [busy, setBusy] = useState(false)
@@ -1809,13 +1810,14 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
 
       {step === 'setup' ? (
         <section className="gw-step" key="setup">
-          <Bubble>{t.setupBubble}</Bubble>
+          {cartView === 'store' ? <Bubble>{t.setupBubble}</Bubble> : null}
           <GuidedCart
             lang={cartLang}
             items={cartItems}
             onChange={setCartItems}
             disabled={disabled}
             brandName={profile.name}
+            onViewChange={setCartView}
             onBack={() => goTo('pick')}
             onCheckout={() => goTo('create')}
             checkoutDisabled={disabled || !(amountNumber > 0) || !receiptReady}
