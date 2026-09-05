@@ -24,6 +24,7 @@
   --danger: #b91c1c;
   --danger-bg: #fef2f2;
   --success: #047857;
+  --success-bg: #ecfdf5;
   --shell-shadow: 0 1px 2px rgba(20, 22, 28, 0.05), 0 1px 1px rgba(20, 22, 28, 0.03);
   --shell-shadow-lg: 0 10px 30px rgba(20, 22, 28, 0.08), 0 2px 6px rgba(20, 22, 28, 0.05);
 }
@@ -51,6 +52,7 @@
     --danger: #f87171;
     --danger-bg: rgba(248, 113, 113, 0.14);
     --success: #34d399;
+    --success-bg: rgba(52, 211, 153, 0.14);
     --shell-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
     --shell-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.45);
   }
@@ -73,6 +75,7 @@
   --danger: #f87171;
   --danger-bg: rgba(248, 113, 113, 0.14);
   --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.14);
   --shell-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shell-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
@@ -121,11 +124,11 @@ iframe {
   color: var(--text);
 }
 
-/* "<Business> · Secure Payment" on one line, the subtitle beside the name. */
+/* "<Business>  [🔒 SECURE PAYMENT]" on one line, the tag beside the name. */
 .brand-text {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
   line-height: 1.2;
 }
@@ -139,17 +142,32 @@ iframe {
   font-weight: 600;
 }
 
+/* A small accent-tinted tag with a lock, so "secure" reads as a badge
+   rather than a subtitle -- and it picks up the business's accent colour. */
 .brand-suffix {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft-bg);
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.brand-suffix::before {
-  content: "·";
-  margin-inline-end: 8px;
-  color: var(--text-faint);
+.brand-suffix .fa {
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* Hebrew has no case and reads badly tracked out. */
+[dir="rtl"] .brand-suffix {
+  font-size: 11px;
+  letter-spacing: 0;
 }
 
 .brand img {
@@ -158,12 +176,34 @@ iframe {
   border-radius: 8px;
 }
 
+/* Tester-only affordance (?testfill=1): fills our own fields with test
+   details. Dashed so it never reads as part of the checkout design. */
+.test-fill {
+  flex: none;
+  margin-inline-start: auto;
+  padding: 4px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.test-fill:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 /* ---- layout shells ------------------------------------------------------ */
 
 .container {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 18px;
   box-shadow: var(--shell-shadow-lg);
   padding: 20px 20px 18px;
 }
@@ -249,7 +289,75 @@ h3 {
 }
 
 .field {
+  position: relative;
   min-width: 0;
+}
+
+/* Expiry: a "/" sits in the gap between Month and Year, level with the
+   inputs (inline-start of Year is the Month side in both directions). */
+.expYear::before {
+  content: "/";
+  position: absolute;
+  bottom: 0;
+  inset-inline-start: -12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 41px;
+  color: var(--text-faint);
+  font-size: 15px;
+  pointer-events: none;
+}
+
+/* CVV: a card-back icon inside the (Cardcom-hosted) box, with a hover/focus
+   tooltip saying what the code is. Pinned to the physical right in both
+   directions: Cardcom's box is always left-to-right, so its digits start at
+   the left even on the Hebrew page. */
+.cvv-hint {
+  position: absolute;
+  bottom: 0;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  height: 41px;
+  color: var(--text-faint);
+  cursor: help;
+}
+
+.cvv-hint:hover,
+.cvv-hint:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+.cvv-hint svg {
+  display: block;
+}
+
+.cvv-hint::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% - 2px);
+  right: -4px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: var(--text);
+  color: var(--surface);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  pointer-events: none;
+}
+
+.cvv-hint:hover::after,
+.cvv-hint:focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .field--full {
@@ -280,6 +388,16 @@ label {
   gap: 6px;
   font-size: 18px;
   line-height: 1;
+}
+
+/* The brand glyphs are solid shapes with the lettering cut out, so on the
+   dark theme the cut-outs show the dark card and the icons go murky. A white
+   chip behind each keeps them exactly as they look on light (where the chip
+   is invisible against the white card). */
+.brands i {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: #fff;
 }
 
 .brands .fa-cc-visa {
@@ -377,6 +495,31 @@ input[type="text"]::placeholder {
 
 #submit-btn {
   margin-top: 26px;
+}
+
+/* Outcome of the last Pay attempt, under the button (replaces alert()). */
+.pay-status {
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.pay-status.is-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.pay-status.is-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.pay-status.is-info {
+  background: var(--accent-soft-bg);
+  color: var(--accent);
 }
 
 /* Flex-wrap, not a fixed grid: with flex-basis 50% and flex-grow 1, a lone

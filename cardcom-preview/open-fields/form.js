@@ -95,6 +95,89 @@ const HEBREW_LABELS = {
     exp_year: 'שנה',
     submit: 'בצע תשלום',
     secure_payment: 'תשלום מאובטח',
+    test_fill: 'מלא פרטי בדיקה',
+    pay_failed: 'התשלום נכשל',
+    pay_done: 'התשלום הושלם',
+    cvv_hint: '3 הספרות שבגב הכרטיס',
+    card_required: 'נא להזין מספר כרטיס',
+    cvv_required: 'נא להזין CVV',
+    card_cvv_required: 'נא להזין מספר כרטיס ו-CVV',
+    fill_hint: 'הפרטים מולאו. עכשיו הקלידו את כרטיס הבדיקה בשדות הכרטיס (שדות מאובטחים של קארדקום שלא ניתן למלא מכאן): 4580 2800 0000 0008 · 12/30 · כל CVV',
+};
+
+// Hebrew UI = the Israel template in anything but English (the us/eu
+// templates stay English) -- the same rule the label pass below uses.
+const IS_HEBREW = currentRegion() === 'il' && PAGE_PARAMS.get('lang') !== 'en';
+const label = (key, fallback) => (IS_HEBREW && HEBREW_LABELS[key]) || fallback;
+
+// Payment outcome, inline under the Pay button. Cardcom's original example
+// used alert() here, which embedded browsers and some iframe hosts swallow
+// -- so a failed attempt looked like "nothing happened".
+function showPayStatus(text, kind) {
+    const status = document.getElementById('payStatus');
+    status.textContent = text;
+    status.className = `pay-status is-${kind}`;
+    status.hidden = false;
+}
+
+// Cardcom sends `message` as a string or an array of strings.
+function errorText(message, fallback) {
+    const text = Array.isArray(message) ? message.filter(Boolean).join(' ') : message;
+    return text || fallback;
+}
+
+// Card-field check before a transaction: Cardcom's card-number/CVV frames
+// answer validateCardNumber/validateCvv with handleValidations messages
+// (relayed by the master frame, the same ones they send on blur). The
+// recorder resolves the pending check once both fields have answered; no
+// answer within the timeout resolves null so a slow frame never blocks a
+// payment -- the server still validates.
+let cardValidation = null;
+
+function recordValidation(field, isValid) {
+    if (!cardValidation) return;
+    cardValidation.results[field] = isValid;
+    if ('cardNumber' in cardValidation.results && 'cvv' in cardValidation.results) {
+        cardValidation.resolve(cardValidation.results);
+    }
+}
+
+function validateCardFields() {
+    const master = document.querySelector('#CardComMasterFrame');
+    return new Promise((resolve) => {
+        const timer = setTimeout(() => resolve(null), 1500);
+        cardValidation = { results: {}, resolve: (results) => { clearTimeout(timer); resolve(results); } };
+        master.contentWindow.postMessage({ action: 'validateCardNumber' }, '*');
+        master.contentWindow.postMessage({ action: 'validateCvv' }, '*');
+    }).finally(() => { cardValidation = null; });
+}
+
+function missingCardFieldsText(results) {
+    const card = results.cardNumber === false;
+    const cvv = results.cvv === false;
+    if (card && cvv) return label('card_cvv_required', 'Please enter your card number and CVV');
+    if (card) return label('card_required', 'Please enter your card number');
+    if (cvv) return label('cvv_required', 'Please enter the CVV');
+    return '';
+}
+
+// Test details per billing template, keyed by field id -- the same values
+// the placeholders show (the invoice fields too, for when that box is
+// ticked). Card number and CVV are Cardcom's iframes and are deliberately
+// not fillable from this page.
+const TEST_DETAILS = {
+    il: {
+        ilFullName: 'ישראל ישראלי', ilIdNumber: '000000000', ilPhone: '0501234567', ilEmail: 'israel@example.com',
+        ilInvoiceName: 'ישראל ישראלי', ilInvoiceEmail: 'israel@example.com',
+    },
+    us: {
+        cname: 'John M. Doe', cardOwnerEmail: 'john@example.com', adr: '542 W. 15th Street',
+        city: 'New York', state: 'NY', zip: '10001', cardOwnerName: 'John More Doe',
+    },
+    eu: {
+        euFullName: 'Anna Schmidt', euEmail: 'anna@example.com', euAddress: 'Hauptstraße 12',
+        euCity: 'Berlin', euPostal: '10115', euCountry: 'Germany', cardOwnerName: 'Anna Schmidt',
+    },
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -139,6 +222,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 const text = HEBREW_LABELS[el.getAttribute('data-i18n')];
                 if (text) el.textContent = text;
             });
+            // Tooltip/aria text lives in attributes, not text content.
+            document.querySelectorAll('[data-i18n-tip]').forEach((el) => {
+                const text = HEBREW_LABELS[el.getAttribute('data-i18n-tip')];
+                if (text) {
+                    el.setAttribute('data-tip', text);
+                    el.setAttribute('aria-label', text);
+                }
+            });
             const submit = document.querySelector('[data-i18n-value="submit"]');
             if (submit) submit.value = HEBREW_LABELS.submit;
         }
@@ -169,6 +260,26 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('brandLogo').src = isDarkTheme() ? brand.logoDark : brand.logo;
         document.getElementById('brandName').textContent = brand.name;
         document.getElementById('brand').hidden = false;
+    }
+
+    // Tester-only: ?testfill=1 shows the "Fill test details" button (in the
+    // brand header, so it needs a brand too). It fills this page's own
+    // fields for the current template and hands the card-owner details to
+    // Cardcom's master frame, exactly as blurring those fields would.
+    if (PAGE_PARAMS.get('testfill') === '1') {
+        const fill = document.getElementById('testFill');
+        fill.hidden = false;
+        fill.addEventListener('click', () => {
+            const values = TEST_DETAILS[region] || {};
+            Object.keys(values).forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.value = values[id];
+            });
+            setCardOwnerDetails();
+            // The card itself has to be typed: card number and CVV are
+            // Cardcom's secure iframes, which accept no value from this page.
+            showPayStatus(label('fill_hint', "Details filled. Now type the test card in the card boxes -- they are Cardcom's secure fields and can't be filled from here: 4580 2800 0000 0008 · 12/30 · any CVV"), 'info');
+        });
     }
 
     // screen=checkout: skip the page's own cart screen -- the tester's
@@ -271,7 +382,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // The boxes are 39px inside 41px iframes; a transparent document
         // background keeps that 2px edge from showing as a light seam on dark.
         const themedDoc = 'html, body { background: transparent; }';
-        const cardCssText = `${await cardCSSPromise.text()}\n${themedDoc}\n#cardNumber { ${themedField} }`;
+        // cardNumber.css has no invalid state of its own (the CVV template
+        // does), so the red outline Cardcom's validation toggles is added here.
+        const cardCssText = `${await cardCSSPromise.text()}\n${themedDoc}\n#cardNumber { ${themedField} }\n#cardNumber.invalid { border-color: ${tok('--danger')}; }`;
         const cvvCssText = `${template.innerText.toString()}\n${themedDoc}\n.cvvField { ${themedField} }\n.cvvField.invalid { border-color: ${tok('--danger')}; }`;
 
         //Note: props names are important
@@ -308,17 +421,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.log("HandleEror", msg);
                 // Preview has no lowProfileCode on purpose -- the master
                 // frame's "required parameter" complaint is expected noise
-                // there, not something to alert the user about.
-                if (!isPreview) alert(msg.message)
+                // there, not something to show the user.
+                if (!isPreview) showPayStatus(errorText(msg.message, label('pay_failed', 'Payment failed')), 'error');
                 break;
             case "handleValidations":
-                if (msg.field === "cvv");
-                    setCvvFieldClass(msg.isValid);
-                if (msg.field === "cardNumber");
-                    setCardNumberClass(msg.isValid);
+                // (Cardcom's example had a stray ';' after each if, which ran
+                // both setters for every field -- one field's result marked
+                // the other box too.)
+                if (msg.field === "cvv") setCvvFieldClass(msg.isValid);
+                if (msg.field === "cardNumber") setCardNumberClass(msg.isValid);
+                recordValidation(msg.field, msg.isValid);
                 if (msg.field === "reCaptcha") {
                     //if you want to enable the "pay" button after all iframe fields have beed validated
                 }
+                break;
             default:
                 break;
         }
@@ -349,9 +465,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function handleSubmitResult(data) {
         loading.style.display = 'none'
         if (data.IsSuccess)
-            alert(data.Description);
+            showPayStatus(data.Description || label('pay_done', 'Payment completed'), 'success');
         else
-            alert("Deal failed");
+            showPayStatus(errorText(data.Description, label('pay_failed', 'Payment failed')), 'error');
     }
 
     function handleFormSubmit() {
@@ -418,12 +534,25 @@ function buildInvoiceDocument() {
     };
 }
 
-function submitForm(e) {
+async function submitForm(e) {
     const loading = document.getElementById('loading')
     const iframe = document.querySelector('#CardComMasterFrame')
     e.preventDefault()
     //Add your loading gif and start it here
     loading.style.display = 'flex'
+    const status = document.getElementById('payStatus');
+    if (status) status.hidden = true;
+
+    // An empty card otherwise travels to the server and comes back as a
+    // generic "Charge failed" -- ask Cardcom's frames first and say which
+    // box is missing. (No answer in time = go ahead; the server validates.)
+    const validation = await validateCardFields();
+    const missing = validation ? missingCardFieldsText(validation) : '';
+    if (missing) {
+        loading.style.display = 'none';
+        showPayStatus(missing, 'error');
+        return;
+    }
 
     const invoiceToggle = document.getElementById('ilInvoiceToggle');
     const wantsInvoice = currentRegion() === 'il' && invoiceToggle && invoiceToggle.checked;

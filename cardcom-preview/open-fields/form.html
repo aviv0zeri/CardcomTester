@@ -32,8 +32,12 @@
             <img id="brandLogo" alt="" width="32" height="32">
             <span class="brand-text">
                 <span id="brandName"></span>
-                <span class="brand-suffix" data-i18n="secure_payment">Secure Payment</span>
+                <span class="brand-suffix"><i class="fa fa-lock" aria-hidden="true"></i><span data-i18n="secure_payment">Secure Payment</span></span>
             </span>
+            <!-- Shown only with ?testfill=1 (the tester passes it); fills our
+                 own fields with test details. Card number / CVV live in
+                 Cardcom's iframes and can't be filled from here, by design. -->
+            <button type="button" id="testFill" class="test-fill" data-i18n="test_fill" hidden>Fill test details</button>
         </header>
         <div id="first-screen">
             <div class="summary-container">
@@ -223,12 +227,28 @@
                                 <iframe id="CardComCvv" name="CardComCvv"
                                     src="https://secure.cardcom.solutions//api/openfields/CVV"
                                     style="width:100%;height:41px;"></iframe>
+                                <!-- Card-back icon over the box's end edge; hover/focus explains
+                                     the code (the box itself is Cardcom's iframe). -->
+                                <span class="cvv-hint" tabindex="0" role="img"
+                                    data-tip="The 3 digits on the back of your card"
+                                    data-i18n-tip="cvv_hint" aria-label="The 3 digits on the back of your card">
+                                    <svg viewBox="0 0 20 14" width="19" height="13.3" aria-hidden="true">
+                                        <rect x="0.75" y="0.75" width="18.5" height="12.5" rx="2.2" fill="none"
+                                            stroke="currentColor" stroke-width="1.5" />
+                                        <rect x="0.75" y="3.4" width="18.5" height="2.6" fill="currentColor" />
+                                        <rect x="9.5" y="8.2" width="7.5" height="3" rx="0.9" fill="none"
+                                            stroke="currentColor" stroke-width="1.2" />
+                                    </svg>
+                                </span>
                             </div>
                         </div>
                     </div>
                 </section>
                 <!-- Shared across all three billing templates. -->
                 <input type="submit" id="submit-btn" value="Pay now" class="btn" data-i18n-value="submit">
+                <!-- Outcome of the last Pay attempt (Cardcom's error/result
+                     messages), inline instead of alert(). -->
+                <p id="payStatus" class="pay-status" role="status" hidden></p>
             </form>
         </div>
         </div>
