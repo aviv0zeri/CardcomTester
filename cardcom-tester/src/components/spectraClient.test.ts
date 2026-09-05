@@ -215,6 +215,6 @@ describe('error handling', () => {
       text: () => Promise.resolve('<html>Bad Gateway</html>'),
     })
     vi.stubGlobal('fetch', fn)
-    await expect(checkSpectraHealth()).rejects.toThrow(/not running on :8099/)
+    await expect(checkSpectraHealth()).rejects.toThrow(/spectra-payments proxy/)
   })
 })

@@ -21,11 +21,27 @@ const {
   responseSummary,
 } = require('./cardcom');
 const { recordWebhookHit, listWebhookHits } = require('./webhookStore');
+const { createSpectraProxyHandler } = require('./spectraProxy');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Same-origin proxy to spectra-payments -- the very handler Vercel runs as
+// api/spectra-proxy.js in production, so local dev goes through the same
+// Bearer-injecting boundary (credential from server/.env, never from the
+// browser). Vite forwards /spectra-api/* here. Without a token the handler
+// fails closed with a clear error instead of reaching upstream.
+const spectraProxy = createSpectraProxyHandler();
+app.use('/spectra-api', (req, res) =>
+  spectraProxy(
+    // Vercel hands the sub-path over as ?path=...; here it is the path under
+    // the mount point. Only the fields the handler reads are passed on.
+    { method: req.method, query: { ...req.query, path: req.path.replace(/^\/+/, '') }, body: req.body },
+    res,
+  ),
+);
 app.use(
   '/cardcom-hosted',
   express.static(path.join(__dirname, '..', 'cardcom-hosted'))

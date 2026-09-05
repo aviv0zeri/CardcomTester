@@ -16,6 +16,9 @@ type PaymentOverlayProps = {
   summarySrc?: string
   summaryLabel?: string
   continueLabel?: string
+  // Draw a device bezel around the sheet (the Guided walkthrough's device
+  // step): a phone with a speaker slot, or a tablet. Purely visual.
+  frame?: 'phone' | 'tablet'
 }
 
 const SUMMARY_WIDTH = 340
@@ -31,6 +34,7 @@ export function PaymentOverlay({
   summarySrc,
   summaryLabel = "Your app's screen",
   continueLabel = 'Continue to payment →',
+  frame,
 }: PaymentOverlayProps) {
   const [frameReady, setFrameReady] = useState(false)
   const [summaryReady, setSummaryReady] = useState(false)
@@ -42,7 +46,7 @@ export function PaymentOverlay({
   return (
     <div className="checkout-overlay checkout-overlay--iframe">
       <div
-        className={`checkout-stage checkout-stage--iframe${sized ? ' checkout-stage--sized' : ''}${scroll ? ' checkout-stage--scroll' : ''}${rtl ? '' : ' checkout-stage--ltr'}${dual ? ' checkout-stage--dual' : ''}`}
+        className={`checkout-stage checkout-stage--iframe${sized ? ' checkout-stage--sized' : ''}${scroll ? ' checkout-stage--scroll' : ''}${rtl ? '' : ' checkout-stage--ltr'}${dual ? ' checkout-stage--dual' : ''}${frame ? ` checkout-stage--frame-${frame}` : ''}`}
         style={
           sized
             ? {

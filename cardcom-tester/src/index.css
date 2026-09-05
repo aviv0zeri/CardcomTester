@@ -1493,6 +1493,11 @@ a.cta-button[aria-disabled="true"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .gw-anim-pop,
+  .gw-anim-tap,
+  .gw-anim-scan,
+  .gw-anim-float,
+  .gw-anim-cursor,
   .gw-step,
   .gw-bubble,
   .gw-card,
@@ -1512,6 +1517,96 @@ a.cta-button[aria-disabled="true"] {
   border-color: var(--accent);
   background: var(--accent-soft-bg);
   box-shadow: var(--shell-shadow);
+}
+
+/* Device step: four cards, two per row on wide screens. The scenes inside
+   animate softly -- app icons popping in, a tap ripple, a page load sweep,
+   a floating tablet, a moving cursor. */
+.gw-choices--devices {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.gw-device svg {
+  max-width: 120px;
+}
+
+.gw-anim-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gw-pop-in 2.4s ease-in-out infinite;
+}
+
+@keyframes gw-pop-in {
+  0%, 12% { transform: scale(0); }
+  22%, 100% { transform: scale(1); }
+}
+
+.gw-anim-tap {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gw-tap 2.4s ease-out infinite;
+}
+
+@keyframes gw-tap {
+  0%, 45% { transform: scale(0.4); opacity: 0; }
+  55% { opacity: 0.9; }
+  85%, 100% { transform: scale(3); opacity: 0; }
+}
+
+.gw-anim-scan {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: gw-scan 2.2s ease-in-out infinite;
+}
+
+@keyframes gw-scan {
+  0% { transform: scaleX(0); opacity: 1; }
+  70% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+
+.gw-anim-float {
+  animation: gw-float 3s ease-in-out infinite;
+}
+
+.gw-anim-cursor {
+  animation: gw-cursor 2.6s ease-in-out infinite;
+}
+
+@keyframes gw-cursor {
+  0%, 100% { transform: translate(-14px, -12px); }
+  45%, 60% { transform: translate(0, 0); }
+}
+
+/* Device bezels around the payment sheet (Guided walkthrough device step). */
+.checkout-stage--frame-phone .checkout-sheet {
+  border: 10px solid #15171c;
+  border-radius: 40px;
+  box-shadow:
+    0 0 0 1.5px #3a3d45,
+    0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.checkout-stage--frame-phone::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  z-index: 4;
+  width: 84px;
+  height: 22px;
+  transform: translateX(-50%);
+  border-radius: 0 0 14px 14px;
+  background: #15171c;
+  pointer-events: none;
+}
+
+.checkout-stage--frame-tablet .checkout-sheet {
+  border: 14px solid #15171c;
+  border-radius: 26px;
+  box-shadow:
+    0 0 0 1.5px #3a3d45,
+    0 24px 60px rgba(0, 0, 0, 0.45);
 }
 
 .gw-picked-reveal {

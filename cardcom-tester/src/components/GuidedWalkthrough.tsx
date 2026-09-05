@@ -43,7 +43,12 @@ import { PROFILES, profileById, type BusinessProfile } from './profiles'
 // step carries an optional "under the hood" corner that teaches the tech
 // (HTTP, API, JSON, webhooks) using the REAL payloads from this very run.
 
-type GuidedStep = 'intro' | 'profile' | 'pick' | 'setup' | 'create' | 'pay' | 'check' | 'done'
+type GuidedStep = 'intro' | 'profile' | 'pick' | 'device' | 'setup' | 'create' | 'pay' | 'check' | 'done'
+
+// Where the customer pays. Drives the pay step's frame: size, a phone/tablet
+// bezel, and (in-app) the payment page's embedded layout.
+type DeviceChoice = 'phone-app' | 'phone-web' | 'tablet' | 'desktop'
+const DEVICE_CHOICES: DeviceChoice[] = ['phone-app', 'phone-web', 'tablet', 'desktop']
 type Integration = 'lowprofile' | 'openfields' | 'spectra'
 type Lang = UiLang
 
@@ -51,10 +56,18 @@ const TEST_CARD_NUMBER = '4580 2800 0000 0008'
 const TEST_CARD_RAW = '4580280000000008'
 
 type Copy = {
-  dots: [string, string, string, string, string, string]
+  dots: [string, string, string, string, string, string, string]
   introBubble: ReactNode
   introGo: string
   pickBubble: ReactNode
+  // Device step: where the customer pays (phone in-app / phone browser / tablet / desktop).
+  deviceBubble: ReactNode
+  deviceTitles: Record<DeviceChoice, string>
+  deviceShorts: Record<DeviceChoice, ReactNode>
+  deviceLong: Record<DeviceChoice, ReactNode>
+  // Pay step, desktop: your-own-app order summary shown beside the payment frame.
+  sideBySideLabel: string
+  sideBySideContinue: string
   // Business step: which business (Cardcom terminal + Spectra project + brand).
   profileBubble: ReactNode
   profileLabel: string
@@ -147,7 +160,53 @@ type Copy = {
 
 const COPY: Record<Lang, Copy> = {
   en: {
-    dots: ['Business', 'Choose', 'Amount', 'Session', 'Pay', 'Verify'],
+    dots: ['Business', 'Choose', 'Device', 'Amount', 'Session', 'Pay', 'Verify'],
+    deviceBubble: (
+      <>
+        <strong>Where will your customer pay?</strong> Pick the screen to imitate. The payment page
+        opens in a frame of that size, and for the in-app case it is embedded the way a mobile app
+        would embed it.
+      </>
+    ),
+    sideBySideLabel: "Your app's screen",
+    sideBySideContinue: 'Continue to payment →',
+    deviceTitles: {
+      'phone-app': 'Phone · in your app',
+      'phone-web': 'Phone · in the browser',
+      tablet: 'Tablet',
+      desktop: 'Desktop',
+    },
+    deviceShorts: {
+      'phone-app': 'The payment form embedded inside the app itself (a WebView).',
+      'phone-web': 'The customer taps a link and pays on a full page in the phone browser.',
+      tablet: 'Bigger screen, still touch — 768×1024 portrait.',
+      desktop: 'A computer browser — the widest layout.',
+    },
+    deviceLong: {
+      'phone-app': (
+        <>
+          <strong>Embedded.</strong> The page is trimmed to fit a phone-sized frame inside the app —
+          no browser bar, no cart screen, straight to the fields.
+        </>
+      ),
+      'phone-web': (
+        <>
+          <strong>A full page on a 390×844 phone.</strong> The page's own layout, scrolled like any
+          mobile site.
+        </>
+      ),
+      tablet: (
+        <>
+          <strong>Tablet-sized page.</strong> Check that the form does not stretch awkwardly at this
+          width.
+        </>
+      ),
+      desktop: (
+        <>
+          <strong>Wide stage.</strong> The whole page fits without scrolling.
+        </>
+      ),
+    },
     introBubble: (
       <>
         <strong>Hi! Let's run a pretend payment.</strong> Real Cardcom API, real screens,
@@ -450,7 +509,50 @@ const COPY: Record<Lang, Copy> = {
     presentationEmbedded: 'Embedded fields',
   },
   he: {
-    dots: ['עסק', 'בחירה', 'סכום', 'יצירה', 'תשלום', 'אימות'],
+    dots: ['עסק', 'בחירה', 'מכשיר', 'סכום', 'יצירה', 'תשלום', 'אימות'],
+    deviceBubble: (
+      <>
+        <strong>איפה הלקוח ישלם?</strong> בחרו את המסך שנחקה. דף התשלום ייפתח במסגרת בגודל הזה,
+        ובמקרה של אפליקציה הוא יוטמע כמו שאפליקציה מוטמעת אותו.
+      </>
+    ),
+    sideBySideLabel: 'המסך של האפליקציה שלך',
+    sideBySideContinue: 'המשך לתשלום ←',
+    deviceTitles: {
+      'phone-app': 'טלפון · בתוך האפליקציה',
+      'phone-web': 'טלפון · בדפדפן',
+      tablet: 'טאבלט',
+      desktop: 'מחשב',
+    },
+    deviceShorts: {
+      'phone-app': 'טופס התשלום מוטמע בתוך האפליקציה עצמה (WebView).',
+      'phone-web': 'הלקוח לוחץ על קישור ומשלם בדף מלא בדפדפן של הטלפון.',
+      tablet: 'מסך גדול יותר, עדיין מגע — 768×1024 לאורך.',
+      desktop: 'דפדפן במחשב — הפריסה הרחבה ביותר.',
+    },
+    deviceLong: {
+      'phone-app': (
+        <>
+          <strong>מוטמע.</strong> הדף מצומצם למסגרת בגודל טלפון בתוך האפליקציה — בלי שורת דפדפן
+          ובלי מסך עגלה, ישר לשדות.
+        </>
+      ),
+      'phone-web': (
+        <>
+          <strong>דף מלא בטלפון 390×844.</strong> הפריסה של הדף עצמו, נגלל כמו כל אתר מובייל.
+        </>
+      ),
+      tablet: (
+        <>
+          <strong>דף בגודל טאבלט.</strong> בודקים שהטופס לא נמתח בצורה מוזרה ברוחב הזה.
+        </>
+      ),
+      desktop: (
+        <>
+          <strong>במה רחבה.</strong> כל הדף נכנס בלי גלילה.
+        </>
+      ),
+    },
     introBubble: (
       <>
         <strong>היי! בואו נריץ תשלום דמה.</strong> API אמיתי של קארדקום, מסכים אמיתיים,
@@ -837,6 +939,83 @@ function SuccessCheck() {
   )
 }
 
+// Device step art: four small animated scenes (CSS keyframes in index.css --
+// .gw-anim-*; all stop under prefers-reduced-motion).
+function DeviceArt({ kind }: { kind: DeviceChoice }) {
+  if (kind === 'phone-app') {
+    return (
+      <svg viewBox="0 0 120 80" aria-hidden="true">
+        <rect x="42" y="4" width="36" height="72" rx="6" fill="var(--surface-alt)" stroke="var(--border-strong)" strokeWidth="2.5" />
+        <rect x="46" y="10" width="28" height="60" rx="3" fill="var(--surface)" />
+        <rect x="55" y="6" width="10" height="2" rx="1" fill="var(--border-strong)" />
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <rect
+            key={i}
+            className="gw-anim-pop"
+            style={{ animationDelay: `${i * 0.12}s` }}
+            x={49 + (i % 3) * 8}
+            y={14 + Math.floor(i / 3) * 8}
+            width="6"
+            height="6"
+            rx="1.5"
+            fill="var(--accent)"
+            opacity={i === 4 ? 1 : 0.35}
+          />
+        ))}
+        <rect x="49" y="36" width="22" height="26" rx="3" fill="var(--accent-soft-bg)" stroke="var(--accent)" strokeWidth="1.5" />
+        <rect x="52" y="41" width="16" height="3" rx="1.5" fill="var(--accent)" opacity="0.5" />
+        <rect x="52" y="47" width="11" height="3" rx="1.5" fill="var(--accent)" opacity="0.3" />
+        <rect x="52" y="54" width="16" height="5" rx="2" fill="var(--accent)" />
+        <circle className="gw-anim-tap" cx="60" cy="56.5" r="3" fill="none" stroke="var(--accent)" strokeWidth="1.5" />
+      </svg>
+    )
+  }
+  if (kind === 'phone-web') {
+    return (
+      <svg viewBox="0 0 120 80" aria-hidden="true">
+        <rect x="42" y="4" width="36" height="72" rx="6" fill="var(--surface-alt)" stroke="var(--border-strong)" strokeWidth="2.5" />
+        <rect x="46" y="10" width="28" height="60" rx="3" fill="var(--surface)" />
+        <rect x="48" y="13" width="24" height="6" rx="3" fill="var(--surface-alt)" stroke="var(--border-strong)" strokeWidth="1" />
+        <circle cx="51.5" cy="16" r="1.2" fill="var(--success)" />
+        <rect x="54" y="15" width="14" height="2" rx="1" fill="var(--border-strong)" />
+        <rect className="gw-anim-scan" x="48" y="20.5" width="24" height="1.5" rx="0.75" fill="var(--accent)" />
+        <rect x="49" y="25" width="22" height="7" rx="2" fill="var(--accent)" opacity="0.15" />
+        <rect x="49" y="35" width="22" height="7" rx="2" fill="var(--accent)" opacity="0.15" />
+        <rect x="49" y="45" width="22" height="7" rx="2" fill="var(--accent)" opacity="0.15" />
+        <rect x="49" y="56" width="22" height="6" rx="2" fill="var(--accent)" />
+      </svg>
+    )
+  }
+  if (kind === 'tablet') {
+    return (
+      <svg viewBox="0 0 120 80" aria-hidden="true" className="gw-anim-float">
+        <rect x="24" y="6" width="72" height="68" rx="6" fill="var(--surface-alt)" stroke="var(--border-strong)" strokeWidth="2.5" />
+        <rect x="30" y="12" width="60" height="56" rx="3" fill="var(--surface)" />
+        <rect x="38" y="22" width="44" height="34" rx="4" fill="var(--accent-soft-bg)" stroke="var(--accent)" strokeWidth="1.5" />
+        <rect x="43" y="28" width="20" height="3" rx="1.5" fill="var(--accent)" opacity="0.5" />
+        <rect x="43" y="34" width="34" height="3" rx="1.5" fill="var(--accent)" opacity="0.3" />
+        <rect x="43" y="40" width="34" height="3" rx="1.5" fill="var(--accent)" opacity="0.3" />
+        <rect x="43" y="47" width="34" height="5" rx="2" fill="var(--accent)" />
+        <circle cx="60" cy="71" r="1.5" fill="var(--border-strong)" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 120 80" aria-hidden="true">
+      <rect x="18" y="8" width="84" height="52" rx="4" fill="var(--surface-alt)" stroke="var(--border-strong)" strokeWidth="2.5" />
+      <rect x="23" y="13" width="74" height="42" rx="2" fill="var(--surface)" />
+      <rect x="10" y="62" width="100" height="6" rx="3" fill="var(--border-strong)" />
+      <rect x="47" y="60" width="26" height="3" fill="var(--border-strong)" opacity="0.6" />
+      <rect x="30" y="20" width="26" height="28" rx="3" fill="var(--accent)" opacity="0.15" />
+      <rect x="61" y="20" width="30" height="28" rx="3" fill="var(--accent-soft-bg)" stroke="var(--accent)" strokeWidth="1.5" />
+      <rect x="65" y="25" width="18" height="3" rx="1.5" fill="var(--accent)" opacity="0.5" />
+      <rect x="65" y="31" width="22" height="3" rx="1.5" fill="var(--accent)" opacity="0.3" />
+      <rect x="65" y="39" width="22" height="5" rx="2" fill="var(--accent)" />
+      <path className="gw-anim-cursor" d="M70 36 l0 9 l2.5 -2.2 l1.8 3.6 l1.6 -0.8 l-1.8 -3.5 l3.2 -0.4 z" fill="var(--text)" stroke="var(--surface)" strokeWidth="0.8" />
+    </svg>
+  )
+}
+
 type GuidedWalkthroughProps = {
   disabled?: boolean
   lang: Lang
@@ -850,6 +1029,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   const [step, setStep] = useState<GuidedStep>('intro')
   const [integration, setIntegration] = useState<Integration>('lowprofile')
   const [picked, setPicked] = useState<Integration | null>(null)
+  const [device, setDevice] = useState<DeviceChoice | null>(null)
   const [region, setRegion] = useState<OpenFieldsRegion>('il')
   const [amount, setAmount] = useState('10')
   const [wantReceipt, setWantReceipt] = useState(false)
@@ -905,6 +1085,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             accent,
             testFill: true,
             wallets: mockWallets,
+            embed: device === 'phone-app',
           })
         : ''
       : asText(spectraSession?.checkout_url)
@@ -919,6 +1100,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             accent,
             testFill: true,
             wallets: mockWallets,
+            embed: device === 'phone-app',
           })
         : ''
       : asText(session?.Url || session?.url)
@@ -1134,13 +1316,35 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   // above its 600px breakpoint it lays the order summary beside the form,
   // which is much shorter than the 520px single-column stack that forced
   // scrolling here before.
+  // The device step narrows this: phone frames at real phone sizes (in-app a
+  // little shorter, like a WebView under an app bar), tablet portrait, and
+  // desktop as before. On a real phone the frame is always the full screen.
   const overlaySize =
     viewport.device === 'mobile'
       ? {}
-      : {
-          width: Math.min(1000, viewport.width - 40),
-          height: Math.min(940, viewport.height - 40),
-        }
+      : device === 'phone-app'
+        ? { width: 390, height: 780 }
+        : device === 'phone-web'
+          ? { width: 390, height: 844 }
+          : device === 'tablet'
+            ? { width: 768, height: 1024 }
+            : {
+                width: Math.min(1000, viewport.width - 40),
+                height: Math.min(940, viewport.height - 40),
+              }
+  const deviceFrame =
+    viewport.device === 'mobile'
+      ? undefined
+      : device === 'phone-app' || device === 'phone-web'
+        ? 'phone'
+        : device === 'tablet'
+          ? 'tablet'
+          : undefined
+  // Desktop: the two-panel view -- your-own-app order summary beside the real
+  // payment frame (the same panel the Design tab's "double view" uses), so the
+  // Open Fields page skips its own cart screen. Phones and tablets have no
+  // room for it.
+  const sideBySide = device === 'desktop' && viewport.device !== 'mobile'
 
   const runCheck = async () => {
     if (busy) return
@@ -1195,10 +1399,11 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   const dots: { id: GuidedStep; label: string }[] = [
     { id: 'profile', label: t.dots[0] },
     { id: 'pick', label: t.dots[1] },
-    { id: 'setup', label: t.dots[2] },
-    { id: 'create', label: t.dots[3] },
-    { id: 'pay', label: t.dots[4] },
-    { id: 'check', label: t.dots[5] },
+    { id: 'device', label: t.dots[2] },
+    { id: 'setup', label: t.dots[3] },
+    { id: 'create', label: t.dots[4] },
+    { id: 'pay', label: t.dots[5] },
+    { id: 'check', label: t.dots[6] },
   ]
   const dotIndex = dots.findIndex((dot) => dot.id === step)
   const transaction = asRecord(result?.TranzactionInfo)
@@ -1426,6 +1631,49 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
                 {picked === 'lowprofile' ? t.lpLong : picked === 'openfields' ? t.ofLong : t.spLong}
               </Bubble>
               <div className="gw-actions">
+                <button
+                  type="button"
+                  className="cta-button gw-pulse"
+                  disabled={disabled}
+                  onClick={() => goTo('device')}
+                >
+                  {t.continueBtn}
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {step === 'device' ? (
+        <section className="gw-step" key="device">
+          <Bubble>{t.deviceBubble}</Bubble>
+          <div className="gw-choices gw-choices--devices">
+            {DEVICE_CHOICES.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={`gw-choice gw-device gw-device--${option}${device === option ? ' is-picked' : ''}`}
+                aria-pressed={device === option}
+                disabled={disabled}
+                onClick={() => {
+                  playClick()
+                  setDevice(option)
+                }}
+              >
+                <DeviceArt kind={option} />
+                <strong>{t.deviceTitles[option]}</strong>
+                <span>{t.deviceShorts[option]}</span>
+              </button>
+            ))}
+          </div>
+          {device ? (
+            <div className="gw-picked-reveal" key={device}>
+              <Bubble>{t.deviceLong[device]}</Bubble>
+              <div className="gw-actions">
+                <button type="button" className="text-btn" onClick={() => goTo('pick')}>
+                  {t.backBtn}
+                </button>
                 <button
                   type="button"
                   className="cta-button gw-pulse"
@@ -1668,6 +1916,10 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
                   onClose={() => setPayOverlayOpen(false)}
                   rtl={lang === 'he'}
                   scroll
+                  frame={deviceFrame}
+                  summarySrc={sideBySide ? '/cardcom-preview/order-summary.html' : undefined}
+                  summaryLabel={t.sideBySideLabel}
+                  continueLabel={t.sideBySideContinue}
                   {...overlaySize}
                 />,
                 document.body,

@@ -16,16 +16,12 @@ export default defineConfig({
       '/cardcom-production': 'http://localhost:3000',
       '/cardcom-hosted': 'http://localhost:3000',
       '/competition-template': 'http://localhost:3000',
-      // Separate process, separate backend: spectra-payments (its own FastAPI
-      // server, its own Postgres, its own Cardcom credentials) -- not proxied
-      // through the Express raw-Cardcom lab above. The prefix is stripped so
-      // spectraClient.ts can call spectra-payments' own paths (e.g. /health)
-      // unchanged.
-      '/spectra-api': {
-        target: 'http://localhost:8099',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/spectra-api/, ''),
-      },
+      // spectra-payments is reached exactly as in production: through the
+      // same-origin proxy (server/spectraProxy.js), which the Express dev
+      // server mounts at /spectra-api/* and which adds the Bearer credential
+      // server-side from server/.env (SPECTRA_PAYMENTS_API_URL / _TOKEN). The
+      // browser never talks to payments.avivozeri.com or a bare :8099.
+      '/spectra-api': 'http://localhost:3000',
     },
   },
 })

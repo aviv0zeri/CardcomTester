@@ -23,7 +23,13 @@ async function spectraFetch<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     data = text ? JSON.parse(text) : {}
   } catch {
-    throw new Error('spectra-payments is not running on :8099. Start it and retry.')
+    // A non-JSON body means the /spectra-api proxy did not answer (the SPA
+    // fallback page came back instead): in production the Vercel function,
+    // locally the Express dev server (server/index.js) with
+    // SPECTRA_PAYMENTS_API_TOKEN set in server/.env.
+    throw new Error(
+      'Could not reach the spectra-payments proxy (/spectra-api). Locally: run the Express server with SPECTRA_PAYMENTS_API_TOKEN in server/.env.',
+    )
   }
   if (!response.ok) {
     const message =
