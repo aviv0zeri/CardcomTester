@@ -177,16 +177,31 @@
     var amount = Number(p.get('amount'));
     if (!isFinite(amount) || amount <= 0) amount = 10;
     var fmt = function (n) { return '₪' + n.toFixed(2); };
-    // Two lines that add up to the session amount exactly.
+    // ?items=[{n,p,q}] (the walkthrough's cart) renders the real lines;
+    // otherwise two stock lines that add up to the session amount exactly.
+    var custom = null;
+    try {
+      var rawItems = p.get('items');
+      var parsed = rawItems ? JSON.parse(rawItems) : null;
+      if (Array.isArray(parsed)) {
+        custom = parsed.slice(0, 12).map(function (i) {
+          return { n: String(i.n || '').slice(0, 60), p: Number(i.p), q: Math.max(1, Math.round(Number(i.q) || 1)) };
+        }).filter(function (i) { return i.n && isFinite(i.p) && i.p >= 0; });
+        if (!custom.length) custom = null;
+      }
+    } catch (e) { custom = null; }
     var plan = Math.round(amount * 0.79 * 100) / 100;
     var setup = Math.round((amount - plan) * 100) / 100;
+    var rows = custom
+      ? custom.map(function (i) { return [i.n, i.q > 1 ? i.q + ' × ' + fmt(i.p) : '', Math.round(i.p * i.q * 100) / 100]; })
+      : [[T.plan, T.planDesc, plan], [T.setup, T.setupDesc, setup]];
     var lines = document.getElementById('lines');
-    [[T.plan, T.planDesc, plan], [T.setup, T.setupDesc, setup]].forEach(function (item) {
+    rows.forEach(function (item) {
       var row = document.createElement('div'); row.className = 'row';
       var left = document.createElement('span');
       var n = document.createElement('span'); n.className = 'name'; n.textContent = item[0];
-      var d = document.createElement('span'); d.className = 'desc'; d.textContent = item[1];
-      left.appendChild(n); left.appendChild(d);
+      left.appendChild(n);
+      if (item[1]) { var d = document.createElement('span'); d.className = 'desc'; d.textContent = item[1]; left.appendChild(d); }
       var price = document.createElement('span'); price.className = 'price'; price.textContent = fmt(item[2]);
       row.appendChild(left); row.appendChild(price); lines.appendChild(row);
     });

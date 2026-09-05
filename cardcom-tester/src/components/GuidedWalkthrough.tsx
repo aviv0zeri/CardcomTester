@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { Language } from './CheckoutControls'
 import { PaymentOverlay } from './PaymentOverlay'
+import { GuidedCart } from './GuidedCart'
+import { DEFAULT_CART, cartTotal, resolveItems, type CartItem } from './cart'
 import type { UiLang } from './uiLang'
 import { useViewport } from './useViewport'
 import {
@@ -97,7 +99,6 @@ type Copy = {
   ofLong: ReactNode
   continueBtn: string
   backBtn: string
-  amountLabel: string
   setupBubble: ReactNode
   templateLabel: string
   regionLabels: Record<OpenFieldsRegion, string>
@@ -172,7 +173,7 @@ type Copy = {
 
 const COPY: Record<Lang, Copy> = {
   en: {
-    dots: ['Business', 'Choose', 'Device', 'Amount', 'Session', 'Pay', 'Verify'],
+    dots: ['Business', 'Choose', 'Device', 'Cart', 'Session', 'Pay', 'Verify'],
     deviceBubble: (
       <>
         <strong>Where will your customer pay?</strong> Pick the screen to imitate. The payment page
@@ -287,12 +288,11 @@ const COPY: Record<Lang, Copy> = {
     ),
     continueBtn: 'Continue',
     backBtn: 'Back',
-    amountLabel: 'Amount (₪)',
     setupBubble: (
       <>
-        <strong>How much are we pretending to charge?</strong> In Cardcom's test world, any
-        amount under ₪5000 succeeds. Want to practice a <em>failed</em> payment someday?
-        Use 5000 or more.
+        <strong>Let's fill a pretend cart.</strong> Pick a ready-made one or stack things one by
+        one — the cart's total is what we'll charge. In Cardcom's test world any total under
+        ₪5000 succeeds; want to practice a <em>failed</em> payment someday? Make it 5000 or more.
       </>
     ),
     templateLabel: 'Form template',
@@ -523,7 +523,7 @@ const COPY: Record<Lang, Copy> = {
     presentationEmbedded: 'Embedded fields',
   },
   he: {
-    dots: ['עסק', 'בחירה', 'מכשיר', 'סכום', 'יצירה', 'תשלום', 'אימות'],
+    dots: ['עסק', 'בחירה', 'מכשיר', 'עגלה', 'יצירה', 'תשלום', 'אימות'],
     deviceBubble: (
       <>
         <strong>איפה הלקוח ישלם?</strong> בחרו את המסך שנחקה. דף התשלום ייפתח במסגרת בגודל הזה,
@@ -632,12 +632,11 @@ const COPY: Record<Lang, Copy> = {
     ),
     continueBtn: 'המשך',
     backBtn: 'חזרה',
-    amountLabel: 'סכום (₪)',
     setupBubble: (
       <>
-        <strong>כמה נעמיד פנים שאנחנו גובים?</strong> בעולם הבדיקות של קארדקום כל סכום
-        מתחת ל-5000 ₪ מצליח. רוצים לתרגל מתישהו תשלום <em>שנכשל</em>? השתמשו ב-5000
-        ומעלה.
+        <strong>בואו נמלא עגלה לדוגמה.</strong> בחרו עגלה מוכנה או הוסיפו דבר-דבר — הסכום
+        של העגלה הוא מה שנגבה. בעולם הבדיקות של קארדקום כל סכום מתחת ל-5000 ₪ מצליח;
+        רוצים לתרגל מתישהו תשלום <em>שנכשל</em>? הגיעו ל-5000 ומעלה.
       </>
     ),
     templateLabel: 'תבנית טופס',
@@ -1047,7 +1046,10 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   const [picked, setPicked] = useState<Integration | null>(null)
   const [device, setDevice] = useState<DeviceChoice | null>(null)
   const [region, setRegion] = useState<OpenFieldsRegion>('il')
-  const [amount, setAmount] = useState('10')
+  // The pretend cart stands in for the merchant's app; its total is the amount.
+  const [cartItems, setCartItems] = useState<CartItem[]>(DEFAULT_CART)
+  const amount = cartTotal(cartItems).toFixed(2)
+  const cartLang = lang === 'he' ? ('he' as const) : ('en' as const)
   const [wantReceipt, setWantReceipt] = useState(false)
   const [receiptEmail, setReceiptEmail] = useState('')
   const [busy, setBusy] = useState(false)
@@ -1305,14 +1307,14 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
         amount,
         documentType: 'Receipt',
         returnValue: 'guided-run',
-        products: [
-          {
-            ...newProduct(),
-            description: lang === 'he' ? 'הזמנה' : 'Order',
-            quantity: '1',
-            unitCost: amount,
-          },
-        ],
+        // The cart's real lines become the receipt's product lines (Cardcom's
+        // rule: they must sum to the charge -- they do, by construction).
+        products: resolveItems(cartItems, cartLang).map((item) => ({
+          ...newProduct(),
+          description: item.name,
+          quantity: String(item.qty),
+          unitCost: item.price.toFixed(2),
+        })),
         customer: {
           name: 'Guided Tester',
           taxId: '',
@@ -1402,6 +1404,8 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
     lang: language === 'en' ? 'en' : 'he',
     theme: resolvedTheme,
     accent: accent.replace(/^#/, ''),
+    // The summary renders the cart's own lines instead of its stock two.
+    items: JSON.stringify(resolveItems(cartItems, cartLang).map((item) => ({ n: item.name, p: item.price, q: item.qty }))),
   })}`
 
   const runCheck = async () => {
@@ -1770,16 +1774,8 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
       {step === 'setup' ? (
         <section className="gw-step" key="setup">
           <Bubble>{t.setupBubble}</Bubble>
-          <div className="gw-form">
-            <label className="gw-field">
-              {t.amountLabel}
-              <input
-                value={amount}
-                inputMode="decimal"
-                disabled={disabled}
-                onChange={(event) => setAmount(event.target.value)}
-              />
-            </label>
+          <div className="gw-form gw-form--cart">
+            <GuidedCart lang={cartLang} items={cartItems} onChange={setCartItems} disabled={disabled} />
             {isSpectra ? (
               <div className="gw-field">
                 {t.presentationLabel}

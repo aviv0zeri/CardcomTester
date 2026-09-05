@@ -13,12 +13,33 @@ const SPECTRA_API_BASE = '/spectra-api'
 
 export const SPECTRA_PROJECT_ID = DEFAULT_PROFILE.spectraProjectId
 
+// The proxy hop is sub-second; a long wait is the API itself (its own call to
+// Cardcom is capped at 15s per request server-side). Cap the whole round trip
+// so the UI reports the stall instead of spinning indefinitely.
+const SPECTRA_TIMEOUT_MS = 30_000
+
 async function spectraFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${SPECTRA_API_BASE}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
-  })
-  const text = await response.text()
+  const controller = new AbortController()
+  const started = performance.now()
+  const timer = setTimeout(() => controller.abort(), SPECTRA_TIMEOUT_MS)
+  let text: string
+  let response: Response
+  try {
+    response = await fetch(`${SPECTRA_API_BASE}${path}`, {
+      ...init,
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+    })
+    text = await response.text()
+  } catch (cause) {
+    if (controller.signal.aborted) {
+      const seconds = Math.round((performance.now() - started) / 1000)
+      throw new Error(`No answer from spectra-payments after ${seconds}s (${path}). The wait is on the API side, not this page -- try again.`)
+    }
+    throw cause
+  } finally {
+    clearTimeout(timer)
+  }
   let data: unknown
   try {
     data = text ? JSON.parse(text) : {}

@@ -1,0 +1,373 @@
+/* Guided walkthrough cart (GuidedCart.tsx). Logical properties throughout so
+   the Hebrew walkthrough mirrors for free. */
+
+.gw-form--cart {
+  max-width: 560px;
+}
+
+.gc {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.gc.is-disabled {
+  opacity: 0.7;
+}
+
+.gc-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shell-shadow);
+}
+
+.gc-icon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--accent-soft-bg);
+  font-size: 1.3rem;
+  transform-origin: center;
+}
+
+.gc-count {
+  position: absolute;
+  top: -6px;
+  inset-inline-end: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+
+.gc-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gc-title strong {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.gc-title span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.gc-total {
+  flex: none;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.gc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gc-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.gc-bundles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gc-bundle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gc-bundle:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 6px 18px rgba(20, 22, 28, 0.08);
+}
+
+.gc-bundle:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.gc-emoji {
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.gc-bundle-name {
+  font-weight: 600;
+  font-size: 0.86rem;
+  text-align: center;
+}
+
+.gc-bundle-price {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.gc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.gc-chip em {
+  font-style: normal;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.gc-chip:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: var(--accent-soft-bg);
+}
+
+.gc-chip:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.gc-custom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.gc-custom input {
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.gc-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.gc-empty {
+  padding: 22px 14px;
+  text-align: center;
+  color: var(--text-muted);
+  border-bottom: 1px dashed var(--border-strong);
+}
+
+.gc-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto 78px 28px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.gc-row-emoji {
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.gc-row-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gc-row-name small {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: start;
+  font-variant-numeric: tabular-nums;
+}
+
+.gc-qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px;
+}
+
+.gc-qty button {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gc-qty button:hover:not(:disabled) {
+  background: var(--accent-soft-bg);
+  color: var(--accent-strong);
+}
+
+.gc-qty b {
+  min-width: 18px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.gc-row-price {
+  text-align: end;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.gc-remove {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gc-remove:hover:not(:disabled) {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.gc-sum {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface-alt);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.gc-toggle {
+  align-self: flex-start;
+}
+
+.gc-object {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gc-object .gw-json {
+  margin: 0;
+}
+
+.gc-note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* The button clone that flies into the cart icon (appended to body). */
+.gc-ghost {
+  position: fixed;
+  margin: 0;
+  z-index: 80;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(20, 22, 28, 0.15);
+}
+
+@media (max-width: 560px) {
+  .gc-bundles {
+    grid-template-columns: 1fr;
+  }
+
+  .gc-bundle {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .gc-bundle-price {
+    margin-inline-start: auto;
+  }
+
+  .gc-row {
+    grid-template-columns: 26px minmax(0, 1fr) auto 28px;
+  }
+
+  .gc-row-price {
+    display: none;
+  }
+}
