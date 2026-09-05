@@ -262,6 +262,26 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('brand').hidden = false;
     }
 
+    // Tester-only: ?wallets=<2-4> pads the wallet row with mock Apple Pay /
+    // Bit / PayPal buttons after the real Google Pay, to preview how the
+    // flex-wrap layout spreads several wallets. Pure CSS look-alikes -- not
+    // wired to anything (Cardcom Open Fields here only provides Google Pay).
+    const walletCount = Math.min(4, Math.max(1, Number(PAGE_PARAMS.get('wallets')) || 1));
+    if (walletCount > 1) {
+        const row = document.getElementById('walletRow');
+        ['applepay', 'bit', 'paypal'].slice(0, walletCount - 1).forEach((kind) => {
+            const item = document.createElement('div');
+            item.className = 'wallet-item';
+            const mock = document.createElement('button');
+            mock.type = 'button';
+            mock.className = `wallet-mock wallet-mock--${kind}`;
+            mock.setAttribute('aria-label', `${kind} (mock)`);
+            mock.title = 'Mock button (layout preview only)';
+            item.appendChild(mock);
+            row.appendChild(item);
+        });
+    }
+
     // Tester-only: ?testfill=1 shows the "Fill test details" button (in the
     // brand header, so it needs a brand too). It fills this page's own
     // fields for the current template and hands the card-owner details to
@@ -378,14 +398,21 @@ document.addEventListener("DOMContentLoaded", () => {
         // appended as overrides to the CSS text we send them.
         const tokens = getComputedStyle(document.documentElement);
         const tok = (name) => tokens.getPropertyValue(name).trim();
-        const themedField = `border-color: ${tok('--border-strong')}; color: ${tok('--text')}; background: ${tok('--surface')};`;
-        // The boxes are 39px inside 41px iframes; a transparent document
-        // background keeps that 2px edge from showing as a light seam on dark.
+        // Same geometry and states as this page's own inputs: a 41px
+        // border-box with 3px of room on every side (the iframe is 47px and
+        // pulled back 3px in form.css), so the focus ring / red border have
+        // somewhere to draw instead of being clipped by the frame edge.
+        const themedField = `box-sizing: border-box; height: 41px; margin: 3px; width: calc(100% - 6px); border-color: ${tok('--border-strong')}; color: ${tok('--text')}; background: ${tok('--surface')};`;
+        const focusField = `outline: none; border-color: ${tok('--accent')}; box-shadow: 0 0 0 3px ${tok('--accent-soft-bg')};`;
+        const invalidField = `border-color: ${tok('--danger')};`;
+        // A transparent document background keeps the room around the box
+        // from showing as a light seam on the dark theme.
         const themedDoc = 'html, body { background: transparent; }';
         // cardNumber.css has no invalid state of its own (the CVV template
-        // does), so the red outline Cardcom's validation toggles is added here.
-        const cardCssText = `${await cardCSSPromise.text()}\n${themedDoc}\n#cardNumber { ${themedField} }\n#cardNumber.invalid { border-color: ${tok('--danger')}; }`;
-        const cvvCssText = `${template.innerText.toString()}\n${themedDoc}\n.cvvField { ${themedField} }\n.cvvField.invalid { border-color: ${tok('--danger')}; }`;
+        // does); its card-brand icon is positioned off the body, so it moves
+        // with the box's 3px margin.
+        const cardCssText = `${await cardCSSPromise.text()}\n${themedDoc}\n#cardNumber { ${themedField} }\n#cardNumber:focus { ${focusField} }\n#cardNumber.invalid { ${invalidField} }\n.credit-card { left: 13px; top: 12px; }`;
+        const cvvCssText = `${template.innerText.toString()}\n${themedDoc}\n.cvvField { ${themedField} }\n.cvvField:focus { ${focusField} }\n.cvvField.invalid { ${invalidField} }`;
 
         //Note: props names are important
         iframeMessage = {

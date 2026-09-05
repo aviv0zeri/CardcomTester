@@ -147,26 +147,26 @@ iframe {
 .brand-suffix {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 9px 3px 8px;
-  border-radius: 999px;
+  gap: 4px;
+  padding: 2px 6px 2px 5px;
+  border-radius: 5px;
   background: var(--accent-soft-bg);
   color: var(--accent);
-  font-size: 10.5px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .brand-suffix .fa {
-  font-size: 10px;
+  font-size: 8.5px;
   line-height: 1;
 }
 
 /* Hebrew has no case and reads badly tracked out. */
 [dir="rtl"] .brand-suffix {
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0;
 }
 
@@ -446,10 +446,16 @@ input[type="text"]::placeholder {
   color: var(--text-faint);
 }
 
+/* Cardcom's card-number/CVV frames are 3px larger than the box on every
+   side, pulled back by the same 3px so the box sits exactly where a plain
+   input would. That margin is what the focus ring and the red invalid
+   border draw into -- a frame the exact size of the box clipped them. The
+   box geometry inside (41px, 3px margin) is in the CSS form.js sends. */
 #CardComCardNumber,
 #CardComCvv {
-  width: 100%;
-  height: 41px;
+  width: calc(100% + 6px);
+  height: 47px;
+  margin: -3px;
 }
 
 .checkbox {
@@ -497,14 +503,26 @@ input[type="text"]::placeholder {
   margin-top: 26px;
 }
 
-/* Outcome of the last Pay attempt, under the button (replaces alert()). */
+/* Outcome of the last Pay attempt, under the button (replaces alert()): a
+   proper alert box -- bordered in its own colour, icon at the start, text
+   aligned to the start -- not a tinted bar. */
 .pay-status {
-  margin: 10px 0 0;
-  padding: 9px 12px;
-  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 10px;
   font-size: 13px;
+  font-weight: 500;
   line-height: 1.4;
-  text-align: center;
+  text-align: start;
+}
+
+.pay-status::before {
+  flex: none;
+  font: normal normal normal 15px/1.3 FontAwesome;
 }
 
 .pay-status.is-error {
@@ -512,14 +530,26 @@ input[type="text"]::placeholder {
   color: var(--danger);
 }
 
+.pay-status.is-error::before {
+  content: "\f06a";
+}
+
 .pay-status.is-success {
   background: var(--success-bg);
   color: var(--success);
 }
 
+.pay-status.is-success::before {
+  content: "\f058";
+}
+
 .pay-status.is-info {
   background: var(--accent-soft-bg);
   color: var(--accent);
+}
+
+.pay-status.is-info::before {
+  content: "\f05a";
 }
 
 /* Flex-wrap, not a fixed grid: with flex-basis 50% and flex-grow 1, a lone
@@ -554,6 +584,79 @@ input[type="text"]::placeholder {
   display: block;
   width: 100%;
   height: 48px;
+}
+
+/* Mock wallets (tester-only, ?wallets=n): the real Google Pay pill's
+   proportions in each brand's colours, so the row can be previewed with
+   2-4 wallets before the others are wired. */
+.wallet-mock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: default;
+}
+
+.wallet-mock::before,
+.wallet-mock::after {
+  display: block;
+}
+
+.wallet-mock--applepay {
+  background: #000;
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.wallet-mock--applepay::before {
+  content: "\f179";
+  margin-top: -3px;
+  font: normal normal normal 21px/1 FontAwesome;
+}
+
+.wallet-mock--applepay::after {
+  content: "Pay";
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.wallet-mock--bit {
+  background: #1a9df3;
+  color: #fff;
+}
+
+.wallet-mock--bit::after {
+  content: "bit";
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.wallet-mock--paypal {
+  background: #ffc439;
+  color: #003087;
+}
+
+.wallet-mock--paypal::before {
+  content: "\f1ed";
+  font: normal normal normal 18px/1 FontAwesome;
+  color: #003087;
+}
+
+.wallet-mock--paypal::after {
+  content: "PayPal";
+  font-weight: 700;
+  font-style: italic;
+  color: #003087;
 }
 
 /* ---- footer / credits -------------------------------------------------------- */
