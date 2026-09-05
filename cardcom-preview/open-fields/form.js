@@ -99,9 +99,9 @@ const HEBREW_LABELS = {
     pay_failed: 'התשלום נכשל',
     pay_done: 'התשלום הושלם',
     cvv_hint: '3 הספרות שבגב הכרטיס',
-    card_required: 'נא להזין מספר כרטיס',
-    cvv_required: 'נא להזין CVV',
-    card_cvv_required: 'נא להזין מספר כרטיס ו-CVV',
+    card_required: 'נא להזין מספר כרטיס תקין',
+    cvv_required: 'נא להזין CVV תקין',
+    card_cvv_required: 'נא להזין מספר כרטיס ו-CVV תקינים',
     fill_hint: 'הפרטים מולאו. עכשיו הקלידו את כרטיס הבדיקה בשדות הכרטיס (שדות מאובטחים של קארדקום שלא ניתן למלא מכאן): 4580 2800 0000 0008 · 12/30 · כל CVV',
 };
 
@@ -152,12 +152,14 @@ function validateCardFields() {
     }).finally(() => { cardValidation = null; });
 }
 
+// Cardcom's frames only report valid/invalid (an empty box and a mistyped
+// number look the same to us), so the wording covers both.
 function missingCardFieldsText(results) {
     const card = results.cardNumber === false;
     const cvv = results.cvv === false;
-    if (card && cvv) return label('card_cvv_required', 'Please enter your card number and CVV');
-    if (card) return label('card_required', 'Please enter your card number');
-    if (cvv) return label('cvv_required', 'Please enter the CVV');
+    if (card && cvv) return label('card_cvv_required', 'Please enter a valid card number and CVV');
+    if (card) return label('card_required', 'Please enter a valid card number');
+    if (cvv) return label('cvv_required', 'Please enter a valid CVV');
     return '';
 }
 
