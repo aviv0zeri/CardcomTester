@@ -1,4 +1,4 @@
-import type { Device, Language, Mode } from './CheckoutControls'
+import { isNewDesign, isOpenFieldsDesign, type Design, type Device, type Language, type Mode } from './CheckoutControls'
 
 export type PreviewVersion = {
   id: string
@@ -52,6 +52,8 @@ export function openFieldsUrl(
     testFill?: boolean
     // 2-4 pads the wallet row with mock wallets after the real Google Pay.
     wallets?: number
+    // 'box' -> Open Fields 2.1: number | expiry / CVV in one bordered box.
+    fields?: 'box'
   } = {},
 ) {
   const lang = language === 'en' ? 'en' : 'he'
@@ -67,22 +69,24 @@ export function openFieldsUrl(
   if (opts.accent) params.set('accent', opts.accent.replace(/^#/, ''))
   if (opts.testFill) params.set('testfill', '1')
   if (opts.wallets && opts.wallets > 1) params.set('wallets', String(Math.min(4, opts.wallets)))
+  if (opts.fields) params.set('fields', opts.fields)
   return `/cardcom-preview/open-fields/form.html?${params}`
 }
 
 export function localPreviewUrl(
   language: Language,
   embed: boolean,
-  design: 'old' | 'new' | 'openfields',
+  design: Design,
   opts: { region?: OpenFieldsRegion; screen?: 'checkout'; brand?: string } = {},
 ) {
-  if (design === 'openfields') {
+  if (isOpenFieldsDesign(design)) {
     return openFieldsUrl(language, {
       preview: true,
       region: opts.region,
       embed,
       screen: opts.screen,
       brand: opts.brand,
+      fields: design === 'openfields21' ? 'box' : undefined,
     })
   }
   const kind = embed ? `${language}/embed` : language
@@ -90,7 +94,9 @@ export function localPreviewUrl(
     v: `low-profile/${kind}`,
     wallets: '4',
   })
+  // brand=1 is the compact skin; brand=21 layers the 2.1 card box on top of it.
   if (design === 'new') params.set('brand', '1')
+  if (design === 'new21') params.set('brand', '21')
   return `/cardcom-preview/open.html?${params}`
 }
 
@@ -134,14 +140,14 @@ const OPEN_FIELDS_IFRAME: PreviewVersion[] = [
 export function versionsFor(
   device: Device,
   mode: Mode,
-  design: 'old' | 'new' | 'openfields' = 'old',
+  design: Design = 'old',
 ): PreviewVersion[] {
   // Merchant-owned page: no phone/tablet framing variants, and on a real
   // phone it opens as a plain page. Desktop iframe is the tester's own box.
-  if (design === 'openfields') return device === 'desktop' && mode === 'iframe' ? OPEN_FIELDS_IFRAME : []
+  if (isOpenFieldsDesign(design)) return device === 'desktop' && mode === 'iframe' ? OPEN_FIELDS_IFRAME : []
   if (device === 'mobile') return [...MOBILE_REDIRECT, ...MOBILE_IFRAME]
   if (mode === 'redirect') return MOBILE_REDIRECT
-  if (design === 'new') return NEW_DESKTOP_IFRAME
+  if (isNewDesign(design)) return NEW_DESKTOP_IFRAME
   return DESKTOP_IFRAME
 }
 

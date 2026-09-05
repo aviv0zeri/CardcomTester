@@ -186,18 +186,21 @@
   var spec = VERSIONS[key];
 
   // &brand=1 — compact Aviv skin (logo, name, card fields). Not Canaan, not paste.
+  // &brand=21 — the same skin plus the "2.1" unified card box (a CSS-only layer).
   // &all=1 / &wip=1 — working copies under templates/cardcom/low-profile/.
   if (spec && spec.html.indexOf("/competition-template/") === -1) {
-    if (params.get("brand") === "1") {
+    var brand = params.get("brand");
+    if (brand === "1" || brand === "21") {
       spec = {
         dir: spec.dir,
         lang: spec.lang,
         mock: spec.mock,
         base: spec.base,
         html: "/templates/cardcom/low-profile/_brand/checkout.html",
-        css: spec.css.concat([
-          "/templates/cardcom/low-profile/_brand/brand-skin.css"
-        ])
+        css: spec.css.concat(
+          ["/templates/cardcom/low-profile/_brand/brand-skin.css"],
+          brand === "21" ? ["/templates/cardcom/low-profile/_brand21/card-box.css"] : []
+        )
       };
     } else if (params.get("all") === "1" || params.get("wip") === "1") {
       var folder = params.get("all") === "1" ? "_all" : "_wip";

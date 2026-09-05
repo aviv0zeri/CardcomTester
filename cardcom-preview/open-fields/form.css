@@ -300,6 +300,17 @@ h3 {
   min-width: 0;
 }
 
+/* Plain layout: the box wrapper and the expiry wrapper are invisible so the
+   existing grid is untouched; the expiry caption is only for the box. */
+.card-box,
+.expiry-cell {
+  display: contents;
+}
+
+.expiry-label {
+  display: none;
+}
+
 /* Expiry: a "/" sits in the gap between Month and Year, level with the
    inputs (inline-start of Year is the Month side in both directions). */
 .expYear::before {
@@ -734,6 +745,144 @@ input[type="text"]::placeholder {
   font-weight: 700;
   font-style: italic;
   color: #003087;
+}
+
+/* ---- Open Fields 2.1: unified card box (?fields=box) ------------------------
+   Number | expiry / CVV as cells of one bordered box with hairline
+   separators: the box background is the line colour and the cells are the
+   surface, 1px apart. Cardcom's number/CVV boxes are told to drop their own
+   border in this mode (form.js), so they read as cells too. */
+html.fields-box .card-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  grid-column: 1 / -1;
+  background: var(--border-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+html.fields-box .card-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft-bg);
+}
+
+html.fields-box .card-box-number {
+  flex: 1 1 100%;
+  padding: 6px 12px 0;
+  background: var(--surface);
+}
+
+html.fields-box .card-box-number .label-row {
+  margin-bottom: 0;
+}
+
+html.fields-box .card-box .expDate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  flex: 1 1 100%;
+  background: transparent;
+}
+
+html.fields-box .expiry-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 60%;
+  min-width: 170px;
+  padding: 6px 12px;
+  background: var(--surface);
+}
+
+html.fields-box .expiry-label {
+  display: block;
+  margin-inline-end: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+html.fields-box .expiry-cell .field {
+  flex: 0 0 auto;
+}
+
+html.fields-box .expiry-cell label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+html.fields-box .expiry-cell input[type="text"] {
+  width: 3ch;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+html.fields-box .expiry-cell input[type="text"]:focus {
+  box-shadow: none;
+}
+
+/* The "/" becomes an inline sibling of the year input instead of the
+   absolutely placed separator of the plain layout. */
+html.fields-box .expYear {
+  display: flex;
+  align-items: center;
+}
+
+html.fields-box .expYear::before {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0 4px;
+  color: var(--text-faint);
+}
+
+html.fields-box .card-box .cvv {
+  flex: 1 1 30%;
+  min-width: 110px;
+  padding: 6px 12px 0;
+  background: var(--surface);
+}
+
+html.fields-box .card-box .cvv label,
+html.fields-box .card-box-number label {
+  margin-bottom: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* Cardcom's frames keep their 3px focus room but the cell is the visible
+   box now, so pull them flush and let the cell show the focus tint. */
+html.fields-box .card-box #CardComCardNumber,
+html.fields-box .card-box #CardComCvv {
+  margin: -3px -3px -1px;
+}
+
+html.fields-box .card-box .field:focus-within,
+html.fields-box .expiry-cell:focus-within {
+  background: var(--accent-soft-bg);
+}
+
+html.fields-box .card-box .cvv-hint {
+  bottom: 2px;
+}
+
+@media (max-width: 300px) {
+  html.fields-box .expiry-cell,
+  html.fields-box .card-box .cvv {
+    flex-basis: 100%;
+  }
 }
 
 /* ---- footer / credits -------------------------------------------------------- */

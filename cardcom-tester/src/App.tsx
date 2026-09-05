@@ -2,6 +2,8 @@ import { useState } from 'react'
 import {
   CheckoutControls,
   deviceModeFrom,
+  isNewDesign,
+  isOpenFieldsDesign,
   openAsFrom,
   type Design,
   type Device,
@@ -63,7 +65,7 @@ function App() {
   const [statusUrl, setStatusUrl] = useState<string | null>(null)
   const overlayOpen = Boolean(overlay)
   const openAs = openAsFrom(device, mode)
-  const dualView = (design === 'new' || design === 'openfields') && doubleView
+  const dualView = (isNewDesign(design) || isOpenFieldsDesign(design)) && doubleView
   const statusOk =
     status === 'ready' ||
     status === 'creating session…' ||
@@ -80,7 +82,7 @@ function App() {
   const handleDesignChange = (next: Design) => {
     setDesign(next)
     // Open Fields' credits iframe only speaks he/en (Cardcom's own limit).
-    if (next === 'openfields' && language !== 'he' && language !== 'en') setLanguage('he')
+    if (isOpenFieldsDesign(next) && language !== 'he' && language !== 'en') setLanguage('he')
   }
 
   const guardDevice = (): boolean => {
@@ -101,7 +103,7 @@ function App() {
       src,
       width: version.width,
       height: version.height,
-      scroll: design === 'new' ? true : version.scroll,
+      scroll: isNewDesign(design) ? true : version.scroll,
       summarySrc: dualView ? '/cardcom-preview/order-summary.html' : undefined,
     })
     setStatusUrl(null)
@@ -111,7 +113,7 @@ function App() {
   const openLocal = (version?: PreviewVersion) => {
     if (!guardDevice()) return
     const embed = Boolean(version?.embed)
-    const screen = design === 'openfields' && embed && dualView ? 'checkout' : undefined
+    const screen = isOpenFieldsDesign(design) && embed && dualView ? 'checkout' : undefined
     const src = localPreviewUrl(language, embed, design, { region, screen, brand: profile.id })
     // The guard above already confirmed device matches reality, so on mobile
     // this is a real phone — show the real page, not a scaled-down box.
@@ -129,11 +131,12 @@ function App() {
   const openCardcom = async (version?: PreviewVersion) => {
     if (busy) return
     if (!guardDevice()) return
-    if (design === 'openfields') {
+    if (isOpenFieldsDesign(design)) {
       // No session is created here -- the Open Fields page itself calls
       // LowProfile/Create when its "Continue to checkout" is pressed (or on
       // load, in the two-panel view where the tester's summary replaces the
       // page's own cart screen).
+      const fields = design === 'openfields21' ? ('box' as const) : undefined
       const framed = device === 'desktop' && Boolean(version)
       if (framed && version) {
         const src = openFieldsUrl(language, {
@@ -141,11 +144,12 @@ function App() {
           embed: true,
           screen: dualView ? 'checkout' : undefined,
           brand: profile.id,
+          fields,
         })
         openFrame(src, version, 'Open Fields (live)')
         return
       }
-      const src = openFieldsUrl(language, { region, brand: profile.id })
+      const src = openFieldsUrl(language, { region, brand: profile.id, fields })
       const tabWindow = window.open(src, '_blank', 'noopener,noreferrer')
       setStatusUrl(tabWindow ? null : src)
       setStatus(tabWindow ? 'opened Open Fields (live) in a new tab' : 'Popup blocked. Open the live page:')

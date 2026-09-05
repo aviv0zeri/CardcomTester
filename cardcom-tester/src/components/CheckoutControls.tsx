@@ -1,7 +1,9 @@
 import { MenuSelect } from './MenuSelect'
 import { OPEN_FIELDS_REGIONS, type OpenFieldsRegion } from './previewVersions'
 
-export type Design = 'old' | 'new' | 'openfields'
+// 'new21' / 'openfields21' are the "2.1" variants: the same designs with the
+// card fields regrouped into one bordered box (number | expiry / CVV).
+export type Design = 'old' | 'new' | 'new21' | 'openfields' | 'openfields21'
 export type Language = 'he' | 'en' | 'ar' | 'ru'
 export type Device = 'mobile' | 'desktop'
 export type Mode = 'redirect' | 'iframe'
@@ -9,9 +11,17 @@ export type OpenAs = 'page' | 'iframe' | 'phone'
 
 export const DESIGNS: { value: Design; label: string }[] = [
   { value: 'new', label: 'New version' },
+  { value: 'new21', label: 'New version 2.1 — card box' },
   { value: 'old', label: 'Old version' },
   { value: 'openfields', label: 'Open Fields' },
+  { value: 'openfields21', label: 'Open Fields 2.1 — card box' },
 ]
+
+// Family checks: everything true of "New version" is true of its 2.1, and
+// likewise for Open Fields.
+export const isNewDesign = (design: Design) => design === 'new' || design === 'new21'
+export const isOpenFieldsDesign = (design: Design) =>
+  design === 'openfields' || design === 'openfields21'
 
 export const LANGUAGES: { value: Language; label: string }[] = [
   { value: 'he', label: 'Hebrew' },
@@ -62,10 +72,9 @@ export function CheckoutControls({
   onOpenAsChange,
 }: CheckoutControlsProps) {
   // Open Fields' credits iframe only supports he/en upstream.
-  const languageOptions =
-    design === 'openfields'
-      ? LANGUAGES.filter((option) => option.value === 'he' || option.value === 'en')
-      : LANGUAGES
+  const languageOptions = isOpenFieldsDesign(design)
+    ? LANGUAGES.filter((option) => option.value === 'he' || option.value === 'en')
+    : LANGUAGES
   return (
     <div className="cta-fields">
       <div className="cta-field">
@@ -90,7 +99,7 @@ export function CheckoutControls({
         />
       </div>
 
-      {design === 'openfields' ? (
+      {isOpenFieldsDesign(design) ? (
         <div className="cta-field">
           Template
           <MenuSelect

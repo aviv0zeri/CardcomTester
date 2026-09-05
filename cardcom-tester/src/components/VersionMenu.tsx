@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Design, Device, Language, Mode } from './CheckoutControls'
+import { isNewDesign, isOpenFieldsDesign, type Design, type Device, type Language, type Mode } from './CheckoutControls'
 import { MenuSelect } from './MenuSelect'
 import { versionsFor, type PreviewVersion } from './previewVersions'
 
@@ -33,7 +33,8 @@ export function VersionMenu({
   // Open Fields is a merchant-owned page. Preview opens it with preview=1 (no
   // API call at all); Cardcom API opens it live -- its own Continue button
   // creates the session. On a real phone it is always a plain page.
-  const isOpenFields = design === 'openfields'
+  const isOpenFields = isOpenFieldsDesign(design)
+  const isNew = isNewDesign(design)
   const isPage = (!isMobile && isRedirect) || (isOpenFields && isMobile)
   const versions = versionsFor(device, isRedirect ? 'redirect' : 'iframe', design)
   const [sizeId, setSizeId] = useState(versions[0]?.id ?? '')
@@ -44,7 +45,7 @@ export function VersionMenu({
   // untouched on purpose, and there's no room for two side-by-side panels on
   // a real phone. For Open Fields the two-panel view skips the page's own
   // cart screen and shows the tester's order summary in its place.
-  const canDoubleView = (design === 'new' || isOpenFields) && framed && !isMobile
+  const canDoubleView = (isNew || isOpenFields) && framed && !isMobile
 
   return (
     <section className="design-go">
@@ -87,13 +88,13 @@ export function VersionMenu({
       <div className="cta-actions cta-actions--go">
         <button
           type="button"
-          className={`cta-button${design === 'new' || isOpenFields ? ' cta-button--secondary' : ''}`}
+          className={`cta-button${isNew || isOpenFields ? ' cta-button--secondary' : ''}`}
           disabled={blocked}
           onClick={() => onLocal(framed ? sizePick : undefined)}
         >
           Preview
         </button>
-        {design === 'new' || isOpenFields ? (
+        {isNew || isOpenFields ? (
           <button
             type="button"
             className="cta-button"

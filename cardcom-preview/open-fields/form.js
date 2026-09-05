@@ -11,6 +11,10 @@ function isDarkTheme() {
     return FORCED_THEME ? FORCED_THEME === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
+// ?fields=box (Open Fields 2.1): number | expiry / CVV as one bordered box.
+const FIELDS_BOX = PAGE_PARAMS.get('fields') === 'box';
+if (FIELDS_BOX) document.documentElement.classList.add('fields-box');
+
 // ?accent=rrggbb (strict six-hex, nothing else) recolours the page's accent.
 // The hover shade and soft tint are derived from it, so one value is enough.
 const ACCENT = /^#?([0-9a-f]{6})$/i.exec(PAGE_PARAMS.get('accent') || '');
@@ -103,6 +107,7 @@ const HEBREW_LABELS = {
     check_card: 'בדקו את פרטי הכרטיס',
     dialog_ok: 'אישור',
     cvv_hint: '3 הספרות שבגב הכרטיס',
+    expiry: 'תוקף',
     card_required: 'נא להזין מספר כרטיס תקין',
     cvv_required: 'נא להזין CVV תקין',
     card_cvv_required: 'נא להזין מספר כרטיס ו-CVV תקינים',
@@ -441,16 +446,24 @@ document.addEventListener("DOMContentLoaded", () => {
         // border-box with 3px of room on every side (the iframe is 47px and
         // pulled back 3px in form.css), so the focus ring / red border have
         // somewhere to draw instead of being clipped by the frame edge.
-        const themedField = `box-sizing: border-box; height: 41px; margin: 3px; width: calc(100% - 6px); border-color: ${tok('--border-strong')}; color: ${tok('--text')}; background: ${tok('--surface')};`;
-        const focusField = `outline: none; border-color: ${tok('--accent')}; box-shadow: 0 0 0 3px ${tok('--accent-soft-bg')};`;
-        const invalidField = `border-color: ${tok('--danger')};`;
+        // In the 2.1 box layout the cell is the visible box: the fields drop
+        // their own border and background; focus tints the cell (form.css).
+        const themedField = FIELDS_BOX
+            ? `box-sizing: border-box; height: 41px; margin: 3px; width: calc(100% - 6px); border: 0; padding: 0; color: ${tok('--text')}; background: transparent;`
+            : `box-sizing: border-box; height: 41px; margin: 3px; width: calc(100% - 6px); border-color: ${tok('--border-strong')}; color: ${tok('--text')}; background: ${tok('--surface')};`;
+        const focusField = FIELDS_BOX
+            ? 'outline: none; border: 0; box-shadow: none;'
+            : `outline: none; border-color: ${tok('--accent')}; box-shadow: 0 0 0 3px ${tok('--accent-soft-bg')};`;
+        const invalidField = FIELDS_BOX
+            ? `border: 0; color: ${tok('--danger')};`
+            : `border-color: ${tok('--danger')};`;
         // A transparent document background keeps the room around the box
         // from showing as a light seam on the dark theme.
         const themedDoc = 'html, body { background: transparent; }';
         // cardNumber.css has no invalid state of its own (the CVV template
         // does); its card-brand icon is positioned off the body, so it moves
         // with the box's 3px margin.
-        const cardCssText = `${await cardCSSPromise.text()}\n${themedDoc}\n#cardNumber { ${themedField} }\n#cardNumber:focus { ${focusField} }\n#cardNumber.invalid { ${invalidField} }\n.credit-card { left: 13px; top: 12px; }`;
+        const cardCssText = `${await cardCSSPromise.text()}\n${themedDoc}\n#cardNumber { ${themedField} }\n#cardNumber:focus { ${focusField} }\n#cardNumber.invalid { ${invalidField} }\n.credit-card { left: ${FIELDS_BOX ? '1px' : '13px'}; top: 12px; }${FIELDS_BOX ? '\n#cardNumber { padding: 0 0 0 30px; }' : ''}`;
         const cvvCssText = `${template.innerText.toString()}\n${themedDoc}\n.cvvField { ${themedField} }\n.cvvField:focus { ${focusField} }\n.cvvField.invalid { ${invalidField} }`;
 
         //Note: props names are important

@@ -196,7 +196,11 @@
                             <input type="text" id="cardOwnerName" name="cardOwnerName" onblur="setCardOwnerDetails()"
                                 placeholder="John More Doe">
                         </div>
-                        <div class="field field--full">
+                        <!-- .card-box groups number + expiry + CVV. Plain layout by
+                             default (display: contents); with ?fields=box (Open Fields
+                             2.1) it becomes one bordered box with hairline cells. -->
+                        <div class="field--full card-box">
+                        <div class="field field--full card-box-number">
                             <div class="label-row">
                                 <label for="CardComCardNumber"><span data-i18n="card_number">Card
                                         number</span></label>
@@ -214,6 +218,10 @@
                                 src="https://secure.cardcom.solutions/api/openfields/cardNumber"></iframe>
                         </div>
                         <div class="field--full fields fields--3 expDate">
+                            <!-- Month + year share one cell in the box layout; in the plain
+                                 layout the wrapper is display: contents so they stay grid items. -->
+                            <div class="expiry-cell">
+                            <span class="expiry-label" data-i18n="expiry">Expiry</span>
                             <div class="field expMonth">
                                 <label for="expirationMonth"><span data-i18n="exp_month">Month</span></label>
                                 <input type="text" id="expirationMonth" name="expirationMonth" value="12"
@@ -223,6 +231,7 @@
                                 <label for="expirationYear"><span data-i18n="exp_year">Year</span></label>
                                 <input type="text" id="expirationYear" name="expirationYear" value="30"
                                     placeholder="30">
+                            </div>
                             </div>
                             <div class="field cvv">
                                 <label class="cvv-label" for="CardComCvv">CVV</label>
@@ -242,6 +251,7 @@
                                     </svg>
                                 </span>
                             </div>
+                        </div>
                         </div>
                     </div>
                 </section>

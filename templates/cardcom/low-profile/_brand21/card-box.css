@@ -1,0 +1,235 @@
+/* ==========================================================================
+   Low Profile "2.1" — unified card box, layered OVER the brand skin.
+   Loaded after brand-skin.css (open.js: &brand=21). Nothing in the approved
+   brand skin or the canonical paste files changes; this file only regroups
+   the three card fields — number | expiry / CVV — into one bordered box
+   with hairline cell separators, the way the competitor template does it,
+   in our colours. Static CSS only: no markup or Knockout binding changes,
+   labels stay Cardcom's (cardNumber.label, lblExpiration, cvv.label).
+
+   Technique: the box's background is the line colour and the cells are
+   white with a 1px gap, so separators appear wherever cells meet, at any
+   wrap. !important mirrors the canonical/brand files, which use it on
+   every field rule; the #CreditCardDiv id keeps these rules on top.
+   ========================================================================== */
+
+/* The card group becomes a real box (the brand skin flattens it with
+   display: contents to order rows across the whole form). */
+#CreditCardDiv .card-group-card {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 1px;
+    order: 2;
+    flex: 1 1 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    background: #cbd3df;
+    border: 1px solid #cbd3df;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+#CreditCardDiv .card-group-card:focus-within {
+    border-color: #0f1f3d;
+    box-shadow: 0 0 0 3px rgba(15, 31, 61, .14);
+}
+
+#CreditCardDiv .card-group-card.errorRow,
+#CreditCardDiv .card-group-card:has(.errorRow) {
+    border-color: #c0392b;
+}
+
+/* Cells: white, a small caption on top, the control underneath. */
+#CreditCardDiv .card-group-card .formRow {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 56px;
+    margin: 0 !important;
+    padding: 7px 12px 5px !important;
+    background: #fff;
+    overflow: visible !important;
+}
+
+#CreditCardDiv .card-group-card .formRow:focus-within {
+    background: #f1f4f9;
+}
+
+#CreditCardDiv .card-group-card .formRow.errorRow {
+    background: #fdf2f2;
+}
+
+#CreditCardDiv .card-group-card .fieldName,
+#CreditCardDiv .card-group-card .fieldName label {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+    color: #64708a !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 14px !important;
+    white-space: nowrap;
+}
+
+/* The brand skin blanks Cardcom's long CVV label ("3 digits on the back...")
+   and prints "CVV" via ::after -- keep exactly that, sized like the other
+   captions (the generic caption rule above would otherwise unblank it). */
+#CreditCardDiv .card-group-card .cvvRow .fieldName label {
+    font-size: 0 !important;
+    line-height: 0 !important;
+}
+
+#CreditCardDiv .card-group-card .cvvRow .fieldName label::after {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64708a;
+    line-height: 14px;
+    height: 14px;
+}
+
+/* The brand skin's grid captions for the two selects ("Month"/"Year",
+   "חודש"/"שנה") are redundant inside the box: the cell has one "expiry"
+   caption and the selects read month / year. */
+#CreditCardDiv .card-group-card .validityDate::before,
+#CreditCardDiv .card-group-card .validityDate::after {
+    content: none !important;
+    display: none !important;
+}
+
+#CreditCardDiv .card-group-card .fieldInput {
+    display: flex !important;
+    align-items: center;
+    width: 100% !important;
+    min-width: 0;
+}
+
+#CreditCardDiv .card-group-card .fieldInput input,
+#CreditCardDiv .card-group-card .fieldInput select {
+    min-height: 30px !important;
+    height: 30px;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #0f172a !important;
+    font-size: 16px !important;
+}
+
+#CreditCardDiv .card-group-card .fieldInput input:focus,
+#CreditCardDiv .card-group-card .fieldInput select:focus {
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+/* Row 1: card number, full width. The detected-brand icon (canonical CSS
+   paints it as a background image at the left) gets room at the left. */
+#CreditCardDiv .card-group-card .formRow:has(#txtCardNumber) {
+    flex-basis: 100% !important;
+    order: 1;
+}
+
+#CreditCardDiv .card-group-card #txtCardNumber {
+    background-position: left 0 center !important;
+    background-size: 34px !important;
+}
+
+#CreditCardDiv .card-group-card #txtCardNumber.card-visa,
+#CreditCardDiv .card-group-card #txtCardNumber.card-mastercard,
+#CreditCardDiv .card-group-card #txtCardNumber.card-amex,
+#CreditCardDiv .card-group-card #txtCardNumber.card-diners {
+    padding-left: 44px !important;
+}
+
+/* Row 2: expiry (wide) and CVV (narrow). */
+#CreditCardDiv .card-group-card .validityRow {
+    order: 2;
+    flex: 1 1 60% !important;
+    min-width: 170px !important;
+    max-width: none !important;
+    display: flex !important;
+}
+
+#CreditCardDiv .card-group-card .cvvRow {
+    order: 3;
+    flex: 1 1 30% !important;
+    min-width: 96px !important;
+    max-width: none !important;
+    display: flex !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+}
+
+/* Month / year selects sit inline, month first in both directions
+   (DOM order stays year, slash, month for autofill; row-reverse puts the
+   month at the reading start). */
+#CreditCardDiv .card-group-card .validityDate {
+    display: flex !important;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 2px;
+    width: auto !important;
+}
+
+#CreditCardDiv .card-group-card .validityDate select.mini,
+#CreditCardDiv .card-group-card .validityDate select.tiny {
+    width: auto !important;
+    min-width: 0 !important;
+    flex: 0 0 auto;
+    direction: ltr;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    padding: 0 16px 0 2px !important;
+    background-position: left 2px center !important;
+    background-size: 10px 7px !important;
+}
+
+#CreditCardDiv .card-group-card .validity-slash {
+    color: #9aa3b5;
+    font-size: 15px;
+    padding: 0 2px;
+}
+
+#CreditCardDiv .card-group-card .cvvRow .fieldInput {
+    width: 100% !important;
+}
+
+#CreditCardDiv .card-group-card .cvvRow .fieldInput input {
+    width: 100% !important;
+    min-width: 0 !important;
+    direction: ltr;
+    letter-spacing: 1px;
+}
+
+/* The privacy link the brand skin parks beside the CVV: under it, tiny. */
+#CreditCardDiv .card-group-card .cvvRow #privacy-policy-container {
+    display: block !important;
+    width: 100% !important;
+    margin: 2px 0 0 !important;
+    text-align: start;
+}
+
+#CreditCardDiv .card-group-card .cvvRow #privacy-policy-container:empty {
+    display: none !important;
+}
+
+/* Narrow iframes (<= 300px): CVV drops to its own full row. */
+@media (max-width: 300px) {
+    #CreditCardDiv .card-group-card .validityRow,
+    #CreditCardDiv .card-group-card .cvvRow {
+        flex-basis: 100% !important;
+    }
+}
