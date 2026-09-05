@@ -11,9 +11,12 @@
 # Order matters: loading HTML in Cardcom's editor resets the CSS pane.
 # Do not F5 Cardcom's preview window; close it and reopen.
 
-CARDCOM_TEMPLATES="/Users/aviv0zeri/work/personal/CardcomTester/templates/cardcom"
-CARDCOM_CLIPBOARD_SCRIPT="/Users/aviv0zeri/work/personal/CardcomTester/scripts/cardcom-clipboard.zsh"
-CARDCOM_ROOT="/Users/aviv0zeri/work/personal/CardcomTester"
+# Roots follow the checkout this file lives in (the main checkout or any git
+# worktree), so `source <checkout>/scripts/cardcom-clipboard.zsh` serves that
+# checkout. CARDCOM_ROOT in the environment overrides.
+CARDCOM_CLIPBOARD_SCRIPT="${${(%):-%x}:A}"
+CARDCOM_ROOT="${CARDCOM_ROOT:-${CARDCOM_CLIPBOARD_SCRIPT:h:h}}"
+CARDCOM_TEMPLATES="$CARDCOM_ROOT/templates/cardcom"
 
 _cardcom_copy() {
     local file="$1" label="$2" check_tags="$3" quiet="${4:-}"
@@ -426,16 +429,39 @@ _cardcom_wait_ok() {
     return 1
 }
 
+# Working directory of whatever listens on a port ("" if nothing does).
+_cardcom_listen_cwd() {
+    local pid
+    pid=$(lsof -nP -t -iTCP:"$1" -sTCP:LISTEN 2>/dev/null | head -1)
+    [[ -n "$pid" ]] || return 0
+    lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p'
+}
+
+# A server that is up but runs from ANOTHER checkout (e.g. main while this
+# script is a worktree's) is stopped so this checkout's copy can take the
+# port -- otherwise Vite from one tree proxies into an Express from another.
+_cardcom_restart_if_foreign() {
+    local port="$1" want="$2" label="$3" cwd
+    cwd=$(_cardcom_listen_cwd "$port")
+    [[ -n "$cwd" && "$cwd" != "$want" ]] || return 1
+    print -P "%F{yellow}!%f $label on :$port runs from ${cwd/#$HOME/~}"
+    print -P "  restarting it from ${want/#$HOME/~}"
+    _cardcom_kill_listen "$port"
+    return 0
+}
+
 cardcom_tester() {
     local env_file="$CARDCOM_ROOT/server/.env"
     local api_log="${TMPDIR:-/tmp}/cardcom-api.log"
     local vite_log="${TMPDIR:-/tmp}/cardcom-vite.log"
 
+    print -P "%F{blue}·%f checkout: ${CARDCOM_ROOT/#$HOME/~}"
     if [[ ! -f "$env_file" ]]; then
-        print -P "%F{yellow}!%f missing $env_file (CARDCOM_USERNAME, CARDCOM_TERMINAL)"
-        print -P "  Live Cardcom Redirect will fail until that file exists."
+        print -P "%F{yellow}!%f missing $env_file (CARDCOM_USERNAME, CARDCOM_TERMINAL, SPECTRA_PAYMENTS_API_TOKEN)"
+        print -P "  Live Cardcom Redirect and the Spectra proxy will fail until that file exists."
     fi
 
+    _cardcom_restart_if_foreign 3000 "$CARDCOM_ROOT/server" "Express API"
     if _cardcom_api_ok; then
         print -P "%F{green}✓%f API already on :3000"
     elif ! _cardcom_preview_port_free 3000; then
@@ -461,6 +487,7 @@ cardcom_tester() {
         print -P "%F{green}✓%f API on :3000"
     fi
 
+    _cardcom_restart_if_foreign 5173 "$CARDCOM_ROOT/cardcom-tester" "Vite"
     if _cardcom_vite_ok; then
         print -P "%F{green}✓%f Vite already on :5173"
     else
