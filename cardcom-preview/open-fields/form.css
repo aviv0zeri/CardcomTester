@@ -14,8 +14,8 @@
   --border: #e1e4ee;
   --border-strong: #c7cddd;
   --text: #14161c;
-  --text-secondary: #3d4456;
-  --text-muted: #5a5e6e;
+  --text-secondary: #2f3646;
+  --text-muted: #555b6c;
   --text-faint: #8b90a0;
   --accent: #3d5580;
   --accent-strong: #1c2c46;
@@ -26,7 +26,7 @@
   --success: #047857;
   --success-bg: #ecfdf5;
   --shell-shadow: 0 1px 2px rgba(20, 22, 28, 0.05), 0 1px 1px rgba(20, 22, 28, 0.03);
-  --shell-shadow-lg: 0 10px 30px rgba(20, 22, 28, 0.08), 0 2px 6px rgba(20, 22, 28, 0.05);
+  --shell-shadow-lg: 0 28px 60px -24px rgba(20, 22, 28, 0.28), 0 2px 6px rgba(20, 22, 28, 0.06);
 }
 
 /* Dark tokens apply from the OS preference (unless an explicit
@@ -84,10 +84,16 @@
   box-sizing: border-box;
 }
 
+/* Two soft accent glows over a faint vertical gradient -- follows the
+   business's accent (also when overridden), on both themes. */
 body {
   margin: 0;
   padding: 32px 16px 40px;
-  background: var(--surface-alt);
+  background:
+    radial-gradient(760px 420px at 12% -8%, color-mix(in srgb, var(--accent) 32%, transparent), transparent 70%),
+    radial-gradient(640px 380px at 100% 105%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--surface-alt), color-mix(in srgb, var(--surface-alt) 86%, var(--accent)));
+  background-attachment: fixed;
   color: var(--text);
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
@@ -118,8 +124,9 @@ iframe {
 
 .brand {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 8px 10px;
   margin: 0 0 12px;
   color: var(--text);
 }
@@ -272,9 +279,9 @@ h4 {
 }
 
 h3 {
-  margin: 0 0 8px;
-  font-size: 14px;
-  font-weight: 600;
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--text);
 }
 
@@ -366,9 +373,9 @@ h3 {
 
 label {
   display: block;
-  margin-bottom: 5px;
-  font-size: 12.5px;
-  font-weight: 500;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
@@ -478,25 +485,65 @@ input[type="text"]::placeholder {
 
 /* ---- buttons ---------------------------------------------------------------- */
 
+/* Primary action: a soft top-to-bottom accent gradient with a coloured
+   drop shadow and a lift on hover. Works for any accent on both themes
+   (the bottom shade is mixed from the accent, not a theme token). */
 .btn {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
-  height: 46px;
+  height: 50px;
   margin: 18px 0 0;
-  padding: 0;
-  background: var(--accent);
+  padding: 0 16px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--accent) 86%, #fff) 0%,
+    var(--accent) 55%,
+    color-mix(in srgb, var(--accent) 82%, #000) 100%);
   color: var(--accent-contrast);
   border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
   font-family: inherit;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  box-shadow:
+    0 12px 26px -12px color-mix(in srgb, var(--accent) 80%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
 
 .btn:hover {
-  background: var(--accent-strong);
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow:
+    0 16px 30px -12px color-mix(in srgb, var(--accent) 85%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.btn:active {
+  filter: brightness(0.98);
+  transform: translateY(0);
+}
+
+.btn .fa {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* "Pay now | ₪10.00" -- the amount sits after a thin divider. */
+.btn-amount {
+  margin-inline-start: 2px;
+  padding-inline-start: 10px;
+  border-inline-start: 1px solid rgba(255, 255, 255, 0.35);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-amount:empty {
+  display: none;
 }
 
 #submit-btn {
@@ -593,6 +640,29 @@ input[type="text"]::placeholder {
   height: 48px;
 }
 
+/* Square Google Pay. Google fixes the pill's radius (Cardcom's bundle
+   ignores buttonRadius), so the frame does it: a black, 8px-radius box
+   that clips the iframe, with the iframe overshooting it by more than the
+   pill's end radius sideways and by 2px top/bottom. Only the pill's
+   straight middle -- black, with the centred label -- stays visible; its
+   rounded ends and hairline outline fall outside the clip. */
+.wallet-item--gpay {
+  position: relative;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.wallet-item--gpay iframe {
+  position: absolute;
+  top: -2px;
+  left: -30px;
+  width: calc(100% + 60px);
+  height: 52px;
+}
+
 /* Mock wallets (tester-only, ?wallets=n): the real Google Pay pill's
    proportions in each brand's colours, so the row can be previewed with
    2-4 wallets before the others are wired. */
@@ -605,7 +675,7 @@ input[type="text"]::placeholder {
   height: 48px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: 8px;
   font-family: inherit;
   font-size: 17px;
   font-weight: 600;
@@ -747,20 +817,19 @@ input[type="text"]::placeholder {
 
 /* ---- embedded (inside the tester's sized iframe) ------------------------- */
 
+/* The card is content-sized and centred in the tester's frame, over the
+   page background -- not stretched to the frame with a void above the
+   footer. */
 .embed body {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   min-height: 100vh;
-  padding: 12px 14px 10px;
+  padding: 16px 14px;
 }
 
-/* .app-shell (not #first-screen directly) is now body's direct flex child,
-   since brand/first-screen/second-screen/footer all live inside it. */
 .embed .app-shell {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+  flex: 0 0 auto;
 }
 
 .embed .brand {
@@ -775,11 +844,8 @@ input[type="text"]::placeholder {
   justify-content: center;
 }
 
-/* The card fills the tester's iframe height, so the footer is pushed to
-   the card's bottom edge rather than hanging right under the form. */
 .embed .footer {
-  margin-top: auto;
-  padding-top: 8px;
+  margin-top: 16px;
 }
 
 /* ---- payment result window ----------------------------------------------- */

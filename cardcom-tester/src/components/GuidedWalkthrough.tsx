@@ -63,6 +63,7 @@ type Copy = {
   lookLabel: string
   themeLabels: Record<PageTheme, string>
   accentLabel: string
+  walletsLabel: string
   lpTitle: string
   lpShort: ReactNode
   ofTitle: string
@@ -171,6 +172,7 @@ const COPY: Record<Lang, Copy> = {
     lookLabel: 'Payment page look',
     themeLabels: { system: 'System', light: 'Light', dark: 'Dark' },
     accentLabel: 'Accent',
+    walletsLabel: 'Wallets',
     profileLong: (name) => (
       <>
         From here on everything runs as <strong>{name}</strong>: sessions go to its Cardcom
@@ -473,6 +475,7 @@ const COPY: Record<Lang, Copy> = {
     lookLabel: 'מראה דף התשלום',
     themeLabels: { system: 'מערכת', light: 'בהיר', dark: 'כהה' },
     accentLabel: 'צבע מבטא',
+    walletsLabel: 'ארנקים',
     profileLong: (name) => (
       <>
         מכאן והלאה הכול רץ בתור <strong>{name}</strong>: הסשנים הולכים למסוף שלו, הלוגו שלו
@@ -872,6 +875,8 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   // can't be themed from here). Accent starts from the business's own colour.
   const [pageTheme, setPageTheme] = useState<PageTheme>('system')
   const [accent, setAccent] = useState(profile.accent)
+  // 1 = the real Google Pay only; 2-4 add mock wallets to preview the row.
+  const [mockWallets, setMockWallets] = useState(1)
 
   const t = COPY[lang]
   // One choice drives both the walkthrough interface AND the payment page.
@@ -899,6 +904,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             theme: pageTheme,
             accent,
             testFill: true,
+            wallets: mockWallets,
           })
         : ''
       : asText(spectraSession?.checkout_url)
@@ -912,6 +918,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             theme: pageTheme,
             accent,
             testFill: true,
+            wallets: mockWallets,
           })
         : ''
       : asText(session?.Url || session?.url)
@@ -948,6 +955,23 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
           {t.accentLabel}
           <code dir="ltr">{accent}</code>
         </label>
+        <div className="seg seg--small" role="radiogroup" aria-label={t.walletsLabel}>
+          <span className="seg-label">{t.walletsLabel}</span>
+          {[1, 2, 3, 4].map((count) => (
+            <button
+              key={count}
+              type="button"
+              className={`seg-btn${mockWallets === count ? ' is-on' : ''}`}
+              disabled={disabled}
+              onClick={() => {
+                playClick()
+                setMockWallets(count)
+              }}
+            >
+              {count}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -50,6 +50,8 @@ export function openFieldsUrl(
     theme?: PageTheme
     accent?: string
     testFill?: boolean
+    // 2-4 pads the wallet row with mock wallets after the real Google Pay.
+    wallets?: number
   } = {},
 ) {
   const lang = language === 'en' ? 'en' : 'he'
@@ -64,6 +66,7 @@ export function openFieldsUrl(
   if (opts.theme && opts.theme !== 'system') params.set('theme', opts.theme)
   if (opts.accent) params.set('accent', opts.accent.replace(/^#/, ''))
   if (opts.testFill) params.set('testfill', '1')
+  if (opts.wallets && opts.wallets > 1) params.set('wallets', String(Math.min(4, opts.wallets)))
   return `/cardcom-preview/open-fields/form.html?${params}`
 }
 

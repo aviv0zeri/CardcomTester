@@ -264,9 +264,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     el.setAttribute('aria-label', text);
                 }
             });
-            const submit = document.querySelector('[data-i18n-value="submit"]');
-            if (submit) submit.value = HEBREW_LABELS.submit;
         }
+    }
+
+    // Amount on the Pay button. ?amount= is what the tester created the
+    // session with; the charge itself is whatever the LowProfile holds.
+    const amountParam = Number(PAGE_PARAMS.get('amount'));
+    if (Number.isFinite(amountParam) && amountParam > 0) {
+        document.getElementById('payAmount').textContent = `₪${amountParam.toFixed(2)}`;
     }
 
     // Credits iframe supports en/he only (per Cardcom's own comment in the

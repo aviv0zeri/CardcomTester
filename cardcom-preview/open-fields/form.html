@@ -63,7 +63,10 @@
                      (same technique as templates/cardcom/low-profile's
                      compact .payment-methods-grid). -->
                 <div class="wallet" id="walletRow">
-                    <div class="wallet-item">
+                    <!-- .wallet-item--gpay clips Google's pill to a square-cornered
+                         black frame (see form.css); the iframe overshoots the frame
+                         so only the pill's straight middle is visible. -->
+                    <div class="wallet-item wallet-item--gpay">
                         <iframe allow="payment" id="CardComGooglePay" name="CardComGooglePay"
                             src="https://secure.cardcom.solutions/api/openfields/GooglePay?terminalNumber=1000"></iframe>
                     </div>
@@ -242,8 +245,14 @@
                         </div>
                     </div>
                 </section>
-                <!-- Shared across all three billing templates. -->
-                <input type="submit" id="submit-btn" value="Pay now" class="btn" data-i18n-value="submit">
+                <!-- Shared across all three billing templates. The amount comes from
+                     ?amount= (the tester passes the session's amount; the charge itself
+                     is whatever the LowProfile session holds). -->
+                <button type="submit" id="submit-btn" class="btn">
+                    <i class="fa fa-lock" aria-hidden="true"></i>
+                    <span data-i18n="submit">Pay now</span>
+                    <span class="btn-amount" id="payAmount"></span>
+                </button>
                 <!-- Outcome of the last Pay attempt (Cardcom's error/result
                      messages), inline instead of alert(). -->
                 <p id="payStatus" class="pay-status" role="status" hidden></p>
