@@ -28,6 +28,8 @@ type PaymentOverlayProps = {
 }
 
 const SUMMARY_WIDTH = 420
+const reduceMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 export function PaymentOverlay({
   src,
@@ -50,19 +52,20 @@ export function PaymentOverlay({
   const sized = Boolean(width && height)
   const stageWidth = dual && width ? width + SUMMARY_WIDTH + 1 : width
 
-  // Entrance: the summary column slides in from its edge, the divider draws
-  // itself, and (when already visible) the payment column follows from the
-  // other edge. Skipped under prefers-reduced-motion.
+  // Entrance, once per overlay. gsap.context scopes selectors to the stage and
+  // its revert() cleans up under React's dev double-mount; every tween clears
+  // its own inline props on finish, so nothing is ever left stranded mid-way.
+  // The payment column animates here only when it is visible from the start
+  // (side-by-side); in 'continue' it is handled by the reveal effect below,
+  // so the two never fight over the same element.
   useLayoutEffect(() => {
-    if (!dual || !stageRef.current) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (!dual || !stageRef.current || reduceMotion()) return
+    const dir = rtl ? -1 : 1
     const ctx = gsap.context(() => {
-      gsap.from('.checkout-panel--summary', { x: rtl ? 40 : -40, opacity: 0, duration: 0.65, ease: 'power3.out' })
-      gsap.from('.checkout-divider', { scaleY: 0, duration: 0.7, delay: 0.15, ease: 'power2.out' })
+      gsap.fromTo('.checkout-panel--summary', { x: -40 * dir, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', clearProps: 'all' })
+      gsap.fromTo('.checkout-divider', { scaleY: 0 }, { scaleY: 1, duration: 0.7, delay: 0.15, ease: 'power2.out', clearProps: 'all' })
       if (dualMode === 'side-by-side') {
-        gsap.from('.checkout-panel--payment', { x: rtl ? -40 : 40, opacity: 0, duration: 0.65, delay: 0.1, ease: 'power3.out' })
-      } else {
-        gsap.from('.checkout-panel--pending', { opacity: 0, duration: 0.6, delay: 0.3 })
+        gsap.fromTo('.checkout-panel--payment', { x: 40 * dir, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.6, delay: 0.1, ease: 'power3.out', clearProps: 'all' })
       }
     }, stageRef)
     return () => ctx.revert()
@@ -70,12 +73,19 @@ export function PaymentOverlay({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 'continue': the payment column slides in when revealed.
+  // 'continue': slide the payment column in when it is revealed -- but never on
+  // the initial render (guarded by a ref), so it can't collide with the
+  // entrance effect above.
+  const mountedRef = useRef(false)
   useLayoutEffect(() => {
-    if (!dual || dualMode !== 'continue' || !revealed || !stageRef.current) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (!mountedRef.current) {
+      mountedRef.current = true
+      return
+    }
+    if (!dual || dualMode !== 'continue' || !revealed || !stageRef.current || reduceMotion()) return
+    const dir = rtl ? -1 : 1
     const ctx = gsap.context(() => {
-      gsap.from('.checkout-panel--payment', { x: rtl ? -60 : 60, opacity: 0, duration: 0.6, ease: 'power3.out' })
+      gsap.fromTo('.checkout-panel--payment', { x: 60 * dir, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.55, ease: 'power3.out', clearProps: 'all' })
     }, stageRef)
     return () => ctx.revert()
     // eslint-disable-next-line react-hooks/exhaustive-deps
