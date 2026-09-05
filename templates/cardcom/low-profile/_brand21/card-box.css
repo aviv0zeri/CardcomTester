@@ -192,7 +192,7 @@
     text-align: center;
     font-variant-numeric: tabular-nums;
     cursor: pointer;
-    padding: 0 16px 0 2px !important;
+    padding: 0 2px 0 16px !important;
     background-position: left 2px center !important;
     background-size: 10px 7px !important;
 }

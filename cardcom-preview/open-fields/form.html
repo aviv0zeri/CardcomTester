@@ -81,29 +81,29 @@
                     <div class="fields">
                         <div class="field">
                             <label for="cname">Full name</label>
-                            <input type="text" id="cname" name="fname" placeholder="John M. Doe">
+                            <input type="text" id="cname" name="fname" autocomplete="name" placeholder="John M. Doe">
                         </div>
                         <div class="field">
                             <label for="cardOwnerEmail">Email</label>
-                            <input type="text" id="cardOwnerEmail" name="email" onblur="setCardOwnerDetails()"
+                            <input type="email" inputmode="email" autocomplete="email" id="cardOwnerEmail" name="email" onblur="setCardOwnerDetails()"
                                 placeholder="john@example.com">
                         </div>
                         <div class="field field--full">
                             <label for="adr">Address</label>
-                            <input type="text" id="adr" name="address" placeholder="542 W. 15th Street">
+                            <input type="text" id="adr" name="address" autocomplete="street-address" placeholder="542 W. 15th Street">
                         </div>
                         <div class="field--full fields fields--3">
                             <div class="field">
                                 <label for="city">City</label>
-                                <input type="text" id="city" name="city" placeholder="New York">
+                                <input type="text" id="city" name="city" autocomplete="address-level2" placeholder="New York">
                             </div>
                             <div class="field">
                                 <label for="state">State</label>
-                                <input type="text" id="state" name="state" placeholder="NY">
+                                <input type="text" id="state" name="state" autocomplete="address-level1" placeholder="NY">
                             </div>
                             <div class="field">
                                 <label for="zip">ZIP</label>
-                                <input type="text" id="zip" name="zip" placeholder="10001">
+                                <input type="text" id="zip" name="zip" inputmode="numeric" autocomplete="postal-code" placeholder="10001">
                             </div>
                         </div>
                     </div>
@@ -117,7 +117,7 @@
                     <div class="fields">
                         <div class="field">
                             <label for="ilFullName"><span data-i18n="il_full_name">Full name</span></label>
-                            <input type="text" id="ilFullName" name="ilFullName" onblur="setCardOwnerDetails()"
+                            <input type="text" id="ilFullName" name="ilFullName" autocomplete="name" onblur="setCardOwnerDetails()"
                                 placeholder="ישראל ישראלי">
                         </div>
                         <div class="field">
@@ -127,12 +127,12 @@
                         </div>
                         <div class="field">
                             <label for="ilPhone"><span data-i18n="il_phone">Phone</span></label>
-                            <input type="text" id="ilPhone" name="ilPhone" inputmode="tel" onblur="setCardOwnerDetails()"
+                            <input type="tel" id="ilPhone" name="ilPhone" inputmode="tel" autocomplete="tel" onblur="setCardOwnerDetails()"
                                 placeholder="0501234567">
                         </div>
                         <div class="field">
                             <label for="ilEmail"><span data-i18n="il_email">Email</span></label>
-                            <input type="text" id="ilEmail" name="ilEmail" onblur="setCardOwnerDetails()"
+                            <input type="email" inputmode="email" autocomplete="email" id="ilEmail" name="ilEmail" onblur="setCardOwnerDetails()"
                                 placeholder="israel@example.com">
                         </div>
                         <label class="checkbox field--full" for="ilInvoiceToggle">
@@ -143,12 +143,12 @@
                             <div class="field">
                                 <label for="ilInvoiceName"><span data-i18n="il_invoice_name">Name on
                                         invoice</span></label>
-                                <input type="text" id="ilInvoiceName" name="ilInvoiceName" placeholder="ישראל ישראלי">
+                                <input type="text" id="ilInvoiceName" name="ilInvoiceName" autocomplete="name" placeholder="ישראל ישראלי">
                             </div>
                             <div class="field">
                                 <label for="ilInvoiceEmail"><span data-i18n="il_invoice_email">Email for the
                                         invoice</span></label>
-                                <input type="text" id="ilInvoiceEmail" name="ilInvoiceEmail"
+                                <input type="email" inputmode="email" autocomplete="email" id="ilInvoiceEmail" name="ilInvoiceEmail"
                                     placeholder="israel@example.com">
                             </div>
                         </div>
@@ -161,29 +161,29 @@
                     <div class="fields">
                         <div class="field">
                             <label for="euFullName">Full name</label>
-                            <input type="text" id="euFullName" name="euFullName" placeholder="Anna Schmidt">
+                            <input type="text" id="euFullName" name="euFullName" autocomplete="name" placeholder="Anna Schmidt">
                         </div>
                         <div class="field">
                             <label for="euEmail">Email</label>
-                            <input type="text" id="euEmail" name="euEmail" onblur="setCardOwnerDetails()"
+                            <input type="email" inputmode="email" autocomplete="email" id="euEmail" name="euEmail" onblur="setCardOwnerDetails()"
                                 placeholder="anna@example.com">
                         </div>
                         <div class="field field--full">
                             <label for="euAddress">Address</label>
-                            <input type="text" id="euAddress" name="euAddress" placeholder="Hauptstraße 12">
+                            <input type="text" id="euAddress" name="euAddress" autocomplete="street-address" placeholder="Hauptstraße 12">
                         </div>
                         <div class="field--full fields fields--3">
                             <div class="field">
                                 <label for="euCity">City</label>
-                                <input type="text" id="euCity" name="euCity" placeholder="Berlin">
+                                <input type="text" id="euCity" name="euCity" autocomplete="address-level2" placeholder="Berlin">
                             </div>
                             <div class="field">
                                 <label for="euPostal">Postal code</label>
-                                <input type="text" id="euPostal" name="euPostal" placeholder="10115">
+                                <input type="text" id="euPostal" name="euPostal" inputmode="numeric" autocomplete="postal-code" placeholder="10115">
                             </div>
                             <div class="field">
                                 <label for="euCountry">Country</label>
-                                <input type="text" id="euCountry" name="euCountry" placeholder="Germany">
+                                <input type="text" id="euCountry" name="euCountry" autocomplete="country-name" placeholder="Germany">
                             </div>
                         </div>
                     </div>
@@ -193,7 +193,7 @@
                     <div class="fields">
                         <div class="field field--full" id="nameOnCardRow">
                             <label for="cardOwnerName">Name on card</label>
-                            <input type="text" id="cardOwnerName" name="cardOwnerName" onblur="setCardOwnerDetails()"
+                            <input type="text" id="cardOwnerName" name="cardOwnerName" autocomplete="cc-name" onblur="setCardOwnerDetails()"
                                 placeholder="John More Doe">
                         </div>
                         <!-- .card-box groups number + expiry + CVV. Plain layout by
@@ -202,7 +202,7 @@
                         <div class="field--full card-box">
                         <div class="field field--full card-box-number">
                             <div class="label-row">
-                                <label for="CardComCardNumber"><span data-i18n="card_number">Card
+                                <label><span data-i18n="card_number">Card
                                         number</span></label>
                                 <span class="brands" aria-hidden="true">
                                     <i class="fa fa-cc-visa"></i>
@@ -214,7 +214,7 @@
                             <iframe id="CardComMasterFrame" name="CardComMasterFrame"
                                 src="https://secure.cardcom.solutions/api/openfields/master"
                                 style="display: block;width:0px;height:0px;"></iframe>
-                            <iframe id="CardComCardNumber" name="CardComCardNumber"
+                            <iframe id="CardComCardNumber" name="CardComCardNumber" title="Card number"
                                 src="https://secure.cardcom.solutions/api/openfields/cardNumber"></iframe>
                         </div>
                         <div class="field--full fields fields--3 expDate">
@@ -224,18 +224,18 @@
                             <span class="expiry-label" data-i18n="expiry">Expiry</span>
                             <div class="field expMonth">
                                 <label for="expirationMonth"><span data-i18n="exp_month">Month</span></label>
-                                <input type="text" id="expirationMonth" name="expirationMonth" value="12"
+                                <input type="text" id="expirationMonth" name="expirationMonth" value="12" inputmode="numeric" maxlength="2" autocomplete="cc-exp-month"
                                     placeholder="12">
                             </div>
                             <div class="field expYear">
                                 <label for="expirationYear"><span data-i18n="exp_year">Year</span></label>
-                                <input type="text" id="expirationYear" name="expirationYear" value="30"
+                                <input type="text" id="expirationYear" name="expirationYear" value="30" inputmode="numeric" maxlength="2" autocomplete="cc-exp-year"
                                     placeholder="30">
                             </div>
                             </div>
                             <div class="field cvv">
-                                <label class="cvv-label" for="CardComCvv">CVV</label>
-                                <iframe id="CardComCvv" name="CardComCvv"
+                                <label class="cvv-label">CVV</label>
+                                <iframe id="CardComCvv" name="CardComCvv" title="CVV"
                                     src="https://secure.cardcom.solutions//api/openfields/CVV"></iframe>
                                 <!-- Card-back icon over the box's end edge; hover/focus explains
                                      the code (the box itself is Cardcom's iframe). -->

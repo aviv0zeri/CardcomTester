@@ -35,6 +35,11 @@ function applyAccent(hex) {
     root.setProperty('--accent', hex);
     root.setProperty('--accent-strong', '#' + strong.map((c) => c.toString(16).padStart(2, '0')).join(''));
     root.setProperty('--accent-soft-bg', `rgba(${r}, ${g}, ${b}, 0.18)`);
+    // Keep the Pay button label readable: white on a dark accent, near-black
+    // on a light one (WCAG relative luminance), rather than always #fff.
+    const lin = [r, g, b].map((c) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); });
+    const luminance = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+    root.setProperty('--accent-contrast', luminance > 0.4 ? '#111827' : '#ffffff');
 }
 
 // Google Pay button design. Cardcom's master frame reads `googlePayButton`
@@ -366,9 +371,13 @@ document.addEventListener("DOMContentLoaded", () => {
         secondSceen.style.display = 'block';
         // Google Pay needs a real session; without one its frame is a blank box.
         if (isPreview) document.getElementById('walletRow').style.display = 'none';
-        await loadIframesCss();
-        window.addEventListener("message", handleFrameMessages);
+        // Bind submit + start listening BEFORE the awaits below: the checkout
+        // is already visible (screen=checkout shows it at load), and the form
+        // has a real submit button, so an Enter/click during loadIframesCss's
+        // ~3s window would otherwise trigger a native GET reload.
         handleFormSubmit();
+        window.addEventListener("message", handleFrameMessages);
+        await loadIframesCss();
     }
 
     function nextScreen(event) {
@@ -418,7 +427,10 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(err => {
                 console.error(err);
                 loading.style.display = 'none';
-                alert('Could not create LP deal ', err);
+                // alert() is swallowed in embed/iframe hosts (the reason
+                // showPayDialog exists), so surface the failure inline.
+                showPayDialog('error', label('pay_failed', 'Payment failed'),
+                    errorText(err && err.message, label('pay_failed_text', 'The payment could not be completed. Please check the details and try again.')));
             })
     }
 
@@ -490,7 +502,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function handleFrameMessages(message) {
-        //add validations here that the message came from secure.cardcom.solutions
+        // Only trust messages from Cardcom's own frames -- any other window
+        // could postMessage a fake success dialog or spoof the card pre-check.
+        if (message.origin !== 'https://secure.cardcom.solutions') return;
         const msg = message.data
 
         switch (msg.action) {

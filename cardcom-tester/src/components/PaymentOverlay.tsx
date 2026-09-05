@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 
 type DualMode = 'side-by-side' | 'continue'
@@ -49,8 +49,50 @@ export function PaymentOverlay({
   const dual = Boolean(summarySrc)
   const [revealed, setRevealed] = useState(!dual || dualMode === 'side-by-side')
   const stageRef = useRef<HTMLDivElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
+  const paymentRef = useRef<HTMLDivElement>(null)
   const sized = Boolean(width && height)
   const stageWidth = dual && width ? width + SUMMARY_WIDTH + 1 : width
+
+  // Each iframe's spinner/opacity gate re-arms whenever its src changes: the
+  // states are one-shot booleans, so without this a second load would show a
+  // blank frame with the spinner already dismissed.
+  useEffect(() => setFrameReady(false), [src])
+  useEffect(() => setSummaryReady(false), [summarySrc])
+
+  // Modal contract: focus the close button on open, trap Tab within the sheet,
+  // close on Escape, and restore focus to whatever was focused before.
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    closeRef.current?.focus()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab' || !stageRef.current) return
+      const focusable = stageRef.current.querySelectorAll<HTMLElement>(
+        'button, a[href], iframe, input, [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focusable.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement
+      if (event.shiftKey && active === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      previouslyFocused?.focus?.()
+    }
+  }, [onClose])
 
   // Entrance, once per overlay. gsap.context scopes selectors to the stage and
   // its revert() cleans up under React's dev double-mount; every tween clears
@@ -75,14 +117,17 @@ export function PaymentOverlay({
 
   // 'continue': slide the payment column in when it is revealed -- but never on
   // the initial render (guarded by a ref), so it can't collide with the
-  // entrance effect above.
+  // entrance effect above. Also move focus into the newly-shown payment column,
+  // otherwise the unmounted Continue button strands focus on <body>.
   const mountedRef = useRef(false)
   useLayoutEffect(() => {
     if (!mountedRef.current) {
       mountedRef.current = true
       return
     }
-    if (!dual || dualMode !== 'continue' || !revealed || !stageRef.current || reduceMotion()) return
+    if (!dual || dualMode !== 'continue' || !revealed || !stageRef.current) return
+    paymentRef.current?.focus()
+    if (reduceMotion()) return
     const dir = rtl ? -1 : 1
     const ctx = gsap.context(() => {
       gsap.fromTo('.checkout-panel--payment', { x: 60 * dir, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.55, ease: 'power3.out', clearProps: 'all' })
@@ -92,7 +137,11 @@ export function PaymentOverlay({
   }, [revealed])
 
   const paymentPanel = (
-    <div className={dual ? 'checkout-panel checkout-panel--payment' : 'checkout-panel-frame'}>
+    <div
+      ref={paymentRef}
+      tabIndex={-1}
+      className={dual ? 'checkout-panel checkout-panel--payment' : 'checkout-panel-frame'}
+    >
       {frameReady ? null : (
         <div className="checkout-loading">
           <div className="checkout-spinner" />
@@ -115,6 +164,7 @@ export function PaymentOverlay({
     <div className="checkout-overlay checkout-overlay--iframe">
       <div
         ref={stageRef}
+        dir={rtl ? 'rtl' : 'ltr'}
         className={`checkout-stage checkout-stage--iframe${sized ? ' checkout-stage--sized' : ''}${scroll ? ' checkout-stage--scroll' : ''}${rtl ? '' : ' checkout-stage--ltr'}${dual ? ' checkout-stage--dual' : ''}${frame ? ` checkout-stage--frame-${frame}` : ''}${theme === 'dark' ? ' checkout-stage--dark' : ''}`}
         style={
           sized
@@ -125,20 +175,22 @@ export function PaymentOverlay({
             : undefined
         }
       >
-        <button
-          type="button"
-          className="checkout-close"
-          onClick={onClose}
-          aria-label="Close payment"
-        >
-          ×
-        </button>
         <div
           className={`checkout-sheet${dual ? ' checkout-sheet--dual' : ''}`}
           role="dialog"
           aria-modal="true"
           aria-label="Payment"
         >
+          {/* Inside the dialog subtree so an aria-modal reader can reach it. */}
+          <button
+            ref={closeRef}
+            type="button"
+            className="checkout-close"
+            onClick={onClose}
+            aria-label="Close payment"
+          >
+            ×
+          </button>
           {dual ? (
             <>
               <div className="checkout-panel checkout-panel--summary">
@@ -149,6 +201,7 @@ export function PaymentOverlay({
                     </div>
                   )}
                   <iframe
+                    key={summarySrc}
                     className={`payment-frame${summaryReady ? ' is-ready' : ''}`}
                     src={summarySrc}
                     title="Order summary"

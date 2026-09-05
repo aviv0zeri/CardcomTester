@@ -67,6 +67,14 @@ function App() {
   const overlayOpen = Boolean(overlay)
   const openAs = openAsFrom(device, mode)
   const dualView = (isNewDesign(design) || isOpenFieldsDesign(design)) && doubleView
+  // Two-panel chrome/theme. Only the Open Fields page honours a forced theme;
+  // the Low Profile skin is light-only, so its stage stays light. Accent is
+  // the business's own colour (the Design tab has no accent picker).
+  const prefersDark =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const stageTheme: 'light' | 'dark' =
+    isOpenFieldsDesign(design) && prefersDark ? 'dark' : 'light'
+  const stageAccent = profile.accent.replace(/^#/, '')
   const statusOk =
     status === 'ready' ||
     status === 'creating session…' ||
@@ -108,7 +116,7 @@ function App() {
       // The summary column follows the tester's language and business; the
       // Design tab has no amount or theme controls, so those stay default.
       summarySrc: dualView
-        ? `/cardcom-preview/order-summary.html?${new URLSearchParams({ lang: language === 'en' ? 'en' : 'he', brand: profile.id })}`
+        ? `/cardcom-preview/order-summary.html?${new URLSearchParams({ lang: language === 'en' ? 'en' : 'he', brand: profile.id, theme: stageTheme, accent: stageAccent })}`
         : undefined,
     })
     setStatusUrl(null)
@@ -148,8 +156,11 @@ function App() {
           region,
           embed: true,
           screen: dualView ? 'checkout' : undefined,
+          layout: dualView ? 'split' : undefined,
           brand: profile.id,
           fields,
+          theme: stageTheme,
+          accent: profile.accent,
         })
         openFrame(src, version, 'Open Fields (live)')
         return
@@ -368,6 +379,8 @@ function App() {
           scroll={overlay.scroll}
           summarySrc={overlay.summarySrc}
           dualMode={dualMode}
+          theme={stageTheme}
+          continueLabel={language === 'he' ? 'המשך לתשלום ←' : 'Continue to payment →'}
           rtl={language === 'he' || language === 'ar'}
           onClose={() => {
             setOverlay(null)
