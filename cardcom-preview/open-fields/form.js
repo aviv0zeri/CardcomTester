@@ -116,6 +116,8 @@ function fieldValue(id) {
 // Hebrew labels for the Israel template (applied only when region=il and
 // lang=he -- the us/eu templates stay English).
 const HEBREW_LABELS = {
+    pay_with_card: 'שלמו בכרטיס אשראי',
+    back_to_methods: '\u2192 חזרה',
     il_details: 'פרטים אישיים',
     il_full_name: 'שם מלא',
     il_id: 'תעודת זהות',
@@ -369,6 +371,35 @@ document.addEventListener("DOMContentLoaded", () => {
     const secondSceen = document.getElementById('second-screen');
     const iframe = document.querySelector('#CardComMasterFrame');
     const loading = document.getElementById('loading');
+
+    // Method screen (wallets + "pay with card") vs. card screen (billing +
+    // card fields): a phone no longer has to scroll past a wallet row it
+    // doesn't want just to reach the card form. Both screens' iframes are
+    // already created and CSS-styled by the time either shows -- this only
+    // ever toggles which one is visible, never re-runs loadIframesCss or
+    // re-touches the message listener, so nothing about Cardcom's own
+    // postMessage handshake is affected. Declared early (before the
+    // screen=checkout auto-trigger below, which can call showFields()
+    // synchronously) so nothing here is ever read before it's initialized.
+    const methodScreen = document.getElementById('method-screen');
+    const cardScreen = document.getElementById('card-screen');
+    const backToMethods = document.getElementById('backToMethods');
+
+    function showCardScreen() {
+        methodScreen.style.display = 'none';
+        cardScreen.style.display = 'block';
+        document.getElementById('cardOwnerName')?.focus();
+    }
+
+    function showMethodScreen() {
+        cardScreen.style.display = 'none';
+        methodScreen.style.display = 'block';
+        document.getElementById('payWithCardBtn')?.focus();
+    }
+
+    document.getElementById('payWithCardBtn').addEventListener('click', showCardScreen);
+    backToMethods.addEventListener('click', showMethodScreen);
+
     // The init postMessage is lost if it goes out before the master frame
     // has loaded -- which is exactly what happens with screen=checkout,
     // where the checkout is shown at DOMContentLoaded rather than on a
@@ -466,6 +497,12 @@ document.addEventListener("DOMContentLoaded", () => {
             name: 'GateOpen',
             // server/profiles.js key -> that business's Cardcom terminal.
             profileId: 'gateopen',
+            // Cardcom's own sandbox terminal -- every environment this page has
+            // ever run in. A real cutover overrides it with ?terminal=<real
+            // number> (server/profiles.js already reads its own terminal from
+            // CARDCOM_TERMINAL; this is the one other place a terminal number
+            // was still hardcoded, since Google Pay's iframe needs it directly).
+            terminalNumber: 1000,
             logo: '/cardcom-preview/brand/gateopen-light.svg',
             logoDark: '/cardcom-preview/brand/gateopen-dark.svg',
         },
@@ -476,6 +513,9 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('brandName').textContent = brand.name;
         document.getElementById('brand').hidden = false;
     }
+    const gpayTerminal = Number(PAGE_PARAMS.get('terminal')) || (brand ? brand.terminalNumber : 1000);
+    document.getElementById('CardComGooglePay').src =
+        `https://secure.cardcom.solutions/api/openfields/GooglePay?terminalNumber=${gpayTerminal}`;
 
     // Tester-only: ?wallets=<2-4> pads the wallet row with mock Apple Pay /
     // Bit / PayPal buttons after the real Google Pay, to preview how the
@@ -543,10 +583,16 @@ document.addEventListener("DOMContentLoaded", () => {
         firstSceen.style.display = 'none';
         secondSceen.style.display = 'block';
         // Google Pay needs a real session; without one its frame is a blank
-        // box -- and with no wallets there is nothing for the "or" to divide.
+        // box -- and with no wallets there is nothing to choose between, so
+        // the method screen is skipped entirely and "back" has nowhere
+        // meaningful to go.
         if (isPreview) {
             document.getElementById('walletRow').style.display = 'none';
             document.getElementById('orDivider').style.display = 'none';
+            document.getElementById('payWithCardBtn').style.display = 'none';
+            showCardScreen();
+        } else {
+            backToMethods.hidden = false;
         }
         // Bind submit + start listening BEFORE the awaits below: the checkout
         // is already visible (screen=checkout shows it at load), and the form

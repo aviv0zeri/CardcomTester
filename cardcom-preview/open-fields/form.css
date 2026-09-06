@@ -575,6 +575,28 @@ input[aria-invalid="true"]:focus {
   transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
 
+#method-screen .btn {
+  margin-top: 4px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
 .btn:hover {
   filter: brightness(1.06);
   transform: translateY(-1px);

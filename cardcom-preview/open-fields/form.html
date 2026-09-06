@@ -67,24 +67,38 @@
                      leftover stretches its own row instead of leaving a gap
                      (same technique as templates/cardcom/low-profile's
                      compact .payment-methods-grid). -->
+                <!-- Method-picker screen: wallets (if any) + a plain "pay with
+                     card" button, so a phone never has to scroll past a wallet
+                     row it doesn't want just to reach the card form. Skipped
+                     entirely in preview (no session -> no real wallet to show,
+                     see form.js) and whenever the page has no wallet to offer. -->
+                <div id="method-screen">
                 <div class="wallet" id="walletRow">
                     <!-- .wallet-item--gpay clips Google's pill to a square-cornered
                          black frame (see form.css); the iframe overshoots the frame
                          so only the pill's straight middle is visible. -->
                     <div class="wallet-item wallet-item--gpay">
-                        <iframe allow="payment" id="CardComGooglePay" name="CardComGooglePay"
-                            src="https://secure.cardcom.solutions/api/openfields/GooglePay?terminalNumber=1000"></iframe>
+                        <!-- src set by form.js from the brand's terminal (or ?terminal=),
+                             never hardcoded -- see the BRANDS map. -->
+                        <iframe allow="payment" id="CardComGooglePay" name="CardComGooglePay"></iframe>
                     </div>
                 </div>
                 <!-- Hairline "or" between the wallets and the card form; hidden
                      together with the wallet row (form.js), so it never floats
                      alone above the form. -->
                 <div class="or-divider" id="orDivider"><span data-i18n="or_card">or pay with card</span></div>
+                <button type="button" id="payWithCardBtn" class="btn" data-i18n="pay_with_card">Pay with credit card</button>
+                </div>
                 <!-- novalidate: this page draws its own inline field errors
                      (form.js), so the browser's native bubbles must not fire
                      on top of them; `required` stays on the inputs for
                      semantics and for the validator to read. -->
                 <form action="" id="form" novalidate>
+                <!-- Card screen: billing + card fields, reached from the method
+                     screen's "pay with card" (or shown immediately when there
+                     was never a method choice to make, see form.js). -->
+                <div id="card-screen" style="display: none;">
+                <button type="button" id="backToMethods" class="back-link" data-i18n="back_to_methods" hidden>&larr; Back</button>
                 <!-- Billing templates: exactly one is shown, picked by the
                      ?region= query param (us | il | eu). form.js does the
                      switching; us is the default and matches Cardcom's
@@ -279,6 +293,7 @@
                 <!-- Outcome of the last Pay attempt (Cardcom's error/result
                      messages), inline instead of alert(). -->
                 <p id="payStatus" class="pay-status" role="status" hidden></p>
+                </div>
             </form>
         </div>
         </div>
