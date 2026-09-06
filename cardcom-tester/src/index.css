@@ -1057,6 +1057,7 @@ a.cta-button[aria-disabled="true"] {
 }
 
 .checkout-panel--summary {
+  position: relative;
   flex: 0 0 420px;
   background: transparent;
 }
@@ -1143,9 +1144,18 @@ a.cta-button[aria-disabled="true"] {
   background: transparent;
 }
 
-/* "Continue to payment" sits at the foot of the summary column. */
+/* "Continue to payment" floats directly over the summary iframe's own
+   background instead of sitting below it in extra flex space -- that extra
+   space had no gradient of its own (the gradient is drawn INSIDE the iframe,
+   sized to the iframe's box), so it showed the stage's flat surface colour
+   as a visible seam right where the button sat. Absolute + inset means the
+   iframe is the only thing behind it, at every panel height. */
 .checkout-continue {
-  margin: 0 40px 36px;
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  bottom: 36px;
+  margin: 0;
 }
 
 @media (max-width: 900px) {

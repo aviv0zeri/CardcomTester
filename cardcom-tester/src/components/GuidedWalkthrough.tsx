@@ -1190,23 +1190,29 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             <code dir="ltr">{accent}</code>
           </label>
         </div>
-        <div className="seg seg--small" role="radiogroup" aria-label={t.walletsLabel}>
-          <span className="seg-label">{t.walletsLabel}</span>
-          {[1, 2, 3, 4].map((count) => (
-            <button
-              key={count}
-              type="button"
-              className={`seg-btn${mockWallets === count ? ' is-on' : ''}`}
-              disabled={disabled}
-              onClick={() => {
-                playClick()
-                setMockWallets(count)
-              }}
-            >
-              {count}
-            </button>
-          ))}
-        </div>
+        {isOpenFields ? (
+          // Cardcom's own hosted Low Profile page decides its wallets on its
+          // own (whatever the real terminal has enabled) -- this mock-count
+          // picker only means anything on our own Open Fields page, which
+          // renders its wallet row itself.
+          <div className="seg seg--small" role="radiogroup" aria-label={t.walletsLabel}>
+            <span className="seg-label">{t.walletsLabel}</span>
+            {[1, 2, 3, 4].map((count) => (
+              <button
+                key={count}
+                type="button"
+                className={`seg-btn${mockWallets === count ? ' is-on' : ''}`}
+                disabled={disabled}
+                onClick={() => {
+                  playClick()
+                  setMockWallets(count)
+                }}
+              >
+                {count}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   )
