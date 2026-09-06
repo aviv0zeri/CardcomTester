@@ -11,6 +11,7 @@ import {
   type Mode,
 } from './components/CheckoutControls'
 import { ApiLab } from './components/ApiLab'
+import { CustomersTab } from './components/CustomersTab'
 import { GuidedWalkthrough } from './components/GuidedWalkthrough'
 import { VersionMenu } from './components/VersionMenu'
 import { PaymentOverlay } from './components/PaymentOverlay'
@@ -35,14 +36,14 @@ type Overlay = {
   summarySrc?: string
 }
 
-type Tab = 'guide' | 'lab' | 'design'
+type Tab = 'guide' | 'customers' | 'lab' | 'design'
 type DeviceError = 'needs-computer' | 'needs-phone'
 
 // One toggle, whole platform: tab names and the Guided tab follow it today;
 // the Design/API-lab body copy is still English and can join later.
 const TAB_LABELS: Record<UiLang, Record<Tab, string>> = {
-  en: { guide: 'Guided', design: 'Design', lab: 'API lab' },
-  he: { guide: 'מודרך', design: 'עיצוב', lab: 'מעבדת API' },
+  en: { guide: 'Guided', customers: 'Customers', design: 'Design', lab: 'API lab' },
+  he: { guide: 'מודרך', customers: 'לקוחות', design: 'עיצוב', lab: 'מעבדת API' },
 }
 
 function App() {
@@ -271,7 +272,7 @@ function App() {
             </div>
             <div className="shell-head-controls">
               <div className="seg" role="tablist" aria-label="Tester">
-                {(['guide', 'design', 'lab'] as Tab[]).map((option) => (
+                {(['guide', 'customers', 'design', 'lab'] as Tab[]).map((option) => (
                   <button
                     key={option}
                     type="button"
@@ -294,6 +295,8 @@ function App() {
               profile={profile}
               onProfileChange={setProfileId}
             />
+          ) : tab === 'customers' ? (
+            <CustomersTab profile={profile} lang={uiLang} />
           ) : tab === 'lab' ? (
             <ApiLab disabled={overlayOpen} />
           ) : (

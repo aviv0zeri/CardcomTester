@@ -1,0 +1,295 @@
+/* Customer inspection (CustomersTab.tsx). Logical properties throughout so the
+   Hebrew view mirrors for free. Two panes: a persisted-Customer list on one
+   side, the selected Customer's resource graph (Payments, Subscriptions) on
+   the other -- read-only, inspection-first, never a CRM. */
+
+.customers-tab {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 980px;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.ct-list-pane,
+.ct-detail-pane {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shell-shadow);
+}
+
+.ct-list-pane {
+  flex: 0 0 280px;
+  padding: 14px;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.ct-detail-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 18px 20px;
+}
+
+.ct-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-block-end: 4px;
+}
+
+.ct-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ct-project-badge {
+  padding: 3px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ct-count {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.ct-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ct-list-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.ct-list-item:hover {
+  background: var(--accent-soft-bg);
+}
+
+.ct-list-item.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft-bg);
+}
+
+.ct-id {
+  font-size: 0.72rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.ct-id--inline {
+  margin-inline-start: auto;
+}
+
+.ct-load-more {
+  width: 100%;
+  margin-block-start: 8px;
+  padding: 7px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.ct-load-more:hover:not(:disabled) {
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.ct-load-more:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ct-empty,
+.ct-loading,
+.ct-pick-one {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.ct-error {
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.ct-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-block-end: 12px;
+  margin-block-end: 12px;
+  border-block-end: 1px solid var(--border);
+}
+
+.ct-detail-head strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.ct-section {
+  margin-block-end: 18px;
+}
+
+.ct-section h3 {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.ct-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ct-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.ct-row-amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ct-row-date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.ct-renew-tag {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.ct-renew-tag.is-cancelling {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.ct-status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ct-status--succeeded,
+.ct-status--active {
+  background: rgba(16, 122, 87, 0.14);
+  color: #0e7c66;
+}
+
+.ct-status--pending,
+.ct-status--past-due {
+  background: rgba(180, 83, 9, 0.14);
+  color: #b45309;
+}
+
+.ct-status--declined,
+.ct-status--cancelled {
+  background: rgba(120, 120, 128, 0.16);
+  color: var(--text-secondary);
+}
+
+/* UNKNOWN must read as materially more serious than DECLINED -- it means we
+   genuinely don't know whether Cardcom charged the customer. */
+.ct-status--unknown,
+.ct-status--technical-failed {
+  background: rgba(185, 28, 28, 0.16);
+  color: #b91c1c;
+}
+
+.ct-raw-toggle {
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.ct-raw-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.ct-raw {
+  margin-block-start: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--accent-soft-bg);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 720px) {
+  .customers-tab {
+    flex-direction: column;
+  }
+
+  .ct-list-pane {
+    flex: 1 1 auto;
+    width: 100%;
+    max-height: 260px;
+  }
+}

@@ -236,3 +236,60 @@ export function getPayment(
 ): Promise<SpectraPayment> {
   return spectraFetch(`/payments/${paymentId}?${withProject(projectId)}`, profileId)
 }
+
+export type SpectraSubscription = {
+  id: string
+  project_id: string
+  customer_id: string
+  payment_method_id: string
+  external_plan_reference: string | null
+  amount: string
+  currency: string
+  billing_interval: string
+  billing_anchor_day: number | null
+  status: string
+  current_period_start: string | null
+  current_period_end: string | null
+  next_charge_date: string | null
+  cancel_at_period_end: boolean
+  latest_payment_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type SpectraCustomerList = { customers: SpectraCustomer[]; next_cursor: string | null }
+
+// The project's own persisted Customers -- this is what makes the profile
+// selector actually teach isolation instead of just switching a brand: the
+// same list, scoped by whichever project_id/credential is selected. Bounded
+// (server enforces 1-100) and keyset-paginated; pass a prior call's
+// next_cursor back as opts.cursor to continue.
+export function listCustomers(
+  projectId: string,
+  profileId: string = DEFAULT_PROFILE_ID,
+  opts: { limit?: number; cursor?: string } = {},
+): Promise<SpectraCustomerList> {
+  const params: Record<string, string> = { project_id: projectId }
+  if (opts.limit) params.limit = String(opts.limit)
+  if (opts.cursor) params.cursor = opts.cursor
+  return spectraFetch(`/customers?${new URLSearchParams(params).toString()}`, profileId)
+}
+
+export function listPaymentsForCustomer(
+  customerId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<{ payments: SpectraPayment[] }> {
+  return spectraFetch(`/payments?${withProject(projectId, { customer_id: customerId })}`, profileId)
+}
+
+export function listSubscriptionsForCustomer(
+  customerId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<{ subscriptions: SpectraSubscription[] }> {
+  return spectraFetch(
+    `/subscriptions?${withProject(projectId, { customer_id: customerId })}`,
+    profileId,
+  )
+}

@@ -7,6 +7,9 @@ import {
   createHostedCheckoutSession,
   getCheckoutSession,
   getPayment,
+  listCustomers,
+  listPaymentsForCustomer,
+  listSubscriptionsForCustomer,
   resolveSpectraCustomer,
   verifyCheckoutSession,
 } from './spectraClient'
@@ -200,6 +203,50 @@ describe('getPayment', () => {
     await getPayment('pay-1')
     const [path] = fetchMock.mock.calls[0]
     expect(path).toBe(`/spectra-api/payments/pay-1?project_id=${SPECTRA_PROJECT_ID}`)
+  })
+})
+
+describe('listCustomers', () => {
+  it('GETs with project_id, and forwards limit/cursor only when given', async () => {
+    const fetchMock = mockFetchOnce(200, { customers: [], next_cursor: null })
+    await listCustomers(SPECTRA_PROJECT_ID)
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/customers?project_id=${SPECTRA_PROJECT_ID}`)
+  })
+
+  it('includes limit and cursor when passed', async () => {
+    const fetchMock = mockFetchOnce(200, { customers: [], next_cursor: null })
+    await listCustomers(SPECTRA_PROJECT_ID, DEFAULT_PROFILE.id, { limit: 10, cursor: 'abc' })
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/customers?project_id=${SPECTRA_PROJECT_ID}&limit=10&cursor=abc`)
+  })
+
+  it('returns the customers array and next_cursor as given', async () => {
+    mockFetchOnce(200, {
+      customers: [{ id: 'c-1', project_id: SPECTRA_PROJECT_ID, display_name: 'Ada' }],
+      next_cursor: 'xyz',
+    })
+    const result = await listCustomers(SPECTRA_PROJECT_ID)
+    expect(result.customers).toHaveLength(1)
+    expect(result.next_cursor).toBe('xyz')
+  })
+})
+
+describe('listPaymentsForCustomer', () => {
+  it('GETs /payments with project_id and customer_id', async () => {
+    const fetchMock = mockFetchOnce(200, { payments: [] })
+    await listPaymentsForCustomer('cust-1', SPECTRA_PROJECT_ID)
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/payments?project_id=${SPECTRA_PROJECT_ID}&customer_id=cust-1`)
+  })
+})
+
+describe('listSubscriptionsForCustomer', () => {
+  it('GETs /subscriptions with project_id and customer_id', async () => {
+    const fetchMock = mockFetchOnce(200, { subscriptions: [] })
+    await listSubscriptionsForCustomer('cust-1', SPECTRA_PROJECT_ID)
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/subscriptions?project_id=${SPECTRA_PROJECT_ID}&customer_id=cust-1`)
   })
 })
 
