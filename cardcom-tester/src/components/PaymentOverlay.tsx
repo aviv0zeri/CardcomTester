@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
+import { useViewport } from './useViewport'
 
 type DualMode = 'side-by-side' | 'continue'
 
@@ -47,7 +48,14 @@ export function PaymentOverlay({
   const [frameReady, setFrameReady] = useState(false)
   const [summaryReady, setSummaryReady] = useState(false)
   const dual = Boolean(summarySrc)
-  const [revealed, setRevealed] = useState(!dual || dualMode === 'side-by-side')
+  // A real phone is never a "side by side" width -- and a collapsible toggle
+  // bar sharing the screen with a pending payment box still reads as two
+  // things at once. On phone this is always a linear review -> pay flow,
+  // one full screen at a time, regardless of what the caller asked for.
+  const viewport = useViewport()
+  const isPhone = viewport.device === 'mobile'
+  const effectiveDualMode = isPhone ? 'continue' : dualMode
+  const [revealed, setRevealed] = useState(!dual || effectiveDualMode === 'side-by-side')
   // Stacked (narrow) layout: the summary collapses to a one-line bar with the
   // total, Stripe-style, and expands on tap. Label/amount come from summarySrc's
   // own query (the summary page is ours; its URL carries amount + lang).
@@ -66,7 +74,9 @@ export function PaymentOverlay({
   const closeRef = useRef<HTMLButtonElement>(null)
   const paymentRef = useRef<HTMLDivElement>(null)
   const sized = Boolean(width && height)
-  const stageWidth = dual && width ? width + SUMMARY_WIDTH + 1 : width
+  // On phone only one panel is ever visible at a time -- no extra width for
+  // a summary column that never sits beside anything.
+  const stageWidth = dual && width && !isPhone ? width + SUMMARY_WIDTH + 1 : width
 
   // Each iframe's spinner/opacity gate re-arms whenever its src changes: the
   // states are one-shot booleans, so without this a second load would show a
@@ -132,7 +142,7 @@ export function PaymentOverlay({
     const ctx = gsap.context(() => {
       gsap.fromTo('.checkout-panel--summary', { x: -40 * dir, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.6, ease: 'power3.out', clearProps: 'all' })
       gsap.fromTo('.checkout-divider', { scaleY: 0 }, { scaleY: 1, duration: 0.7, delay: 0.15, ease: 'power2.out', clearProps: 'all' })
-      if (dualMode === 'side-by-side') {
+      if (effectiveDualMode === 'side-by-side') {
         gsap.fromTo('.checkout-panel--payment', { x: 40 * dir, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.6, delay: 0.1, ease: 'power3.out', clearProps: 'all' })
       }
     }, stageRef)
@@ -151,7 +161,7 @@ export function PaymentOverlay({
       mountedRef.current = true
       return
     }
-    if (!dual || dualMode !== 'continue' || !revealed || !stageRef.current) return
+    if (!dual || effectiveDualMode !== 'continue' || !revealed || !stageRef.current) return
     paymentRef.current?.focus()
     if (reduceMotion()) return
     const dir = rtl ? -1 : 1
@@ -199,7 +209,7 @@ export function PaymentOverlay({
       <div
         ref={stageRef}
         dir={rtl ? 'rtl' : 'ltr'}
-        className={`checkout-stage checkout-stage--iframe${sized ? ' checkout-stage--sized' : ''}${scroll ? ' checkout-stage--scroll' : ''}${rtl ? '' : ' checkout-stage--ltr'}${dual ? ' checkout-stage--dual' : ''}${frame ? ` checkout-stage--frame-${frame}` : ''}${theme === 'dark' ? ' checkout-stage--dark' : ''}`}
+        className={`checkout-stage checkout-stage--iframe${sized ? ' checkout-stage--sized' : ''}${scroll ? ' checkout-stage--scroll' : ''}${rtl ? '' : ' checkout-stage--ltr'}${dual ? ' checkout-stage--dual' : ''}${isPhone ? ' checkout-stage--phone' : ''}${frame ? ` checkout-stage--frame-${frame}` : ''}${theme === 'dark' ? ' checkout-stage--dark' : ''}`}
         style={
           sized
             ? {
@@ -210,7 +220,7 @@ export function PaymentOverlay({
         }
       >
         <div
-          className={`checkout-sheet${dual ? ' checkout-sheet--dual' : ''}`}
+          className={`checkout-sheet${dual ? ' checkout-sheet--dual' : ''}${isPhone ? ' checkout-sheet--phone' : ''}`}
           role="dialog"
           aria-modal="true"
           aria-label="Payment"
@@ -225,7 +235,40 @@ export function PaymentOverlay({
           >
             ×
           </button>
-          {dual ? (
+          {dual && isPhone ? (
+            // Phone: one full screen at a time, a plain step transition --
+            // never both panels' iframes visible or even mounted together.
+            revealed ? (
+              paymentPanel
+            ) : (
+              <div className="checkout-panel checkout-panel--summary checkout-panel--phone-review">
+                <div className="checkout-panel-frame">
+                  {summaryReady ? null : (
+                    <div className="checkout-loading">
+                      <div className="checkout-spinner" />
+                    </div>
+                  )}
+                  <iframe
+                    key={summarySrc}
+                    className={`payment-frame${summaryReady ? ' is-ready' : ''}`}
+                    src={summarySrc}
+                    title="Order summary"
+                    onLoad={() => setSummaryReady(true)}
+                  />
+                </div>
+                <div className="checkout-phone-cta">
+                  <button type="button" className="cta-button checkout-continue" onClick={() => setRevealed(true)}>
+                    {continueLabel}
+                  </button>
+                  <p className="checkout-agree">
+                    {summaryMeta?.he
+                      ? 'בהמשך אתם מאשרים את ההזמנה ומסכימים לתנאי השימוש.'
+                      : 'By continuing you confirm this order and agree to the Terms of Service.'}
+                  </p>
+                </div>
+              </div>
+            )
+          ) : dual ? (
             <>
               <div className={`checkout-panel checkout-panel--summary${summaryOpen ? ' is-open' : ''}`}>
                 <button

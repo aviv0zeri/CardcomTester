@@ -1217,6 +1217,76 @@ a.cta-button[aria-disabled="true"] {
   }
 }
 
+/* True phone width: PaymentOverlay renders ONE full screen at a time (review,
+   then payment) -- never a collapsible summary bar sharing space with a
+   pending payment box, and never two iframes mounted together. Declared after
+   the stacked/tablet block above so it wins, at equal selector specificity,
+   for exactly the properties that block sets -- a real phone never falls
+   into the tablet's collapsed-bar treatment. */
+.checkout-stage--phone {
+  padding: 0;
+}
+
+.checkout-stage--phone.checkout-stage--sized {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+}
+
+.checkout-sheet--phone {
+  border-radius: 0;
+}
+
+.checkout-sheet--dual.checkout-sheet--phone .checkout-panel--summary,
+.checkout-sheet--dual.checkout-sheet--phone .checkout-panel--payment {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.checkout-panel--phone-review {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Higher specificity than the tablet block's own
+   ".checkout-sheet--dual .checkout-panel--summary .checkout-panel-frame"
+   (which sets display:none, collapsed behind its toggle bar) -- on phone
+   there is no toggle bar, the frame is the whole screen above the CTA. */
+.checkout-sheet--dual.checkout-sheet--phone .checkout-panel--summary .checkout-panel-frame {
+  display: block;
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.checkout-phone-cta {
+  flex: none;
+  padding: 14px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: var(--co-surface);
+  border-top: 1px solid var(--co-border, var(--border));
+}
+
+.checkout-agree {
+  margin: 10px 0 0;
+  color: var(--co-text-muted, var(--text-muted));
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* .checkout-continue is absolutely positioned for the desktop "continue"
+   summary column, where it floats alone over the iframe with nothing below
+   it. Here it has a sibling (the agree line) and belongs in normal flow,
+   stacked by .checkout-phone-cta's own flex column. */
+.checkout-phone-cta .checkout-continue {
+  position: static;
+  width: 100%;
+  margin: 0;
+}
+
 .device-modal {
   position: fixed;
   inset: 0;
