@@ -7,6 +7,12 @@
       "runtimeArgs": ["run", "dev", "--prefix", "cardcom-tester"],
       "port": 5173,
       "autoPort": true
+    },
+    {
+      "name": "cardcom-tester-api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server/index.js"],
+      "port": 3000
     }
   ]
 }

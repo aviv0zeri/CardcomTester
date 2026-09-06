@@ -12,13 +12,17 @@ import { DEFAULT_PROFILE } from './profiles'
 const SPECTRA_API_BASE = '/spectra-api'
 
 export const SPECTRA_PROJECT_ID = DEFAULT_PROFILE.spectraProjectId
+// The default BusinessProfile id, used only as this module's own fallback --
+// every real call from GuidedWalkthrough already passes the selected
+// profile's own id explicitly, mirroring how projectId already works.
+const DEFAULT_PROFILE_ID = DEFAULT_PROFILE.id
 
 // The proxy hop is sub-second; a long wait is the API itself (its own call to
 // Cardcom is capped at 15s per request server-side). Cap the whole round trip
 // so the UI reports the stall instead of spinning indefinitely.
 const SPECTRA_TIMEOUT_MS = 30_000
 
-async function spectraFetch<T>(path: string, init?: RequestInit): Promise<T> {
+async function spectraFetch<T>(path: string, profileId: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController()
   const started = performance.now()
   const timer = setTimeout(() => controller.abort(), SPECTRA_TIMEOUT_MS)
@@ -28,7 +32,11 @@ async function spectraFetch<T>(path: string, init?: RequestInit): Promise<T> {
     response = await fetch(`${SPECTRA_API_BASE}${path}`, {
       ...init,
       signal: controller.signal,
-      headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+      // X-Spectra-Profile tells the proxy which server-side credential to
+      // attach -- a routing hint only, never a credential itself (see
+      // server/spectraProxy.js). It never reaches spectra-payments; the proxy
+      // strips it before forwarding upstream.
+      headers: { 'Content-Type': 'application/json', 'X-Spectra-Profile': profileId, ...(init?.headers ?? {}) },
     })
     text = await response.text()
   } catch (cause) {
@@ -122,7 +130,7 @@ export type SpectraLineItemInput = { name: string; unit_price: string; quantity:
 export type SpectraLineItem = SpectraLineItemInput & { line_total: string }
 
 export function checkSpectraHealth(): Promise<SpectraHealth> {
-  return spectraFetch('/health')
+  return spectraFetch('/health', DEFAULT_PROFILE_ID)
 }
 
 export function createCustomer(
@@ -131,8 +139,9 @@ export function createCustomer(
     email?: string
   } = {},
   projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
 ): Promise<SpectraCustomer> {
-  return spectraFetch('/customers', {
+  return spectraFetch('/customers', profileId, {
     method: 'POST',
     body: JSON.stringify({
       project_id: projectId,
@@ -160,9 +169,10 @@ export function createHostedCheckoutSession(input: {
   currency?: string
   language?: string
   projectId?: string
+  profileId?: string
   lineItems?: SpectraLineItemInput[]
 }): Promise<SpectraCheckoutSession> {
-  return spectraFetch('/checkout-sessions', {
+  return spectraFetch('/checkout-sessions', input.profileId ?? DEFAULT_PROFILE_ID, {
     method: 'POST',
     body: JSON.stringify({
       project_id: input.projectId ?? SPECTRA_PROJECT_ID,
@@ -183,9 +193,10 @@ export function createEmbeddedFieldsCheckoutSession(input: {
   currency?: string
   language?: string
   projectId?: string
+  profileId?: string
   lineItems?: SpectraLineItemInput[]
 }): Promise<SpectraCheckoutSession> {
-  return spectraFetch('/checkout-sessions', {
+  return spectraFetch('/checkout-sessions', input.profileId ?? DEFAULT_PROFILE_ID, {
     method: 'POST',
     body: JSON.stringify({
       project_id: input.projectId ?? SPECTRA_PROJECT_ID,
@@ -203,15 +214,17 @@ export function createEmbeddedFieldsCheckoutSession(input: {
 export function getCheckoutSession(
   checkoutSessionId: string,
   projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
 ): Promise<SpectraCheckoutSession> {
-  return spectraFetch(`/checkout-sessions/${checkoutSessionId}?${withProject(projectId)}`)
+  return spectraFetch(`/checkout-sessions/${checkoutSessionId}?${withProject(projectId)}`, profileId)
 }
 
 export function verifyCheckoutSession(
   checkoutSessionId: string,
   projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
 ): Promise<SpectraVerifyResult> {
-  return spectraFetch(`/checkout-sessions/${checkoutSessionId}/verify?${withProject(projectId)}`, {
+  return spectraFetch(`/checkout-sessions/${checkoutSessionId}/verify?${withProject(projectId)}`, profileId, {
     method: 'POST',
   })
 }
@@ -219,6 +232,7 @@ export function verifyCheckoutSession(
 export function getPayment(
   paymentId: string,
   projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
 ): Promise<SpectraPayment> {
-  return spectraFetch(`/payments/${paymentId}?${withProject(projectId)}`)
+  return spectraFetch(`/payments/${paymentId}?${withProject(projectId)}`, profileId)
 }

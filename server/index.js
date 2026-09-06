@@ -33,15 +33,22 @@ app.use(express.json());
 // Bearer-injecting boundary (credential from server/.env, never from the
 // browser). Vite forwards /spectra-api/* here. Without a token the handler
 // fails closed with a clear error instead of reaching upstream.
+//
+// Vercel hands the sub-path over as ?path=...; here it is the path under the
+// mount point. Only the fields the handler reads are forwarded -- headers
+// included, since X-Spectra-Profile (which server-side credential to use)
+// lives there, not in query/body (see server/spectraProxy.js).
+function toProxyRequest(req) {
+  return {
+    method: req.method,
+    query: { ...req.query, path: req.path.replace(/^\/+/, '') },
+    body: req.body,
+    headers: req.headers,
+  }
+}
+
 const spectraProxy = createSpectraProxyHandler();
-app.use('/spectra-api', (req, res) =>
-  spectraProxy(
-    // Vercel hands the sub-path over as ?path=...; here it is the path under
-    // the mount point. Only the fields the handler reads are passed on.
-    { method: req.method, query: { ...req.query, path: req.path.replace(/^\/+/, '') }, body: req.body },
-    res,
-  ),
-);
+app.use('/spectra-api', (req, res) => spectraProxy(toProxyRequest(req), res));
 app.use(
   '/cardcom-hosted',
   express.static(path.join(__dirname, '..', 'cardcom-hosted'))
@@ -289,6 +296,10 @@ app.get('/lab/webhook', (req, res) => {
   res.json({ hits: listWebhookHits() });
 });
 
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
-});
+if (require.main === module) {
+  app.listen(3000, () => {
+    console.log('Server running on http://localhost:3000');
+  });
+}
+
+module.exports = { app, toProxyRequest };

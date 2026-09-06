@@ -11,6 +11,7 @@ import {
   verifyCheckoutSession,
 } from './spectraClient'
 import type { SpectraCustomer } from './spectraClient'
+import { DEFAULT_PROFILE } from './profiles'
 
 function mockFetchOnce(status: number, body: unknown) {
   const fn = vi.fn().mockResolvedValue({
@@ -199,6 +200,37 @@ describe('getPayment', () => {
     await getPayment('pay-1')
     const [path] = fetchMock.mock.calls[0]
     expect(path).toBe(`/spectra-api/payments/pay-1?project_id=${SPECTRA_PROJECT_ID}`)
+  })
+})
+
+describe('X-Spectra-Profile header (proxy credential selection)', () => {
+  it('defaults to the default BusinessProfile id when no profileId is passed', async () => {
+    const fetchMock = mockFetchOnce(200, { id: 'pay-1', status: 'SUCCEEDED' })
+    await getPayment('pay-1')
+    const [, init] = fetchMock.mock.calls[0]
+    expect(init.headers['X-Spectra-Profile']).toBe(DEFAULT_PROFILE.id)
+  })
+
+  it('sends an explicitly-passed profileId instead of the default', async () => {
+    const fetchMock = mockFetchOnce(200, { id: 'pay-1', status: 'SUCCEEDED' })
+    await getPayment('pay-1', 'cardcom-tester', 'cardcom-tester')
+    const [, init] = fetchMock.mock.calls[0]
+    expect(init.headers['X-Spectra-Profile']).toBe('cardcom-tester')
+  })
+
+  it('threads profileId through createCustomer the same way it already threads projectId', async () => {
+    const fetchMock = mockFetchOnce(200, {
+      id: 'cust-1',
+      project_id: 'cardcom-tester',
+      external_reference: null,
+      display_name: 'Ada',
+      email: null,
+      created_at: 't',
+      updated_at: 't',
+    })
+    await createCustomer({ displayName: 'Ada' }, 'cardcom-tester', 'cardcom-tester')
+    const [, init] = fetchMock.mock.calls[0]
+    expect(init.headers['X-Spectra-Profile']).toBe('cardcom-tester')
   })
 })
 

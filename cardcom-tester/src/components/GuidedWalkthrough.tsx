@@ -1283,7 +1283,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
       // that clears it back to null for a genuinely new run.
       try {
         const customer = await resolveSpectraCustomer(spectraCustomer, () =>
-          createCustomer({ displayName: 'Guided Tester' }, profile.spectraProjectId),
+          createCustomer({ displayName: 'Guided Tester' }, profile.spectraProjectId, profile.id),
         )
         setSpectraCustomer(customer)
         const created =
@@ -1293,6 +1293,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
                 amount: amountNumber,
                 language,
                 projectId: profile.spectraProjectId,
+                profileId: profile.id,
                 lineItems: cartLineItems,
               })
             : await createHostedCheckoutSession({
@@ -1300,6 +1301,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
                 amount: amountNumber,
                 language,
                 projectId: profile.spectraProjectId,
+                profileId: profile.id,
                 lineItems: cartLineItems,
               })
         setSpectraSession(created)
@@ -1433,9 +1435,10 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
         const verified = await verifyCheckoutSession(
           spectraSession.checkout_session_id,
           profile.spectraProjectId,
+          profile.id,
         )
         setSpectraVerify(verified)
-        const payment = await getPayment(verified.payment_id, profile.spectraProjectId)
+        const payment = await getPayment(verified.payment_id, profile.spectraProjectId, profile.id)
         setSpectraPayment(payment)
         if (payment.status === 'SUCCEEDED') goTo('done')
       } catch (cause) {

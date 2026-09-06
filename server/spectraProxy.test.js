@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-const { createSpectraProxyHandler, buildUpstreamPath, DEFAULT_BASE_URL } = require('./spectraProxy')
+import { afterEach, describe, expect, it, vi } from 'vitest'
+const { createSpectraProxyHandler, buildUpstreamPath, DEFAULT_BASE_URL, DEFAULT_PROFILE_ID, envVarForProfile } = require('./spectraProxy')
 
 function mockRes() {
   const res = {
@@ -146,5 +146,87 @@ describe('createSpectraProxyHandler -- upstream target and auth', () => {
 
   it('defaults to the production spectra-payments origin when unconfigured', () => {
     expect(DEFAULT_BASE_URL).toBe('https://payments.avivozeri.com')
+  })
+})
+
+describe('createSpectraProxyHandler -- per-profile credentials', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('uses the default token when no X-Spectra-Profile header is present, unchanged from before', async () => {
+    const fetchImpl = fakeUpstream(200, {})
+    const handler = createSpectraProxyHandler({ token: 'gateopen-token', fetchImpl })
+    const req = { method: 'GET', query: { path: 'health' } }
+    await handler(req, mockRes())
+    const [, init] = fetchImpl.mock.calls[0]
+    expect(init.headers.Authorization).toBe('Bearer gateopen-token')
+  })
+
+  it(`explicitly naming the default profile ("${DEFAULT_PROFILE_ID}") behaves identically to omitting it`, async () => {
+    const fetchImpl = fakeUpstream(200, {})
+    const handler = createSpectraProxyHandler({ token: 'gateopen-token', fetchImpl })
+    const req = { method: 'GET', query: { path: 'health' }, headers: { 'x-spectra-profile': DEFAULT_PROFILE_ID } }
+    await handler(req, mockRes())
+    const [, init] = fetchImpl.mock.calls[0]
+    expect(init.headers.Authorization).toBe('Bearer gateopen-token')
+  })
+
+  it('selects a different profile\'s token (from options.tokensByProfile) via the X-Spectra-Profile header', async () => {
+    const fetchImpl = fakeUpstream(200, {})
+    const handler = createSpectraProxyHandler({
+      token: 'gateopen-token',
+      tokensByProfile: { 'cardcom-tester': 'cardcom-tester-token' },
+      fetchImpl,
+    })
+    const req = { method: 'GET', query: { path: 'customers/x' }, headers: { 'x-spectra-profile': 'cardcom-tester' } }
+    await handler(req, mockRes())
+    const [, init] = fetchImpl.mock.calls[0]
+    expect(init.headers.Authorization).toBe('Bearer cardcom-tester-token')
+  })
+
+  it('falls back to a derived env var when no options.tokensByProfile override is given', async () => {
+    vi.stubEnv('SPECTRA_PAYMENTS_API_TOKEN_CARDCOM_TESTER', 'from-env-token')
+    const fetchImpl = fakeUpstream(200, {})
+    const handler = createSpectraProxyHandler({ token: 'gateopen-token', fetchImpl })
+    const req = { method: 'GET', query: { path: 'health' }, headers: { 'x-spectra-profile': 'cardcom-tester' } }
+    await handler(req, mockRes())
+    const [, init] = fetchImpl.mock.calls[0]
+    expect(init.headers.Authorization).toBe('Bearer from-env-token')
+  })
+
+  it('fails closed with a profile-specific 500 when the named profile has no configured token', async () => {
+    const fetchImpl = fakeUpstream(200, {})
+    const handler = createSpectraProxyHandler({ token: 'gateopen-token', fetchImpl })
+    const req = { method: 'GET', query: { path: 'health' }, headers: { 'x-spectra-profile': 'some-unconfigured-profile' } }
+    const res = mockRes()
+    await handler(req, res)
+    expect(fetchImpl).not.toHaveBeenCalled()
+    expect(res.statusCode).toBe(500)
+    expect(res.body.error).toContain('some-unconfigured-profile')
+  })
+
+  it('never lets a request supply its own profile-specific credential directly', async () => {
+    // Only the header selects WHICH configured credential is used; there is no
+    // way for a request to inject a token value itself -- confirmed above via
+    // options.tokensByProfile / env vars being the only sources.
+    const fetchImpl = fakeUpstream(200, {})
+    const handler = createSpectraProxyHandler({ token: 'gateopen-token', tokensByProfile: {}, fetchImpl })
+    const req = {
+      method: 'GET',
+      query: { path: 'health' },
+      headers: { 'x-spectra-profile': 'cardcom-tester', authorization: 'Bearer attacker-value' },
+    }
+    const res = mockRes()
+    await handler(req, res)
+    // No env var and no tokensByProfile entry for cardcom-tester -> fails closed.
+    expect(fetchImpl).not.toHaveBeenCalled()
+    expect(res.statusCode).toBe(500)
+  })
+})
+
+describe('envVarForProfile', () => {
+  it('derives an uppercase, underscore-joined env var name from a hyphenated profile id', () => {
+    expect(envVarForProfile('cardcom-tester')).toBe('SPECTRA_PAYMENTS_API_TOKEN_CARDCOM_TESTER')
   })
 })

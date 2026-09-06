@@ -7,14 +7,29 @@
 // that).
 //
 // Security boundary: the browser controls path/query/body (whatever
-// spectraClient.ts already sends), and NOTHING else. The upstream base URL
-// and the Authorization header are always built from server-side
-// configuration (env vars), never from anything on the incoming request --
-// in particular, an incoming Authorization header is never read, so there is
-// nothing for a hostile one to override.
+// spectraClient.ts already sends) plus one routing hint -- the
+// X-Spectra-Profile header, which selects WHICH server-side credential this
+// request uses -- and NOTHING else. The upstream base URL and the
+// Authorization header are always built from server-side configuration (env
+// vars), never from anything on the incoming request -- in particular, an
+// incoming Authorization header is never read, so there is nothing for a
+// hostile one to override. A caller cannot use X-Spectra-Profile to reach
+// another project's data either: it only picks which credential is sent,
+// and spectra-payments itself independently rejects any request whose body
+// project_id doesn't match that credential's own project_id (403). Picking
+// the "wrong" profile here just gets that same 403 back, never a leak.
 
 const DEFAULT_BASE_URL = 'https://payments.avivozeri.com'
 const ALLOWED_METHODS = new Set(['GET', 'POST'])
+// The one profile that keeps using the original, unrenamed env var --
+// existing deployments need no changes for GateOpen to keep working.
+const DEFAULT_PROFILE_ID = 'gateopen'
+
+// Every other profile's token lives in its own env var, derived from the
+// profile id: cardcom-tester -> SPECTRA_PAYMENTS_API_TOKEN_CARDCOM_TESTER.
+function envVarForProfile(profileId) {
+  return `SPECTRA_PAYMENTS_API_TOKEN_${profileId.toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`
+}
 
 function buildUpstreamPath(query) {
   // `path` is the regex-captured sub-path from vercel.json's rewrite
@@ -36,8 +51,15 @@ function buildUpstreamPath(query) {
 
 function createSpectraProxyHandler(options = {}) {
   const baseUrl = options.baseUrl ?? process.env.SPECTRA_PAYMENTS_API_URL ?? DEFAULT_BASE_URL
-  const token = options.token ?? process.env.SPECTRA_PAYMENTS_API_TOKEN
+  const defaultToken = options.token ?? process.env.SPECTRA_PAYMENTS_API_TOKEN
+  const tokensByProfile = options.tokensByProfile ?? {}
   const fetchImpl = options.fetchImpl ?? fetch
+
+  function resolveToken(profileId) {
+    if (!profileId || profileId === DEFAULT_PROFILE_ID) return defaultToken
+    if (Object.prototype.hasOwnProperty.call(tokensByProfile, profileId)) return tokensByProfile[profileId]
+    return process.env[envVarForProfile(profileId)]
+  }
 
   return async function spectraProxyHandler(req, res) {
     if (!ALLOWED_METHODS.has(req.method)) {
@@ -45,10 +67,18 @@ function createSpectraProxyHandler(options = {}) {
       return
     }
 
+    const profileHeader = req.headers ? req.headers['x-spectra-profile'] : undefined
+    const profileId = typeof profileHeader === 'string' ? profileHeader : undefined
+    const token = resolveToken(profileId)
+
     // Fail closed: never make an unauthenticated upstream request, and never
     // fall back to anything the browser supplied.
     if (!token) {
-      res.status(500).json({ error: 'spectra-payments proxy is not configured' })
+      res.status(500).json({
+        error: profileId
+          ? `spectra-payments proxy is not configured for profile "${profileId}"`
+          : 'spectra-payments proxy is not configured',
+      })
       return
     }
 
@@ -81,4 +111,4 @@ function createSpectraProxyHandler(options = {}) {
   }
 }
 
-module.exports = { createSpectraProxyHandler, buildUpstreamPath, DEFAULT_BASE_URL }
+module.exports = { createSpectraProxyHandler, buildUpstreamPath, DEFAULT_BASE_URL, DEFAULT_PROFILE_ID, envVarForProfile }

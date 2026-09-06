@@ -9,8 +9,12 @@
 //   - logo: the brand shown on the checkout pages (Open Fields brand header).
 //   - accent: the checkout page's default accent colour for this business
 //     (the walkthrough lets you override it per run to try others).
-// Today there is exactly one business, GateOpen. Adding another is one entry
-// here, its profile on the server, and its own Cardcom terminal.
+// Adding another business is one entry here, its profile on the server (if it
+// needs its own Cardcom terminal -- it doesn't have to: `cardcom-tester` below
+// deliberately reuses GateOpen's terminal, since its only purpose is to be a
+// second real spectra-payments project_id, not a second Cardcom account), and
+// -- for a genuinely new project_id -- a second server-side credential in the
+// proxy (see server/spectraProxy.js's per-profile token lookup).
 export type BusinessProfile = {
   id: string
   name: string
@@ -30,6 +34,21 @@ export const PROFILES: BusinessProfile[] = [
     logoLight: '/cardcom-preview/brand/gateopen-light.svg',
     logoDark: '/cardcom-preview/brand/gateopen-dark.svg',
     accent: '#3d5580',
+  },
+  {
+    // A second REAL spectra-payments project (its own project_id, its own
+    // issued api_credentials row, its own server-side token) -- not a real
+    // business. It exists so the profile selector actually proves project
+    // isolation instead of just rendering a dropdown around GateOpen's data.
+    // Cardcom side is deliberately shared with GateOpen (same test terminal --
+    // project isolation is a spectra-payments/data concern, not a Cardcom one).
+    id: 'cardcom-tester',
+    name: 'Cardcom Tester',
+    expressProfileId: 'gateopen',
+    spectraProjectId: 'cardcom-tester',
+    logoLight: '/cardcom-preview/brand/cardcom-tester-light.svg',
+    logoDark: '/cardcom-preview/brand/cardcom-tester-dark.svg',
+    accent: '#c97a3a',
   },
 ]
 
