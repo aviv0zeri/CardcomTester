@@ -47,16 +47,16 @@
                      currency -- so the cart total, the Pay button and the charge
                      can never disagree. -->
                 <div class="cart" id="cart">
-                    <h4>Cart <span class="price"><i class="fa fa-shopping-cart"></i> <b>4</b></span></h4>
-                    <p><a href="#">Product 1</a> <span class="price" data-cart-share="15"></span></p>
-                    <p><a href="#">Product 2</a> <span class="price" data-cart-share="5"></span></p>
-                    <p><a href="#">Product 3</a> <span class="price" data-cart-share="8"></span></p>
-                    <p><a href="#">Product 4</a> <span class="price" data-cart-share="2"></span></p>
+                    <h4><span data-i18n="cart_heading">Cart</span> <span class="price"><i class="fa fa-shopping-cart"></i> <b>4</b></span></h4>
+                    <p><a href="#" data-i18n="cart_item_1">Product 1</a> <span class="price" data-cart-share="15"></span></p>
+                    <p><a href="#" data-i18n="cart_item_2">Product 2</a> <span class="price" data-cart-share="5"></span></p>
+                    <p><a href="#" data-i18n="cart_item_3">Product 3</a> <span class="price" data-cart-share="8"></span></p>
+                    <p><a href="#" data-i18n="cart_item_4">Product 4</a> <span class="price" data-cart-share="2"></span></p>
                     <hr>
-                    <p class="cart-total">Total <span class="price"><b id="cartTotal"></b></span></p>
+                    <p class="cart-total"><span data-i18n="cart_total">Total</span> <span class="price"><b id="cartTotal"></b></span></p>
                 </div>
             </div>
-            <input type="button" id="continue" value="Continue to checkout" class="btn">
+            <input type="button" id="continue" data-i18n="continue_checkout" value="Continue to checkout" class="btn">
         </div>
         <div id="second-screen" style="display: none;">
             <div class="checkout">

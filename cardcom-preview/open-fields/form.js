@@ -154,11 +154,21 @@ const HEBREW_LABELS = {
     err_id: 'נא להזין מספר תעודת זהות בן 9 ספרות',
     err_exp_month: 'נא להזין חודש בין 01 ל-12',
     err_exp_year: 'נא להזין שנת תוקף שטרם עברה',
+    // The mock cart (first screen) -- generic placeholder items, not real
+    // Cardcom product data.
+    cart_heading: 'עגלה',
+    cart_item_1: 'מוצר 1',
+    cart_item_2: 'מוצר 2',
+    cart_item_3: 'מוצר 3',
+    cart_item_4: 'מוצר 4',
+    cart_total: 'סה"כ',
+    continue_checkout: 'המשך לתשלום',
 };
 
-// Hebrew UI = the Israel template in anything but English (the us/eu
-// templates stay English) -- the same rule the label pass below uses.
-const IS_HEBREW = currentRegion() === 'il' && PAGE_PARAMS.get('lang') !== 'en';
+// Hebrew UI follows the page's own ?lang= -- independent of region. All three
+// billing templates (il/us/eu) get dir=rtl + translated labels under lang=he;
+// region only changes which fields are collected, never the language.
+const IS_HEBREW = PAGE_PARAMS.get('lang') === 'he';
 const label = (key, fallback) => (IS_HEBREW && HEBREW_LABELS[key]) || fallback;
 
 // Inline note under the Pay button (used for the tester's fill hint).
@@ -388,22 +398,25 @@ document.addEventListener("DOMContentLoaded", () => {
         toggle.addEventListener('change', () => {
             document.getElementById('il-invoice-fields').style.display = toggle.checked ? '' : 'none';
         });
-        if (new URLSearchParams(location.search).get('lang') !== 'en') {
-            document.documentElement.dir = 'rtl';
-            document.documentElement.lang = 'he';
-            document.querySelectorAll('[data-i18n]').forEach((el) => {
-                const text = HEBREW_LABELS[el.getAttribute('data-i18n')];
-                if (text) el.textContent = text;
-            });
-            // Tooltip/aria text lives in attributes, not text content.
-            document.querySelectorAll('[data-i18n-tip]').forEach((el) => {
-                const text = HEBREW_LABELS[el.getAttribute('data-i18n-tip')];
-                if (text) {
-                    el.setAttribute('data-tip', text);
-                    el.setAttribute('aria-label', text);
-                }
-            });
-        }
+    }
+    if (IS_HEBREW) {
+        document.documentElement.dir = 'rtl';
+        document.documentElement.lang = 'he';
+        document.querySelectorAll('[data-i18n]').forEach((el) => {
+            const text = HEBREW_LABELS[el.getAttribute('data-i18n')];
+            if (!text) return;
+            // <input value="..."> has no rendered textContent -- e.g. the
+            // first screen's "Continue to checkout" button.
+            if (el.tagName === 'INPUT') el.value = text; else el.textContent = text;
+        });
+        // Tooltip/aria text lives in attributes, not text content.
+        document.querySelectorAll('[data-i18n-tip]').forEach((el) => {
+            const text = HEBREW_LABELS[el.getAttribute('data-i18n-tip')];
+            if (text) {
+                el.setAttribute('data-tip', text);
+                el.setAttribute('aria-label', text);
+            }
+        });
     }
 
     // Mock cart: the example's four lines, each its share of AMOUNT (the sum
