@@ -413,3 +413,83 @@ export function listPaymentDocuments(
 ): Promise<{ documents: SpectraPaymentDocument[] }> {
   return spectraFetch(`/payments/${paymentId}/documents?${withProject(projectId)}`, profileId)
 }
+
+// -- Subscription/Payment operations (Slice 5) -----------------------------
+// Every one of these can change persisted state; none of them is ever called
+// except from an explicit user action with its own confirmation step. The
+// caller is responsible for refetching the affected resources afterward --
+// none of these optimistically update anything locally.
+
+export type SpectraExecuteDuePeriodResult = {
+  outcome: 'NOT_DUE' | 'CANCELLED_AT_BOUNDARY' | 'CHARGED'
+  subscription: SpectraSubscription
+  payment_id: string | null
+  attempt_status: string | null
+}
+
+// May place a real financial request with the provider -- only when the
+// Subscription is genuinely due; the backend decides that, never this client.
+export function executeDuePeriod(
+  subscriptionId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<SpectraExecuteDuePeriodResult> {
+  return spectraFetch(`/subscriptions/${subscriptionId}/execute-due-period`, profileId, {
+    method: 'POST',
+    body: JSON.stringify({ project_id: projectId }),
+  })
+}
+
+// Never places a financial request -- pure state change (cancel_at_period_end
+// flag, or an immediate status flip). Never a refund/reversal.
+export function cancelSubscription(
+  subscriptionId: string,
+  atPeriodEnd: boolean,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<SpectraSubscription> {
+  return spectraFetch(`/subscriptions/${subscriptionId}/cancel`, profileId, {
+    method: 'POST',
+    body: JSON.stringify({ project_id: projectId, at_period_end: atPeriodEnd }),
+  })
+}
+
+export type SpectraReconcileResult = {
+  payment_id: string
+  payment_status: string
+  attempt_status: string | null
+  reconciliation_outcome: 'RESOLVED' | 'UNRESOLVED' | 'ALREADY_RESOLVED'
+}
+
+// Read-only against the provider -- asks Cardcom what it already knows about
+// an existing operation. Never submits a new charge.
+export function reconcilePayment(
+  paymentId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<SpectraReconcileResult> {
+  return spectraFetch(`/payments/${paymentId}/reconcile`, profileId, {
+    method: 'POST',
+    body: JSON.stringify({ project_id: projectId }),
+  })
+}
+
+export type SpectraReExecuteResult = {
+  payment_id: string
+  payment_status: string
+  attempt_status: string | null
+}
+
+// CAN place a new financial request -- the one recovery submission a
+// TECHNICAL_FAILED attempt ever gets. Only eligible when the backend's own
+// invariants allow it; this client never decides that on its own.
+export function reexecutePayment(
+  paymentId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<SpectraReExecuteResult> {
+  return spectraFetch(`/payments/${paymentId}/re-execute`, profileId, {
+    method: 'POST',
+    body: JSON.stringify({ project_id: projectId }),
+  })
+}

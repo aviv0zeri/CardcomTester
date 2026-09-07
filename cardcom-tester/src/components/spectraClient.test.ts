@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   SPECTRA_PROJECT_ID,
+  cancelSubscription,
   checkSpectraHealth,
   createCustomer,
   createEmbeddedFieldsCheckoutSession,
   createHostedCheckoutSession,
+  executeDuePeriod,
   getCheckoutSession,
   getCustomer,
   getPayment,
@@ -17,6 +19,8 @@ import {
   listPaymentsForSubscription,
   listSubscriptions,
   listSubscriptionsForCustomer,
+  reconcilePayment,
+  reexecutePayment,
   resolveSpectraCustomer,
   verifyCheckoutSession,
 } from './spectraClient'
@@ -332,6 +336,79 @@ describe('listPaymentDocuments', () => {
     await listPaymentDocuments('pay-1')
     const [path] = fetchMock.mock.calls[0]
     expect(path).toBe(`/spectra-api/payments/pay-1/documents?project_id=${SPECTRA_PROJECT_ID}`)
+  })
+})
+
+describe('executeDuePeriod', () => {
+  it('POSTs to execute-due-period with project_id in the body', async () => {
+    const fetchMock = mockFetchOnce(200, {
+      outcome: 'NOT_DUE',
+      subscription: { id: 'sub-1', status: 'ACTIVE' },
+      payment_id: null,
+      attempt_status: null,
+    })
+    const result = await executeDuePeriod('sub-1', SPECTRA_PROJECT_ID)
+    const [path, init] = fetchMock.mock.calls[0]
+    expect(path).toBe('/spectra-api/subscriptions/sub-1/execute-due-period')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body as string)).toEqual({ project_id: SPECTRA_PROJECT_ID })
+    expect(result.outcome).toBe('NOT_DUE')
+  })
+})
+
+describe('cancelSubscription', () => {
+  it('POSTs at_period_end=true when requested', async () => {
+    const fetchMock = mockFetchOnce(200, { id: 'sub-1', cancel_at_period_end: true })
+    await cancelSubscription('sub-1', true, SPECTRA_PROJECT_ID)
+    const [path, init] = fetchMock.mock.calls[0]
+    expect(path).toBe('/spectra-api/subscriptions/sub-1/cancel')
+    expect(JSON.parse(init.body as string)).toEqual({
+      project_id: SPECTRA_PROJECT_ID,
+      at_period_end: true,
+    })
+  })
+
+  it('POSTs at_period_end=false for immediate cancellation', async () => {
+    const fetchMock = mockFetchOnce(200, { id: 'sub-1', status: 'CANCELLED' })
+    await cancelSubscription('sub-1', false, SPECTRA_PROJECT_ID)
+    const [, init] = fetchMock.mock.calls[0]
+    expect(JSON.parse(init.body as string)).toEqual({
+      project_id: SPECTRA_PROJECT_ID,
+      at_period_end: false,
+    })
+  })
+})
+
+describe('reconcilePayment', () => {
+  it('POSTs to reconcile with project_id in the body', async () => {
+    const fetchMock = mockFetchOnce(200, {
+      payment_id: 'pay-1',
+      payment_status: 'SUCCEEDED',
+      attempt_status: 'SUCCEEDED',
+      reconciliation_outcome: 'RESOLVED',
+    })
+    const result = await reconcilePayment('pay-1', SPECTRA_PROJECT_ID)
+    const [path, init] = fetchMock.mock.calls[0]
+    expect(path).toBe('/spectra-api/payments/pay-1/reconcile')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body as string)).toEqual({ project_id: SPECTRA_PROJECT_ID })
+    expect(result.reconciliation_outcome).toBe('RESOLVED')
+  })
+})
+
+describe('reexecutePayment', () => {
+  it('POSTs to re-execute with project_id in the body', async () => {
+    const fetchMock = mockFetchOnce(200, {
+      payment_id: 'pay-1',
+      payment_status: 'PENDING',
+      attempt_status: 'UNKNOWN',
+    })
+    const result = await reexecutePayment('pay-1', SPECTRA_PROJECT_ID)
+    const [path, init] = fetchMock.mock.calls[0]
+    expect(path).toBe('/spectra-api/payments/pay-1/re-execute')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body as string)).toEqual({ project_id: SPECTRA_PROJECT_ID })
+    expect(result.attempt_status).toBe('UNKNOWN')
   })
 })
 

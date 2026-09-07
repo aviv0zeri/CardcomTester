@@ -198,3 +198,140 @@
 .sd-graph-node--main {
   font-weight: 700;
 }
+
+/* Operations (Slice 5): every action button is colour-coded by safety class
+   so a financial action never LOOKS like a plain read-only refresh. */
+.sd-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sd-payment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block: 10px;
+}
+
+.sd-action-btn {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.12s ease;
+}
+
+.sd-action-btn:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.sd-action-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* safe: read-only against the provider (reconcile) -- calm, neutral */
+.sd-action-btn--safe {
+  border: 1px solid var(--accent);
+  background: var(--accent-soft-bg);
+  color: var(--accent-strong);
+}
+
+/* state-changing but non-charging (cancellation) -- distinct but not alarming */
+.sd-action-btn--state {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+
+/* potentially financial (execute due period, re-execute) -- unmistakably
+   different from the other two; this is the one that can place a real charge */
+.sd-action-btn--financial {
+  border: 1px solid #b45309;
+  background: rgba(180, 83, 9, 0.12);
+  color: #b45309;
+}
+
+.sd-confirm {
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--accent-soft-bg);
+}
+
+.sd-confirm p {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+}
+
+.sd-confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.sd-confirm-cancel,
+.sd-confirm-go {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sd-confirm-cancel {
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.sd-confirm-cancel:disabled,
+.sd-confirm-go:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.sd-confirm-go--safe {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.sd-confirm-go--state {
+  border: 1px solid var(--text-secondary);
+  background: var(--text-secondary);
+  color: var(--surface);
+}
+
+.sd-confirm-go--financial {
+  border: 1px solid #b45309;
+  background: #b45309;
+  color: #fff;
+}
+
+.sd-result {
+  border-color: var(--accent);
+}
+
+.sd-result-heading {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.sd-operation-raw {
+  margin-block-start: 8px;
+}
+
+.sd-operation-raw summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.sd-operation-raw .ct-raw {
+  margin-block-start: 8px;
+}
