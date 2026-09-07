@@ -293,3 +293,24 @@ export function listSubscriptionsForCustomer(
     profileId,
   )
 }
+
+export type SpectraSubscriptionList = {
+  subscriptions: SpectraSubscription[]
+  next_cursor: string | null
+}
+
+// The project's own Subscriptions, persisted-truth -- for a standalone
+// Subscriptions console tab (watch/operate existing subscriptions), distinct
+// from listSubscriptionsForCustomer above (one Customer's own history, no
+// pagination). Bounded (server enforces 1-100) and keyset-paginated, same
+// cursor shape as listCustomers.
+export function listSubscriptions(
+  projectId: string,
+  profileId: string = DEFAULT_PROFILE_ID,
+  opts: { limit?: number; cursor?: string } = {},
+): Promise<SpectraSubscriptionList> {
+  const params: Record<string, string> = { project_id: projectId }
+  if (opts.limit) params.limit = String(opts.limit)
+  if (opts.cursor) params.cursor = opts.cursor
+  return spectraFetch(`/subscriptions?${new URLSearchParams(params).toString()}`, profileId)
+}

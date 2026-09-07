@@ -9,6 +9,7 @@ import {
   getPayment,
   listCustomers,
   listPaymentsForCustomer,
+  listSubscriptions,
   listSubscriptionsForCustomer,
   resolveSpectraCustomer,
   verifyCheckoutSession,
@@ -247,6 +248,29 @@ describe('listSubscriptionsForCustomer', () => {
     await listSubscriptionsForCustomer('cust-1', SPECTRA_PROJECT_ID)
     const [path] = fetchMock.mock.calls[0]
     expect(path).toBe(`/spectra-api/subscriptions?project_id=${SPECTRA_PROJECT_ID}&customer_id=cust-1`)
+  })
+})
+
+describe('listSubscriptions', () => {
+  it('GETs project-wide, with no customer_id', async () => {
+    const fetchMock = mockFetchOnce(200, { subscriptions: [], next_cursor: null })
+    await listSubscriptions(SPECTRA_PROJECT_ID)
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/subscriptions?project_id=${SPECTRA_PROJECT_ID}`)
+  })
+
+  it('includes limit and cursor when passed', async () => {
+    const fetchMock = mockFetchOnce(200, { subscriptions: [], next_cursor: null })
+    await listSubscriptions(SPECTRA_PROJECT_ID, DEFAULT_PROFILE.id, { limit: 10, cursor: 'abc' })
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/subscriptions?project_id=${SPECTRA_PROJECT_ID}&limit=10&cursor=abc`)
+  })
+
+  it('returns the subscriptions array and next_cursor as given', async () => {
+    mockFetchOnce(200, { subscriptions: [{ id: 's-1', project_id: SPECTRA_PROJECT_ID }], next_cursor: 'xyz' })
+    const result = await listSubscriptions(SPECTRA_PROJECT_ID)
+    expect(result.subscriptions).toHaveLength(1)
+    expect(result.next_cursor).toBe('xyz')
   })
 })
 
