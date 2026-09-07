@@ -65,6 +65,10 @@ function App() {
   // brand). Picked in the walkthrough's first step; the other tabs follow it.
   const [profileId, setProfileId] = useState(DEFAULT_PROFILE.id)
   const profile = profileById(profileId)
+  // Cross-tab deep link: Subscription Detail's "View Customer" switches to the
+  // Customers tab and asks it to select this specific Customer -- reusing that
+  // tab's own detail view rather than a second implementation here.
+  const [focusCustomerId, setFocusCustomerId] = useState<string | null>(null)
   const [uiLang, setUiLang] = useState<UiLang>(loadUiLang)
   const [sfxMuted, setSfxMutedState] = useState<boolean>(loadSfxMuted)
   const [design, setDesign] = useState<Design>('new')
@@ -309,9 +313,21 @@ function App() {
               onProfileChange={setProfileId}
             />
           ) : tab === 'customers' ? (
-            <CustomersTab profile={profile} lang={uiLang} />
+            <CustomersTab
+              profile={profile}
+              lang={uiLang}
+              focusCustomerId={focusCustomerId}
+              onFocusHandled={() => setFocusCustomerId(null)}
+            />
           ) : tab === 'subscriptions' ? (
-            <SubscriptionsTab profile={profile} lang={uiLang} />
+            <SubscriptionsTab
+              profile={profile}
+              lang={uiLang}
+              onNavigateToCustomer={(customerId) => {
+                setFocusCustomerId(customerId)
+                setTab('customers')
+              }}
+            />
           ) : tab === 'lab' ? (
             <ApiLab disabled={overlayOpen} />
           ) : (

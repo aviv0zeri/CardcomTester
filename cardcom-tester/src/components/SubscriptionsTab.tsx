@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { listSubscriptions, type SpectraSubscription } from './spectraClient'
 import type { BusinessProfile } from './profiles'
 import type { UiLang } from './uiLang'
+import { StatusBadge, fmtDate } from './consoleShared'
+import { SubscriptionDetail } from './SubscriptionDetail'
 import './customersTab.css'
 import './subscriptionsTab.css'
 
@@ -9,12 +11,13 @@ import './subscriptionsTab.css'
 // /subscriptions, project-wide) -- the list view for a standalone console tab
 // that WATCHES recurring billing, distinct from Guided (which teaches how a
 // Subscription gets CREATED). Inspection-first: no actions yet (execute-due-
-// period / cancel / reconcile come with the Subscription detail view), just
-// what already exists, one page at a time.
+// period / cancel / reconcile come with a later slice), just what already
+// exists. Clicking a row opens its full detail/resource-graph view.
 
 type Props = {
   profile: BusinessProfile
   lang: UiLang
+  onNavigateToCustomer: (customerId: string) => void
 }
 
 const STRINGS: Record<UiLang, Record<string, string>> = {
@@ -29,8 +32,6 @@ const STRINGS: Record<UiLang, Record<string, string>> = {
     periodEnd: 'Current period ends',
     willRenew: 'Renews automatically',
     willCancel: 'Cancels at period end',
-    showRaw: 'Show as JSON',
-    hideRaw: 'Hide JSON',
     plan: 'Plan reference',
   },
   he: {
@@ -44,36 +45,17 @@ const STRINGS: Record<UiLang, Record<string, string>> = {
     periodEnd: 'התקופה הנוכחית מסתיימת',
     willRenew: 'מתחדש אוטומטית',
     willCancel: 'יבוטל בסוף התקופה',
-    showRaw: 'הצג כ-JSON',
-    hideRaw: 'הסתר JSON',
     plan: 'הפניית תוכנית',
   },
 }
 
-function fmtDate(iso: string | null, lang: UiLang): string {
-  if (!iso) return '—'
-  try {
-    return new Date(iso).toLocaleString(lang === 'he' ? 'he-IL' : 'en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    })
-  } catch {
-    return iso
-  }
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const cls = status.toLowerCase().replace(/[^a-z]+/g, '-')
-  return <span className={`ct-status ct-status--${cls}`}>{status}</span>
-}
-
-export function SubscriptionsTab({ profile, lang }: Props) {
+export function SubscriptionsTab({ profile, lang, onNavigateToCustomer }: Props) {
   const T = STRINGS[lang]
   const [subscriptions, setSubscriptions] = useState<SpectraSubscription[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [openRawId, setOpenRawId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const load = async (cursor?: string) => {
     setLoading(true)
@@ -91,10 +73,22 @@ export function SubscriptionsTab({ profile, lang }: Props) {
   useEffect(() => {
     setSubscriptions([])
     setNextCursor(null)
-    setOpenRawId(null)
+    setSelectedId(null)
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.id])
+
+  if (selectedId) {
+    return (
+      <SubscriptionDetail
+        subscriptionId={selectedId}
+        profile={profile}
+        lang={lang}
+        onBack={() => setSelectedId(null)}
+        onNavigateToCustomer={onNavigateToCustomer}
+      />
+    )
+  }
 
   const countLabel = subscriptions.length === 1 ? T.countOne : T.countMany.replace('{n}', String(subscriptions.length))
 
@@ -111,7 +105,11 @@ export function SubscriptionsTab({ profile, lang }: Props) {
       <ul className="st-rows">
         {subscriptions.map((subscription) => (
           <li key={subscription.id} className="st-row-wrap">
-            <div className="ct-row st-row">
+            <button
+              type="button"
+              className="ct-row st-row st-row--clickable"
+              onClick={() => setSelectedId(subscription.id)}
+            >
               <StatusBadge status={subscription.status} />
               <span className="ct-row-amount">
                 {subscription.amount} {subscription.currency}
@@ -128,17 +126,7 @@ export function SubscriptionsTab({ profile, lang }: Props) {
               <span className="st-customer">
                 {T.customer}: <span className="ct-id">{subscription.customer_id}</span>
               </span>
-              <button
-                type="button"
-                className="ct-raw-toggle st-raw-toggle"
-                onClick={() => setOpenRawId((id) => (id === subscription.id ? null : subscription.id))}
-              >
-                🤓 {openRawId === subscription.id ? T.hideRaw : T.showRaw}
-              </button>
-            </div>
-            {openRawId === subscription.id ? (
-              <pre className="ct-raw">{JSON.stringify(subscription, null, 2)}</pre>
-            ) : null}
+            </button>
           </li>
         ))}
       </ul>

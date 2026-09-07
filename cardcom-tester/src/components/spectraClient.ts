@@ -133,6 +133,14 @@ export function checkSpectraHealth(): Promise<SpectraHealth> {
   return spectraFetch('/health', DEFAULT_PROFILE_ID)
 }
 
+export function getCustomer(
+  customerId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<SpectraCustomer> {
+  return spectraFetch(`/customers/${customerId}?${withProject(projectId)}`, profileId)
+}
+
 export function createCustomer(
   input: {
     displayName?: string
@@ -313,4 +321,95 @@ export function listSubscriptions(
   if (opts.limit) params.limit = String(opts.limit)
   if (opts.cursor) params.cursor = opts.cursor
   return spectraFetch(`/subscriptions?${new URLSearchParams(params).toString()}`, profileId)
+}
+
+export function getSubscription(
+  subscriptionId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<SpectraSubscription> {
+  return spectraFetch(`/subscriptions/${subscriptionId}?${withProject(projectId)}`, profileId)
+}
+
+export function listPaymentsForSubscription(
+  subscriptionId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<{ payments: SpectraPayment[] }> {
+  return spectraFetch(
+    `/payments?${withProject(projectId, { subscription_id: subscriptionId })}`,
+    profileId,
+  )
+}
+
+// Safe metadata only -- the server-side view (_payment_method_view) explicitly
+// excludes provider_reference (the reusable wrapped Cardcom token). See
+// spectra-payments' own test asserting the raw token string never appears in
+// this response.
+export type SpectraPaymentMethod = {
+  id: string
+  project_id: string
+  customer_id: string
+  status: string
+  provider: string
+  card_brand: string | null
+  card_last4: string | null
+  card_month: number | null
+  card_year: number | null
+  token_expiry_date: string | null
+  created_at: string
+  updated_at: string
+}
+
+export function getPaymentMethod(
+  paymentMethodId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<SpectraPaymentMethod> {
+  return spectraFetch(`/payment-methods/${paymentMethodId}?${withProject(projectId)}`, profileId)
+}
+
+export type SpectraPaymentAttempt = {
+  id: string
+  project_id: string
+  payment_id: string
+  payment_method_id: string | null
+  status: string
+  provider: string
+  provider_reference: string | null
+  idempotency_operation_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export function listPaymentAttempts(
+  paymentId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<{ attempts: SpectraPaymentAttempt[] }> {
+  return spectraFetch(`/payments/${paymentId}/attempts?${withProject(projectId)}`, profileId)
+}
+
+export type SpectraPaymentDocument = {
+  id: string
+  project_id: string
+  payment_id: string
+  payment_attempt_id: string | null
+  status: string
+  provider: string
+  provider_reference: string | null
+  document_url: string | null
+  billing_name_snapshot: string | null
+  billing_email_snapshot: string | null
+  billing_tax_id_snapshot: string | null
+  created_at: string
+  updated_at: string
+}
+
+export function listPaymentDocuments(
+  paymentId: string,
+  projectId: string = SPECTRA_PROJECT_ID,
+  profileId: string = DEFAULT_PROFILE_ID,
+): Promise<{ documents: SpectraPaymentDocument[] }> {
+  return spectraFetch(`/payments/${paymentId}/documents?${withProject(projectId)}`, profileId)
 }

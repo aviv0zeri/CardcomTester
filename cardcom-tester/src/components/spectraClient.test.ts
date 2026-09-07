@@ -6,9 +6,15 @@ import {
   createEmbeddedFieldsCheckoutSession,
   createHostedCheckoutSession,
   getCheckoutSession,
+  getCustomer,
   getPayment,
+  getPaymentMethod,
+  getSubscription,
   listCustomers,
+  listPaymentAttempts,
+  listPaymentDocuments,
   listPaymentsForCustomer,
+  listPaymentsForSubscription,
   listSubscriptions,
   listSubscriptionsForCustomer,
   resolveSpectraCustomer,
@@ -271,6 +277,61 @@ describe('listSubscriptions', () => {
     const result = await listSubscriptions(SPECTRA_PROJECT_ID)
     expect(result.subscriptions).toHaveLength(1)
     expect(result.next_cursor).toBe('xyz')
+  })
+})
+
+describe('getCustomer', () => {
+  it('GETs the persisted Customer with the fixed project_id', async () => {
+    const fetchMock = mockFetchOnce(200, { id: 'cust-1', display_name: 'Ada' })
+    await getCustomer('cust-1')
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/customers/cust-1?project_id=${SPECTRA_PROJECT_ID}`)
+  })
+})
+
+describe('getSubscription', () => {
+  it('GETs the persisted Subscription with the fixed project_id', async () => {
+    const fetchMock = mockFetchOnce(200, { id: 'sub-1', status: 'ACTIVE' })
+    await getSubscription('sub-1')
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/subscriptions/sub-1?project_id=${SPECTRA_PROJECT_ID}`)
+  })
+})
+
+describe('listPaymentsForSubscription', () => {
+  it('GETs /payments with project_id and subscription_id', async () => {
+    const fetchMock = mockFetchOnce(200, { payments: [] })
+    await listPaymentsForSubscription('sub-1', SPECTRA_PROJECT_ID)
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/payments?project_id=${SPECTRA_PROJECT_ID}&subscription_id=sub-1`)
+  })
+})
+
+describe('getPaymentMethod', () => {
+  it('GETs the persisted PaymentMethod with the fixed project_id', async () => {
+    const fetchMock = mockFetchOnce(200, { id: 'pm-1', status: 'ACTIVE', card_brand: null })
+    const result = await getPaymentMethod('pm-1')
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/payment-methods/pm-1?project_id=${SPECTRA_PROJECT_ID}`)
+    expect(result.card_brand).toBeNull()
+  })
+})
+
+describe('listPaymentAttempts', () => {
+  it('GETs /payments/{id}/attempts with the fixed project_id', async () => {
+    const fetchMock = mockFetchOnce(200, { attempts: [] })
+    await listPaymentAttempts('pay-1')
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/payments/pay-1/attempts?project_id=${SPECTRA_PROJECT_ID}`)
+  })
+})
+
+describe('listPaymentDocuments', () => {
+  it('GETs /payments/{id}/documents with the fixed project_id', async () => {
+    const fetchMock = mockFetchOnce(200, { documents: [] })
+    await listPaymentDocuments('pay-1')
+    const [path] = fetchMock.mock.calls[0]
+    expect(path).toBe(`/spectra-api/payments/pay-1/documents?project_id=${SPECTRA_PROJECT_ID}`)
   })
 })
 

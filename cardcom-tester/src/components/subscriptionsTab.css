@@ -43,6 +43,20 @@
   border-radius: 0;
 }
 
+.st-row--clickable {
+  width: 100%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.st-row--clickable:hover {
+  background: var(--accent-soft-bg);
+}
+
 .st-row-wrap .ct-raw {
   border-block-start: 1px solid var(--border);
   border-radius: 0;
@@ -60,10 +74,4 @@
 .st-customer {
   font-size: 0.78rem;
   color: var(--text-muted);
-}
-
-.st-raw-toggle {
-  margin-inline-start: auto;
-  padding: 4px 10px;
-  font-size: 0.74rem;
 }

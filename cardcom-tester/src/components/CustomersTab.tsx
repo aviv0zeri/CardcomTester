@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  getCustomer,
   listCustomers,
   listPaymentsForCustomer,
   listSubscriptionsForCustomer,
@@ -9,6 +10,7 @@ import {
 } from './spectraClient'
 import type { BusinessProfile } from './profiles'
 import type { UiLang } from './uiLang'
+import { StatusBadge, fmtDate } from './consoleShared'
 import './customersTab.css'
 
 // Customer inspection, backed entirely by spectra-payments' own persisted
@@ -22,6 +24,12 @@ import './customersTab.css'
 type Props = {
   profile: BusinessProfile
   lang: UiLang
+  // Deep-link from another tab (e.g. Subscription Detail's "View Customer") --
+  // fetches and selects this Customer directly, even if it isn't (yet) on the
+  // loaded page of the list. onFocusHandled clears the request once served, so
+  // an unrelated re-render can't re-trigger it.
+  focusCustomerId?: string | null
+  onFocusHandled?: () => void
 }
 
 const STRINGS: Record<UiLang, Record<string, string>> = {
@@ -71,24 +79,7 @@ const STRINGS: Record<UiLang, Record<string, string>> = {
   },
 }
 
-function fmtDate(iso: string | null, lang: UiLang): string {
-  if (!iso) return '—'
-  try {
-    return new Date(iso).toLocaleString(lang === 'he' ? 'he-IL' : 'en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    })
-  } catch {
-    return iso
-  }
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const cls = status.toLowerCase().replace(/[^a-z]+/g, '-')
-  return <span className={`ct-status ct-status--${cls}`}>{status}</span>
-}
-
-export function CustomersTab({ profile, lang }: Props) {
+export function CustomersTab({ profile, lang, focusCustomerId, onFocusHandled }: Props) {
   const T = STRINGS[lang]
   const [customers, setCustomers] = useState<SpectraCustomer[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -118,6 +109,27 @@ export function CustomersTab({ profile, lang }: Props) {
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.id])
+
+  // A deep link from another tab: fetch and select this Customer directly,
+  // regardless of whether it's on the currently-loaded page of the list.
+  useEffect(() => {
+    if (!focusCustomerId) return
+    let cancelled = false
+    getCustomer(focusCustomerId, profile.spectraProjectId, profile.id)
+      .then((customer) => {
+        if (!cancelled) setSelected(customer)
+      })
+      .catch((cause) => {
+        if (!cancelled) setError(cause instanceof Error ? cause.message : 'failed to load customer')
+      })
+      .finally(() => {
+        if (!cancelled) onFocusHandled?.()
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusCustomerId])
 
   const countLabel = (T.countMany.includes('{n}') ? T.countMany.replace('{n}', String(customers.length)) : T.countMany)
 

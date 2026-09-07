@@ -1,0 +1,200 @@
+/* Subscription detail / resource graph (SubscriptionDetail.tsx). Reuses
+   customersTab.css's ct-* tokens (status badges, rows, raw-JSON blocks) --
+   this file only adds the card/section/graph layout that's genuinely new. */
+
+.subscription-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 820px;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.sd-back {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.sd-back:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.sd-card {
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shell-shadow);
+}
+
+.sd-card h3 {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.sd-card h4 {
+  margin: 12px 0 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sd-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.sd-card-head h3 {
+  margin: 0;
+}
+
+.sd-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.sd-fields dt {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.sd-fields dd {
+  margin: 2px 0 0;
+  font-size: 0.88rem;
+}
+
+.sd-due {
+  margin: 10px 0 2px;
+  font-weight: 600;
+}
+
+.sd-due.is-due {
+  color: #b45309;
+}
+
+.sd-note {
+  margin: 0 0 8px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.sd-cancel-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.sd-cancel-note.is-cancelling {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.sd-cancel-note.is-cancelled {
+  color: var(--text-muted);
+}
+
+.sd-link-button {
+  margin-top: 10px;
+  padding: 6px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.sd-link-button:hover {
+  background: var(--accent-soft-bg);
+}
+
+.sd-payment {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.sd-payment-row {
+  border: none;
+  border-radius: 0;
+}
+
+.sd-payment-label {
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.sd-payment-expanded {
+  padding: 4px 12px 12px;
+  border-block-start: 1px solid var(--border);
+  background: var(--accent-soft-bg);
+}
+
+.sd-attempt-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.sd-attempt-explain {
+  margin: 0;
+  width: 100%;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.sd-raw-toggle {
+  align-self: flex-start;
+}
+
+/* Resource graph -- a plain nested list with a left "spine" border per level,
+   the lightest way to draw a tree without an SVG library. */
+.sd-graph,
+.sd-graph ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-graph ul {
+  margin-inline-start: 14px;
+  padding-inline-start: 14px;
+  border-inline-start: 2px solid var(--border-strong);
+}
+
+.sd-graph li {
+  margin-block: 6px;
+}
+
+.sd-graph-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.sd-graph-node--main {
+  font-weight: 700;
+}
