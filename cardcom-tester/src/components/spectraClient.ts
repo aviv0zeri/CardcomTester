@@ -269,6 +269,11 @@ export type SpectraSubscription = {
   latest_payment_id: string | null
   created_at: string
   updated_at: string
+  // Only ever present on a LIST response (listSubscriptions/listSubscriptionsForCustomer)
+  // -- the backend attaches it there via one batched lookup, not one per row. Absent
+  // (not just null) on a single getSubscription -- callers with just one Subscription
+  // already have its customer_id and can fetch the Customer directly if they need it.
+  customer_display_name?: string | null
 }
 
 export type SpectraCustomerList = { customers: SpectraCustomer[]; next_cursor: string | null }

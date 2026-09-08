@@ -16,7 +16,8 @@ import { GuidedWalkthrough } from './components/GuidedWalkthrough'
 import { VersionMenu } from './components/VersionMenu'
 import { PaymentOverlay } from './components/PaymentOverlay'
 import { createCardcomSession } from './components/createSession'
-import { DEFAULT_PROFILE, profileById } from './components/profiles'
+import { DEFAULT_PROFILE, PROFILES, profileById } from './components/profiles'
+import { MenuSelect } from './components/MenuSelect'
 import { loadSfxMuted, playClick, saveSfxMuted, setSfxMuted } from './components/sfx'
 import { loadUiLang, saveUiLang, type UiLang } from './components/uiLang'
 import {
@@ -281,6 +282,16 @@ function App() {
               </div>
             </div>
             <div className="shell-head-controls">
+              {/* Visible on every tab, not just Guided's own first step -- this is
+                  the only thing standing between "testing" and "testing against
+                  real production (gateopen) by accident" once you're on a tab
+                  that isn't Guided. */}
+              <MenuSelect
+                value={profileId}
+                onChange={setProfileId}
+                options={PROFILES.map((option) => ({ value: option.id, label: option.name }))}
+                aria-label="Business"
+              />
               <div className="seg" role="tablist" aria-label="Tester">
                 {(['guide', 'subscriptions', 'design', 'lab'] as Tab[]).map((option) => (
                   <button

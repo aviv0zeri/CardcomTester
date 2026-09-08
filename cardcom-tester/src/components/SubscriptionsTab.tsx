@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getCustomer, listSubscriptions, type SpectraCustomer, type SpectraSubscription } from './spectraClient'
+import { listSubscriptions, type SpectraSubscription } from './spectraClient'
 import type { BusinessProfile } from './profiles'
 import type { UiLang } from './uiLang'
 import { StatusBadge, fmtDate } from './consoleShared'
@@ -14,10 +14,11 @@ import './subscriptionsTab.css'
 // period / cancel / reconcile come with a later slice), just what already
 // exists. Clicking a row opens its full detail/resource-graph view.
 //
-// Each row's Customer is resolved to its display_name (falling back to the raw
-// id only while that lookup is still in flight, or if it has none) -- there is
-// no separate Customers tab to cross-reference against, so this is the only
-// place a tester ever sees who a Subscription belongs to.
+// Each row's customer_display_name comes back attached to the list response
+// itself (the backend resolves it with one batched lookup) -- there is no
+// separate Customers tab to cross-reference against, and no per-row fetch here:
+// every extra round trip through this app's proxy chain costs a real 1-2s, so a
+// list view is exactly where an N+1 pattern would actually be felt.
 
 type Props = {
   profile: BusinessProfile
@@ -68,9 +69,6 @@ export function SubscriptionsTab({ profile, lang }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  // customer_id -> resolved Customer, filled in as each row's lookup completes --
-  // a row shows the raw id only until its own entry lands here.
-  const [customers, setCustomers] = useState<Record<string, SpectraCustomer>>({})
 
   const load = async (cursor?: string) => {
     setLoading(true)
@@ -89,34 +87,9 @@ export function SubscriptionsTab({ profile, lang }: Props) {
     setSubscriptions([])
     setNextCursor(null)
     setSelectedId(null)
-    setCustomers({})
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.id])
-
-  // Resolve each new subscription's Customer exactly once -- a page of results
-  // can repeat a customer_id (rare in this test tool, but free to dedupe).
-  useEffect(() => {
-    const missing = [...new Set(subscriptions.map((s) => s.customer_id))].filter((id) => !customers[id])
-    if (missing.length === 0) return
-    let cancelled = false
-    void Promise.all(
-      missing.map((id) =>
-        getCustomer(id, profile.spectraProjectId, profile.id)
-          .then((customer) => [id, customer] as const)
-          .catch(() => null),
-      ),
-    ).then((results) => {
-      if (cancelled) return
-      const found = results.filter((r): r is readonly [string, SpectraCustomer] => r !== null)
-      if (found.length === 0) return
-      setCustomers((prev) => ({ ...prev, ...Object.fromEntries(found) }))
-    })
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subscriptions])
 
   if (selectedId) {
     return (
@@ -152,7 +125,6 @@ export function SubscriptionsTab({ profile, lang }: Props) {
             </thead>
             <tbody>
               {subscriptions.map((subscription) => {
-                const customer = customers[subscription.customer_id]
                 return (
                   <tr
                     key={subscription.id}
@@ -170,7 +142,9 @@ export function SubscriptionsTab({ profile, lang }: Props) {
                     <td>
                       {subscription.amount} {subscription.currency}
                     </td>
-                    <td>{customer?.display_name || <span className="ct-id">{subscription.customer_id}</span>}</td>
+                    <td>
+                      {subscription.customer_display_name || <span className="ct-id">{subscription.customer_id}</span>}
+                    </td>
                     <td>{subscription.external_plan_reference || '—'}</td>
                     <td>{fmtDate(subscription.created_at, lang)}</td>
                     <td>{fmtDate(subscription.current_period_end, lang)}</td>
