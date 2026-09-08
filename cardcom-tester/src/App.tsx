@@ -11,7 +11,6 @@ import {
   type Mode,
 } from './components/CheckoutControls'
 import { ApiLab } from './components/ApiLab'
-import { CustomersTab } from './components/CustomersTab'
 import { SubscriptionsTab } from './components/SubscriptionsTab'
 import { GuidedWalkthrough } from './components/GuidedWalkthrough'
 import { VersionMenu } from './components/VersionMenu'
@@ -37,7 +36,7 @@ type Overlay = {
   summarySrc?: string
 }
 
-type Tab = 'guide' | 'customers' | 'subscriptions' | 'lab' | 'design'
+type Tab = 'guide' | 'subscriptions' | 'lab' | 'design'
 type DeviceError = 'needs-computer' | 'needs-phone'
 
 // One toggle, whole platform: tab names and the Guided tab follow it today;
@@ -45,14 +44,12 @@ type DeviceError = 'needs-computer' | 'needs-phone'
 const TAB_LABELS: Record<UiLang, Record<Tab, string>> = {
   en: {
     guide: 'Guided',
-    customers: 'Customers',
     subscriptions: 'Subscriptions',
     design: 'Design',
     lab: 'API lab',
   },
   he: {
     guide: 'מודרך',
-    customers: 'לקוחות',
     subscriptions: 'מנויים',
     design: 'עיצוב',
     lab: 'מעבדת API',
@@ -65,10 +62,6 @@ function App() {
   // brand). Picked in the walkthrough's first step; the other tabs follow it.
   const [profileId, setProfileId] = useState(DEFAULT_PROFILE.id)
   const profile = profileById(profileId)
-  // Cross-tab deep link: Subscription Detail's "View Customer" switches to the
-  // Customers tab and asks it to select this specific Customer -- reusing that
-  // tab's own detail view rather than a second implementation here.
-  const [focusCustomerId, setFocusCustomerId] = useState<string | null>(null)
   const [uiLang, setUiLang] = useState<UiLang>(loadUiLang)
   const [sfxMuted, setSfxMutedState] = useState<boolean>(loadSfxMuted)
   const [design, setDesign] = useState<Design>('new')
@@ -289,7 +282,7 @@ function App() {
             </div>
             <div className="shell-head-controls">
               <div className="seg" role="tablist" aria-label="Tester">
-                {(['guide', 'customers', 'subscriptions', 'design', 'lab'] as Tab[]).map((option) => (
+                {(['guide', 'subscriptions', 'design', 'lab'] as Tab[]).map((option) => (
                   <button
                     key={option}
                     type="button"
@@ -312,22 +305,8 @@ function App() {
               profile={profile}
               onProfileChange={setProfileId}
             />
-          ) : tab === 'customers' ? (
-            <CustomersTab
-              profile={profile}
-              lang={uiLang}
-              focusCustomerId={focusCustomerId}
-              onFocusHandled={() => setFocusCustomerId(null)}
-            />
           ) : tab === 'subscriptions' ? (
-            <SubscriptionsTab
-              profile={profile}
-              lang={uiLang}
-              onNavigateToCustomer={(customerId) => {
-                setFocusCustomerId(customerId)
-                setTab('customers')
-              }}
-            />
+            <SubscriptionsTab profile={profile} lang={uiLang} />
           ) : tab === 'lab' ? (
             <ApiLab disabled={overlayOpen} />
           ) : (

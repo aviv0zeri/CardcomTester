@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listSubscriptions, type SpectraSubscription } from './spectraClient'
+import { getCustomer, listSubscriptions, type SpectraCustomer, type SpectraSubscription } from './spectraClient'
 import type { BusinessProfile } from './profiles'
 import type { UiLang } from './uiLang'
 import { StatusBadge, fmtDate } from './consoleShared'
@@ -13,11 +13,15 @@ import './subscriptionsTab.css'
 // Subscription gets CREATED). Inspection-first: no actions yet (execute-due-
 // period / cancel / reconcile come with a later slice), just what already
 // exists. Clicking a row opens its full detail/resource-graph view.
+//
+// Each row's Customer is resolved to its display_name (falling back to the raw
+// id only while that lookup is still in flight, or if it has none) -- there is
+// no separate Customers tab to cross-reference against, so this is the only
+// place a tester ever sees who a Subscription belongs to.
 
 type Props = {
   profile: BusinessProfile
   lang: UiLang
-  onNavigateToCustomer: (customerId: string) => void
 }
 
 const STRINGS: Record<UiLang, Record<string, string>> = {
@@ -28,11 +32,15 @@ const STRINGS: Record<UiLang, Record<string, string>> = {
     empty: 'No Subscriptions yet for this project.',
     loading: 'Loading…',
     loadMore: 'Load more',
-    customer: 'Customer',
-    periodEnd: 'Current period ends',
+    colStatus: 'Status',
+    colAmount: 'Amount',
+    colCustomer: 'Customer',
+    colPlan: 'Plan',
+    colCreated: 'Created',
+    colPeriodEnd: 'Current period ends',
+    colRenewal: 'Renewal',
     willRenew: 'Renews automatically',
     willCancel: 'Cancels at period end',
-    plan: 'Plan reference',
   },
   he: {
     kicker: 'מנויים שמורים',
@@ -41,21 +49,28 @@ const STRINGS: Record<UiLang, Record<string, string>> = {
     empty: 'עדיין אין מנויים לפרויקט הזה.',
     loading: 'טוען…',
     loadMore: 'טען עוד',
-    customer: 'לקוח',
-    periodEnd: 'התקופה הנוכחית מסתיימת',
+    colStatus: 'סטטוס',
+    colAmount: 'סכום',
+    colCustomer: 'לקוח',
+    colPlan: 'תוכנית',
+    colCreated: 'נוצר',
+    colPeriodEnd: 'התקופה הנוכחית מסתיימת',
+    colRenewal: 'חידוש',
     willRenew: 'מתחדש אוטומטית',
     willCancel: 'יבוטל בסוף התקופה',
-    plan: 'הפניית תוכנית',
   },
 }
 
-export function SubscriptionsTab({ profile, lang, onNavigateToCustomer }: Props) {
+export function SubscriptionsTab({ profile, lang }: Props) {
   const T = STRINGS[lang]
   const [subscriptions, setSubscriptions] = useState<SpectraSubscription[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // customer_id -> resolved Customer, filled in as each row's lookup completes --
+  // a row shows the raw id only until its own entry lands here.
+  const [customers, setCustomers] = useState<Record<string, SpectraCustomer>>({})
 
   const load = async (cursor?: string) => {
     setLoading(true)
@@ -74,19 +89,38 @@ export function SubscriptionsTab({ profile, lang, onNavigateToCustomer }: Props)
     setSubscriptions([])
     setNextCursor(null)
     setSelectedId(null)
+    setCustomers({})
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.id])
 
+  // Resolve each new subscription's Customer exactly once -- a page of results
+  // can repeat a customer_id (rare in this test tool, but free to dedupe).
+  useEffect(() => {
+    const missing = [...new Set(subscriptions.map((s) => s.customer_id))].filter((id) => !customers[id])
+    if (missing.length === 0) return
+    let cancelled = false
+    void Promise.all(
+      missing.map((id) =>
+        getCustomer(id, profile.spectraProjectId, profile.id)
+          .then((customer) => [id, customer] as const)
+          .catch(() => null),
+      ),
+    ).then((results) => {
+      if (cancelled) return
+      const found = results.filter((r): r is readonly [string, SpectraCustomer] => r !== null)
+      if (found.length === 0) return
+      setCustomers((prev) => ({ ...prev, ...Object.fromEntries(found) }))
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subscriptions])
+
   if (selectedId) {
     return (
-      <SubscriptionDetail
-        subscriptionId={selectedId}
-        profile={profile}
-        lang={lang}
-        onBack={() => setSelectedId(null)}
-        onNavigateToCustomer={onNavigateToCustomer}
-      />
+      <SubscriptionDetail subscriptionId={selectedId} profile={profile} lang={lang} onBack={() => setSelectedId(null)} />
     )
   }
 
@@ -102,34 +136,56 @@ export function SubscriptionsTab({ profile, lang, onNavigateToCustomer }: Props)
       {error ? <p className="ct-error">{error}</p> : null}
       {subscriptions.length === 0 && !loading && !error ? <p className="ct-empty">{T.empty}</p> : null}
 
-      <ul className="st-rows">
-        {subscriptions.map((subscription) => (
-          <li key={subscription.id} className="st-row-wrap">
-            <button
-              type="button"
-              className="ct-row st-row st-row--clickable"
-              onClick={() => setSelectedId(subscription.id)}
-            >
-              <StatusBadge status={subscription.status} />
-              <span className="ct-row-amount">
-                {subscription.amount} {subscription.currency}
-              </span>
-              <span className="ct-row-date">
-                {T.periodEnd}: {fmtDate(subscription.current_period_end, lang)}
-              </span>
-              <span className={`ct-renew-tag${subscription.cancel_at_period_end ? ' is-cancelling' : ''}`}>
-                {subscription.cancel_at_period_end ? T.willCancel : T.willRenew}
-              </span>
-              {subscription.external_plan_reference ? (
-                <span className="st-plan-tag">{subscription.external_plan_reference}</span>
-              ) : null}
-              <span className="st-customer">
-                {T.customer}: <span className="ct-id">{subscription.customer_id}</span>
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {subscriptions.length > 0 ? (
+        <div className="st-table-wrap">
+          <table className="st-table">
+            <thead>
+              <tr>
+                <th>{T.colStatus}</th>
+                <th>{T.colAmount}</th>
+                <th>{T.colCustomer}</th>
+                <th>{T.colPlan}</th>
+                <th>{T.colCreated}</th>
+                <th>{T.colPeriodEnd}</th>
+                <th>{T.colRenewal}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {subscriptions.map((subscription) => {
+                const customer = customers[subscription.customer_id]
+                return (
+                  <tr
+                    key={subscription.id}
+                    className="st-table-row"
+                    tabIndex={0}
+                    role="button"
+                    onClick={() => setSelectedId(subscription.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') setSelectedId(subscription.id)
+                    }}
+                  >
+                    <td>
+                      <StatusBadge status={subscription.status} />
+                    </td>
+                    <td>
+                      {subscription.amount} {subscription.currency}
+                    </td>
+                    <td>{customer?.display_name || <span className="ct-id">{subscription.customer_id}</span>}</td>
+                    <td>{subscription.external_plan_reference || '—'}</td>
+                    <td>{fmtDate(subscription.created_at, lang)}</td>
+                    <td>{fmtDate(subscription.current_period_end, lang)}</td>
+                    <td>
+                      <span className={`ct-renew-tag${subscription.cancel_at_period_end ? ' is-cancelling' : ''}`}>
+                        {subscription.cancel_at_period_end ? T.willCancel : T.willRenew}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
 
       {nextCursor ? (
         <button type="button" className="ct-load-more" disabled={loading} onClick={() => load(nextCursor)}>

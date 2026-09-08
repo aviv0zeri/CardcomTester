@@ -50,7 +50,6 @@ type Props = {
   profile: BusinessProfile
   lang: UiLang
   onBack: () => void
-  onNavigateToCustomer: (customerId: string) => void
 }
 
 const STRINGS = {
@@ -80,7 +79,6 @@ const STRINGS = {
     customer: 'Customer',
     customerName: 'Display name',
     customerId: 'Customer ID',
-    viewCustomer: 'View Customer →',
     paymentMethod: 'Payment method',
     pmId: 'PaymentMethod ID',
     pmProvider: 'Provider',
@@ -182,7 +180,6 @@ const STRINGS = {
     customer: 'לקוח',
     customerName: 'שם תצוגה',
     customerId: 'מזהה לקוח',
-    viewCustomer: '→ צפייה בלקוח',
     paymentMethod: 'אמצעי תשלום',
     pmId: 'מזהה אמצעי תשלום',
     pmProvider: 'ספק',
@@ -255,7 +252,7 @@ const STRINGS = {
   },
 } satisfies Record<UiLang, unknown>
 
-export function SubscriptionDetail({ subscriptionId, profile, lang, onBack, onNavigateToCustomer }: Props) {
+export function SubscriptionDetail({ subscriptionId, profile, lang, onBack }: Props) {
   const T = STRINGS[lang]
   const [subscription, setSubscription] = useState<SpectraSubscription | null>(null)
   const [customer, setCustomer] = useState<SpectraCustomer | null>(null)
@@ -690,9 +687,6 @@ export function SubscriptionDetail({ subscriptionId, profile, lang, onBack, onNa
                 <dd className="ct-project-badge">{customer.project_id}</dd>
               </div>
             </dl>
-            <button type="button" className="sd-link-button" onClick={() => onNavigateToCustomer(customer.id)}>
-              {T.viewCustomer}
-            </button>
           </>
         ) : null}
       </section>

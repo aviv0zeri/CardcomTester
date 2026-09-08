@@ -1,15 +1,14 @@
 /* Subscriptions console tab (SubscriptionsTab.tsx). Reuses customersTab.css's
-   ct-* tokens (status badges, project badge, row/raw-toggle styling) -- this
-   file only adds what's genuinely new: a single-pane list layout instead of
-   the two-pane Customers view, and the plan/customer tags a Subscription row
-   needs that a Customer row doesn't. */
+   ct-* tokens (status badges, project badge, raw-toggle styling) for the
+   pieces that are genuinely shared; a real <table> for the list itself, since
+   there's no separate Customers tab any more to keep this one lightweight. */
 
 .subscriptions-tab {
   display: flex;
   flex-direction: column;
   gap: 4px;
   width: 100%;
-  max-width: 820px;
+  max-width: 960px;
   font-size: 0.9rem;
   color: var(--text);
 }
@@ -21,57 +20,49 @@
   gap: 8px;
 }
 
-.st-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 4px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.st-row-wrap {
+.st-table-wrap {
+  width: 100%;
+  margin-block-start: 4px;
+  overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--shell-shadow);
-  overflow: hidden;
 }
 
-.st-row-wrap .ct-row {
-  border: none;
-  border-radius: 0;
-}
-
-.st-row--clickable {
+.st-table {
   width: 100%;
-  background: transparent;
-  color: inherit;
-  font: inherit;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+
+.st-table th,
+.st-table td {
+  padding: 10px 14px;
   text-align: start;
+  font-size: 0.82rem;
+}
+
+.st-table thead th {
+  border-block-end: 1px solid var(--border);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.st-table-row {
   cursor: pointer;
   transition: background 0.12s ease;
 }
 
-.st-row--clickable:hover {
+.st-table-row:not(:last-child) td {
+  border-block-end: 1px solid var(--border);
+}
+
+.st-table-row:hover,
+.st-table-row:focus-visible {
   background: var(--accent-soft-bg);
-}
-
-.st-row-wrap .ct-raw {
-  border-block-start: 1px solid var(--border);
-  border-radius: 0;
-  margin: 0;
-}
-
-.st-plan-tag {
-  padding: 2px 8px;
-  border: 1px dashed var(--border-strong);
-  border-radius: 999px;
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-}
-
-.st-customer {
-  font-size: 0.78rem;
-  color: var(--text-muted);
+  outline: none;
 }
