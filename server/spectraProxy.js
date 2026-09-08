@@ -19,6 +19,8 @@
 // project_id doesn't match that credential's own project_id (403). Picking
 // the "wrong" profile here just gets that same 403 back, never a leak.
 
+const { appendLogEntry, truncate } = require('./apiLog')
+
 const DEFAULT_BASE_URL = 'https://payments.avivozeri.com'
 const ALLOWED_METHODS = new Set(['GET', 'POST'])
 // The one profile that keeps using the original, unrenamed env var --
@@ -54,6 +56,9 @@ function createSpectraProxyHandler(options = {}) {
   const defaultToken = options.token ?? process.env.SPECTRA_PAYMENTS_API_TOKEN
   const tokensByProfile = options.tokensByProfile ?? {}
   const fetchImpl = options.fetchImpl ?? fetch
+  // Every request/response this proxy ever sees, in detail -- see server/apiLog.js.
+  // Injectable so tests can assert on exactly what gets logged without touching disk.
+  const logImpl = options.logImpl ?? appendLogEntry
 
   function resolveToken(profileId) {
     if (!profileId || profileId === DEFAULT_PROFILE_ID) return defaultToken
@@ -82,29 +87,63 @@ function createSpectraProxyHandler(options = {}) {
       return
     }
 
-    const upstreamUrl = `${baseUrl}${buildUpstreamPath(req.query)}`
+    const upstreamPath = buildUpstreamPath(req.query)
+    const upstreamUrl = `${baseUrl}${upstreamPath}`
     const headers = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     }
     const init = { method: req.method, headers }
-    if (req.method === 'POST') {
-      init.body = JSON.stringify(req.body ?? {})
+    const requestBody = req.method === 'POST' ? (req.body ?? {}) : undefined
+    if (requestBody !== undefined) {
+      init.body = JSON.stringify(requestBody)
     }
 
+    const startedAt = Date.now()
     let upstreamResponse
     try {
       upstreamResponse = await fetchImpl(upstreamUrl, init)
-    } catch {
+    } catch (cause) {
+      logImpl({
+        ts: new Date().toISOString(),
+        method: req.method,
+        path: upstreamPath,
+        profile: profileId ?? null,
+        request_body: requestBody,
+        duration_ms: Date.now() - startedAt,
+        status: null,
+        transport_error: cause instanceof Error ? cause.message : String(cause),
+        response_body: null,
+      })
       res.status(502).json({ error: 'spectra-payments request failed' })
       return
     }
 
     const text = await upstreamResponse.text()
-    res.status(upstreamResponse.status)
+    const durationMs = Date.now() - startedAt
+    let parsedBody = null
+    let isJson = true
     try {
-      res.json(text ? JSON.parse(text) : {})
+      parsedBody = text ? JSON.parse(text) : {}
     } catch {
+      isJson = false
+    }
+    logImpl({
+      ts: new Date().toISOString(),
+      method: req.method,
+      path: upstreamPath,
+      profile: profileId ?? null,
+      request_body: requestBody,
+      duration_ms: durationMs,
+      status: upstreamResponse.status,
+      transport_error: null,
+      response_body: isJson ? parsedBody : truncate(text),
+    })
+
+    res.status(upstreamResponse.status)
+    if (isJson) {
+      res.json(parsedBody)
+    } else {
       res.setHeader('Content-Type', 'text/plain')
       res.send(text)
     }

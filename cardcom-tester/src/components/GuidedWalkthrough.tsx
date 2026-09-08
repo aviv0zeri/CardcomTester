@@ -26,17 +26,20 @@ import {
   createCustomer,
   createEmbeddedFieldsCheckoutSession,
   createHostedCheckoutSession,
+  createSubscription,
   getPayment,
   resolveSpectraCustomer,
   verifyCheckoutSession,
   type SpectraCheckoutSession,
   type SpectraCustomer,
   type SpectraPayment,
+  type SpectraSubscription,
   type SpectraVerifyResult,
 } from './spectraClient'
 import { MenuSelect } from './MenuSelect'
 import { playClick, playError, playStep, playSuccess } from './sfx'
 import { PROFILES, profileById, type BusinessProfile } from './profiles'
+import { PLANS, type Plan } from './plans'
 
 // One screen at a time, one action at a time. The whole point of this tab is
 // that nothing scrolls and nothing competes for attention -- the full ApiLab
@@ -62,6 +65,9 @@ const ACCENT_PRESETS = ['#3d5580', '#0e7c66', '#c2410c', '#b91c1c', '#6d28d9', '
 type DualMode = 'side-by-side' | 'continue'
 const DUAL_MODES: DualMode[] = ['side-by-side', 'continue']
 type Integration = 'lowprofile' | 'openfields' | 'spectra'
+// Only the Spectra path supports subscriptions -- lowprofile/openfields talk to the
+// raw Express lab, which has no subscription concept at all.
+type PayMode = 'onetime' | 'subscription'
 type Lang = UiLang
 
 const TEST_CARD_NUMBER = '4580 2800 0000 0008'
@@ -170,6 +176,20 @@ type Copy = {
   presentationLabel: string
   presentationHosted: string
   presentationEmbedded: string
+  // One-time-vs-subscription choice (Spectra path only, Slice 6).
+  modeBubble: ReactNode
+  modeOnetimeLabel: string
+  modeOnetimeShort: ReactNode
+  modeSubscriptionLabel: string
+  modeSubscriptionShort: ReactNode
+  planBubble: ReactNode
+  planPerMonth: string
+  subscriptionNoTokenError: string
+  doneRecapSubscription: (amount: string, nextChargeDate: string) => ReactNode
+  signupBubble: ReactNode
+  signupNameLabel: string
+  signupEmailLabel: string
+  signupBtn: string
 }
 
 const COPY: Record<Lang, Copy> = {
@@ -523,6 +543,47 @@ const COPY: Record<Lang, Copy> = {
     presentationLabel: 'Checkout presentation',
     presentationHosted: 'Hosted',
     presentationEmbedded: 'Embedded fields',
+    modeBubble: (
+      <>
+        One more choice: a <strong>single payment</strong>, or a{' '}
+        <strong>subscription</strong> that bills this same card again later, on its
+        own, with no browser involved?
+      </>
+    ),
+    modeOnetimeLabel: 'One-time payment',
+    modeOnetimeShort: 'Pick a cart, pay once.',
+    modeSubscriptionLabel: 'Subscription',
+    modeSubscriptionShort: 'Pick a plan, pay once now — then it renews itself.',
+    planBubble: (
+      <>
+        Real spectra-payments has no separate "Plan" of its own — <strong>a plan is
+        just a label your app assigns</strong> (<code>external_plan_reference</code>)
+        to an amount. Pick one below; that first charge is what activates the
+        subscription.
+      </>
+    ),
+    planPerMonth: '/ month',
+    subscriptionNoTokenError:
+      'The payment succeeded, but no reusable card was stored for it — a subscription needs one. This should not normally happen.',
+    doneRecapSubscription: (amount, nextChargeDate) => (
+      <>
+        {' '}
+        One more thing a one-time payment never does: that same successful Payment
+        also <strong>activated a real Subscription</strong> — ₪{amount} every month,
+        next charge {nextChargeDate}. Renewing it from here on never needs the
+        customer or a browser again — see it live in the Subscriptions tab.
+      </>
+    ),
+    signupBubble: (
+      <>
+        Real subscription products make you <strong>create an account</strong> before
+        you can subscribe. This simulates that — nothing typed here is checked, only
+        the name and email become the real Customer we create next.
+      </>
+    ),
+    signupNameLabel: 'Name',
+    signupEmailLabel: 'Email',
+    signupBtn: 'Sign up',
   },
   he: {
     dots: ['עסק', 'בחירה', 'מכשיר', 'עגלה', 'יצירה', 'תשלום', 'אימות'],
@@ -858,6 +919,45 @@ const COPY: Record<Lang, Copy> = {
     presentationLabel: 'הצגת התשלום',
     presentationHosted: 'מתארח',
     presentationEmbedded: 'שדות מוטמעים',
+    modeBubble: (
+      <>
+        עוד בחירה אחת: <strong>תשלום בודד</strong>, או <strong>מנוי</strong> שיחייב את
+        אותו כרטיס שוב בעתיד, לבד, בלי דפדפן בכלל?
+      </>
+    ),
+    modeOnetimeLabel: 'תשלום חד-פעמי',
+    modeOnetimeShort: 'בוחרים עגלה, משלמים פעם אחת.',
+    modeSubscriptionLabel: 'מנוי',
+    modeSubscriptionShort: 'בוחרים תוכנית, משלמים עכשיו — ומכאן זה מתחדש לבד.',
+    planBubble: (
+      <>
+        ל-spectra-payments האמיתי אין "תוכנית" משלו — <strong>תוכנית היא רק תווית
+        שהאפליקציה שלכם נותנת</strong> (<code>external_plan_reference</code>) לסכום.
+        בוחרים אחת; החיוב הראשון הוא זה שמפעיל את המנוי.
+      </>
+    ),
+    planPerMonth: '/ לחודש',
+    subscriptionNoTokenError:
+      'התשלום הצליח, אבל לא נשמר כרטיס לשימוש חוזר — מנוי צריך כזה. זה לא אמור לקרות.',
+    doneRecapSubscription: (amount, nextChargeDate) => (
+      <>
+        {' '}
+        עוד דבר שתשלום חד-פעמי לא עושה: אותו תשלום מוצלח גם{' '}
+        <strong>הפעיל מנוי אמיתי</strong> — ₪{amount} כל חודש, החיוב הבא ב־
+        {nextChargeDate}. מכאן והלאה, החידוש לא צריך את הלקוח או דפדפן בכלל — אפשר
+        לראות אותו חי בטאב המנויים.
+      </>
+    ),
+    signupBubble: (
+      <>
+        מוצרי מנוי אמיתיים מבקשים <strong>ליצור חשבון</strong> לפני שאפשר להירשם למנוי.
+        זו סימולציה של זה — שום דבר כאן לא נבדק, רק השם והאימייל הופכים ל-Customer
+        האמיתי שניצור מיד אחר כך.
+      </>
+    ),
+    signupNameLabel: 'שם',
+    signupEmailLabel: 'אימייל',
+    signupBtn: 'הרשמה',
   },
 }
 
@@ -1046,14 +1146,34 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   const viewport = useViewport()
   const [step, setStep] = useState<GuidedStep>('intro')
   const [integration, setIntegration] = useState<Integration>('lowprofile')
+  const isSpectra = integration === 'spectra'
+  const isOpenFields = integration === 'openfields'
   const [picked, setPicked] = useState<Integration | null>(null)
   const [device, setDevice] = useState<DeviceChoice | null>(null)
   const [region, setRegion] = useState<OpenFieldsRegion>('il')
-  // The pretend cart stands in for the merchant's app; its total is the amount.
+  // Only the Spectra path offers this choice at all -- null means "not chosen yet",
+  // so the setup step starts clean (just the two cards) instead of defaulting into
+  // the one-time cart before the tester has picked anything.
+  const [payMode, setPayMode] = useState<PayMode | null>(null)
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
+  // A simulated account creation before a subscription's plan picker -- real
+  // subscription products make you sign up first; nothing here is a real account,
+  // and the name/email typed here become the real Customer's own display_name/email.
+  const [signedUp, setSignedUp] = useState(false)
+  const [signupName, setSignupName] = useState('')
+  const [signupEmail, setSignupEmail] = useState('')
+  // The pretend cart stands in for the merchant's app; its total is the amount --
+  // unless a subscription plan is selected, in which case the plan's own amount
+  // and a single matching line item stand in for the cart entirely.
   const [cartItems, setCartItems] = useState<CartItem[]>(DEFAULT_CART)
-  const amount = cartTotal(cartItems).toFixed(2)
   const cartLang = lang === 'he' ? ('he' as const) : ('en' as const)
-  const cartLineItems = apiLineItems(cartItems, cartLang)
+  const inSubscriptionMode = isSpectra && payMode === 'subscription'
+  const amount = (inSubscriptionMode ? (selectedPlan?.amount ?? 0) : cartTotal(cartItems)).toFixed(2)
+  const cartLineItems = inSubscriptionMode
+    ? selectedPlan
+      ? [{ name: selectedPlan.name[cartLang], unit_price: selectedPlan.amount.toFixed(2), quantity: 1 }]
+      : []
+    : apiLineItems(cartItems, cartLang)
   const [cartView, setCartView] = useState<'store' | 'cart'>('store')
   const [wantReceipt, setWantReceipt] = useState(false)
   const [receiptEmail, setReceiptEmail] = useState('')
@@ -1071,6 +1191,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   const [spectraSession, setSpectraSession] = useState<SpectraCheckoutSession | null>(null)
   const [spectraVerify, setSpectraVerify] = useState<SpectraVerifyResult | null>(null)
   const [spectraPayment, setSpectraPayment] = useState<SpectraPayment | null>(null)
+  const [spectraSubscription, setSpectraSubscription] = useState<SpectraSubscription | null>(null)
   const [spectraPresentation, setSpectraPresentation] = useState<'hosted' | 'embedded_fields'>(
     'hosted',
   )
@@ -1089,9 +1210,10 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
   const lowProfileId = asText(session?.LowProfileId)
   const sessionCode = responseCode(session)
   const resultCode = responseCode(result)
-  const isOpenFields = integration === 'openfields'
-  const isSpectra = integration === 'spectra'
   const amountNumber = Number(amount) || 0
+  const subscriptionNextChargeText = spectraSubscription?.next_charge_date
+    ? new Date(spectraSubscription.next_charge_date).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')
+    : ''
   // The receipt option belongs to the raw-Cardcom paths only (post-hoc documents
   // through our own API are a later slice) -- it never gates the Spectra path.
   const receiptReady = isSpectra || !wantReceipt || receiptEmail.includes('@')
@@ -1234,6 +1356,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
     setSpectraSession(null)
     setSpectraVerify(null)
     setSpectraPayment(null)
+    setSpectraSubscription(null)
     setPayOpened(false)
     setPayOverlayOpen(false)
     setPayFallbackUrl('')
@@ -1242,15 +1365,25 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
 
   // "Run it again" keeps you in the flow; the global restart button starts
   // the whole story over from the intro.
+  const clearPayModeChoice = () => {
+    setPayMode(null)
+    setSelectedPlan(null)
+    setSignedUp(false)
+    setSignupName('')
+    setSignupEmail('')
+  }
+
   const runAgainFromDone = () => {
     clearRun()
     setPicked(null)
+    clearPayModeChoice()
     goTo('pick')
   }
 
   const restartAll = () => {
     clearRun()
     setPicked(null)
+    clearPayModeChoice()
     goTo('intro')
   }
 
@@ -1269,6 +1402,7 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
     setSpectraSession(null)
     setSpectraVerify(null)
     setSpectraPayment(null)
+    setSpectraSubscription(null)
     setPayOpened(false)
     if (isSpectra) {
       // Our own Payment API does the Cardcom call for us -- two requests, both to
@@ -1283,7 +1417,13 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
       // that clears it back to null for a genuinely new run.
       try {
         const customer = await resolveSpectraCustomer(spectraCustomer, () =>
-          createCustomer({ displayName: 'Guided Tester' }, profile.spectraProjectId, profile.id),
+          createCustomer(
+            inSubscriptionMode
+              ? { displayName: signupName.trim() || 'Guided Tester', email: signupEmail.trim() || undefined }
+              : { displayName: 'Guided Tester' },
+            profile.spectraProjectId,
+            profile.id,
+          ),
         )
         setSpectraCustomer(customer)
         const created =
@@ -1440,7 +1580,31 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
         setSpectraVerify(verified)
         const payment = await getPayment(verified.payment_id, profile.spectraProjectId, profile.id)
         setSpectraPayment(payment)
-        if (payment.status === 'SUCCEEDED') goTo('done')
+        if (payment.status === 'SUCCEEDED') {
+          if (inSubscriptionMode && selectedPlan && spectraCustomer) {
+            // The interactive checkout's own PaymentAttempt never carries a
+            // payment_method_id (the PaymentMethod didn't exist yet when it was
+            // recorded) -- verify_checkout's own response is the only place this
+            // id is ever exposed, so it must come from THIS verify call, not a
+            // later lookup.
+            if (!verified.payment_method_id) {
+              setError(t.subscriptionNoTokenError)
+              playError()
+              setBusy(false)
+              return
+            }
+            const subscription = await createSubscription({
+              customerId: spectraCustomer.id,
+              initialPaymentId: verified.payment_id,
+              paymentMethodId: verified.payment_method_id,
+              externalPlanReference: selectedPlan.externalPlanReference,
+              projectId: profile.spectraProjectId,
+              profileId: profile.id,
+            })
+            setSpectraSubscription(subscription)
+          }
+          goTo('done')
+        }
       } catch (cause) {
         setError(t.errSpectra(cause instanceof Error ? cause.message : ''))
         playError()
@@ -1819,15 +1983,174 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
 
       {step === 'setup' ? (
         <section className="gw-step" key="setup">
-          {cartView === 'store' ? <Bubble>{t.setupBubble}</Bubble> : null}
-          <GuidedCart
+          {isSpectra && payMode === null ? (
+            <>
+              <Bubble>{t.modeBubble}</Bubble>
+              <div className="gw-choices">
+                <button
+                  type="button"
+                  className="gw-choice"
+                  disabled={disabled}
+                  onClick={() => {
+                    playClick()
+                    setPayMode('onetime')
+                  }}
+                >
+                  <strong>{t.modeOnetimeLabel}</strong>
+                  <span>{t.modeOnetimeShort}</span>
+                </button>
+                <button
+                  type="button"
+                  className="gw-choice"
+                  disabled={disabled}
+                  onClick={() => {
+                    playClick()
+                    setPayMode('subscription')
+                  }}
+                >
+                  <strong>{t.modeSubscriptionLabel}</strong>
+                  <span>{t.modeSubscriptionShort}</span>
+                </button>
+              </div>
+              <div className="gw-actions">
+                <button type="button" className="text-btn" onClick={() => goTo('pick')}>
+                  {t.backBtn}
+                </button>
+              </div>
+            </>
+          ) : null}
+          {inSubscriptionMode && !signedUp ? (
+            <>
+              <Bubble>{t.signupBubble}</Bubble>
+              <div className="gw-form">
+                <label className="gw-field">
+                  {t.signupNameLabel}
+                  <input
+                    value={signupName}
+                    disabled={disabled}
+                    onChange={(event) => setSignupName(event.target.value)}
+                  />
+                </label>
+                <label className="gw-field">
+                  {t.signupEmailLabel}
+                  <input
+                    value={signupEmail}
+                    type="email"
+                    dir="ltr"
+                    disabled={disabled}
+                    placeholder="you@example.com"
+                    onChange={(event) => setSignupEmail(event.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="gw-actions">
+                <button type="button" className="text-btn" onClick={() => setPayMode(null)}>
+                  {t.backBtn}
+                </button>
+                <button
+                  type="button"
+                  className="cta-button gw-pulse"
+                  disabled={disabled || !signupName.trim()}
+                  onClick={() => {
+                    playClick()
+                    setSignedUp(true)
+                  }}
+                >
+                  {t.signupBtn}
+                </button>
+              </div>
+            </>
+          ) : null}
+          {inSubscriptionMode && signedUp ? (
+            <>
+              <Bubble>{t.planBubble}</Bubble>
+              <div className="gw-choices">
+                {PLANS.map((plan) => (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    className={`gw-choice${selectedPlan?.id === plan.id ? ' is-picked' : ''}`}
+                    aria-pressed={selectedPlan?.id === plan.id}
+                    disabled={disabled}
+                    onClick={() => {
+                      playClick()
+                      setSelectedPlan(plan)
+                    }}
+                  >
+                    <strong dir="ltr">
+                      {plan.name[cartLang]} — ₪{plan.amount.toFixed(2)} {t.planPerMonth}
+                    </strong>
+                    <span>{plan.blurb[cartLang]}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="gw-form">
+                <div className="gw-field">
+                  {t.presentationLabel}
+                  <div className="seg" role="radiogroup" aria-label={t.presentationLabel}>
+                    <button
+                      type="button"
+                      className={`seg-btn${spectraPresentation === 'hosted' ? ' is-on' : ''}`}
+                      disabled={disabled}
+                      onClick={() => setSpectraPresentation('hosted')}
+                    >
+                      {t.presentationHosted}
+                    </button>
+                    <button
+                      type="button"
+                      className={`seg-btn${spectraPresentation === 'embedded_fields' ? ' is-on' : ''}`}
+                      disabled={disabled}
+                      onClick={() => setSpectraPresentation('embedded_fields')}
+                    >
+                      {t.presentationEmbedded}
+                    </button>
+                  </div>
+                </div>
+                {spectraPresentation === 'embedded_fields' ? (
+                  <div className="gw-field">
+                    {t.templateLabel}
+                    <div className="seg" role="radiogroup" aria-label={t.templateLabel}>
+                      {OPEN_FIELDS_REGIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`seg-btn${region === option.value ? ' is-on' : ''}`}
+                          disabled={disabled}
+                          onClick={() => setRegion(option.value)}
+                        >
+                          {t.regionLabels[option.value]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+              <div className="gw-actions">
+                <button type="button" className="text-btn" onClick={() => setSignedUp(false)}>
+                  {t.backBtn}
+                </button>
+                <button
+                  type="button"
+                  className="cta-button gw-pulse"
+                  disabled={disabled || !selectedPlan}
+                  onClick={() => goTo('create')}
+                >
+                  {t.continueBtn}
+                </button>
+              </div>
+            </>
+          ) : null}
+          {!isSpectra || payMode === 'onetime' ? (
+            <>
+              {cartView === 'store' ? <Bubble>{t.setupBubble}</Bubble> : null}
+              <GuidedCart
             lang={cartLang}
             items={cartItems}
             onChange={setCartItems}
             disabled={disabled}
             brandName={profile.name}
             onViewChange={setCartView}
-            onBack={() => goTo('pick')}
+            onBack={() => (isSpectra ? setPayMode(null) : goTo('pick'))}
             onCheckout={() => goTo('create')}
             checkoutDisabled={disabled || !(amountNumber > 0) || !receiptReady}
             options={<div className="gw-form">
@@ -1897,7 +2220,9 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
               </label>
             ) : null}
           </div>}
-          />
+              />
+            </>
+          ) : null}
         </section>
       ) : null}
 
@@ -2122,6 +2447,11 @@ export function GuidedWalkthrough({ disabled, lang, profile, onProfileChange }: 
             </div>
           ) : null}
           <Bubble>{isSpectra ? t.doneRecapSp : t.doneRecap(integration)}</Bubble>
+          {inSubscriptionMode && spectraSubscription ? (
+            <div className="gw-result gw-result--ok">
+              <p>{t.doneRecapSubscription(spectraSubscription.amount, subscriptionNextChargeText)}</p>
+            </div>
+          ) : null}
           {isSpectra && spectraCheckPreview ? (
             <TechCorner title={t.techTitleCheckSp}>
               <p>{t.techCheckIntroSp}</p>

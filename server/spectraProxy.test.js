@@ -230,3 +230,72 @@ describe('envVarForProfile', () => {
     expect(envVarForProfile('cardcom-tester')).toBe('SPECTRA_PAYMENTS_API_TOKEN_CARDCOM_TESTER')
   })
 })
+
+describe('request/response logging (server/apiLog.js)', () => {
+  it('logs method, path, profile, request body, status and response body on success', async () => {
+    const fetchImpl = fakeUpstream(200, { id: 'cust-1' })
+    const logImpl = vi.fn()
+    const handler = createSpectraProxyHandler({
+      token: 'test-token',
+      tokensByProfile: { 'cardcom-tester': 'cardcom-tester-token' },
+      fetchImpl,
+      logImpl,
+    })
+    const req = {
+      method: 'POST',
+      query: { path: 'customers' },
+      headers: { 'x-spectra-profile': 'cardcom-tester' },
+      body: { project_id: 'cardcom-tester', display_name: 'Log Test' },
+    }
+    await handler(req, mockRes())
+
+    expect(logImpl).toHaveBeenCalledTimes(1)
+    const entry = logImpl.mock.calls[0][0]
+    expect(entry.method).toBe('POST')
+    expect(entry.path).toBe('/customers')
+    expect(entry.profile).toBe('cardcom-tester')
+    expect(entry.request_body).toEqual({ project_id: 'cardcom-tester', display_name: 'Log Test' })
+    expect(entry.status).toBe(200)
+    expect(entry.response_body).toEqual({ id: 'cust-1' })
+    expect(entry.transport_error).toBeNull()
+    expect(typeof entry.duration_ms).toBe('number')
+    expect(typeof entry.ts).toBe('string')
+  })
+
+  it('logs a non-JSON response body truncated, not dropped', async () => {
+    const longHtml = `<html>${'x'.repeat(5000)}</html>`
+    const fetchImpl = vi.fn().mockResolvedValue({ status: 503, text: async () => longHtml })
+    const logImpl = vi.fn()
+    const handler = createSpectraProxyHandler({ token: 'test-token', fetchImpl, logImpl })
+    const req = { method: 'GET', query: { path: 'health' } }
+    await handler(req, mockRes())
+
+    const entry = logImpl.mock.calls[0][0]
+    expect(entry.status).toBe(503)
+    expect(typeof entry.response_body).toBe('string')
+    expect(entry.response_body.length).toBeLessThan(longHtml.length)
+    expect(entry.response_body).toContain('[truncated]')
+  })
+
+  it('logs a transport-level failure (fetch itself threw) distinctly from an HTTP error status', async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new Error('connection refused'))
+    const logImpl = vi.fn()
+    const handler = createSpectraProxyHandler({ token: 'test-token', fetchImpl, logImpl })
+    const req = { method: 'GET', query: { path: 'health' } }
+    await handler(req, mockRes())
+
+    expect(logImpl).toHaveBeenCalledTimes(1)
+    const entry = logImpl.mock.calls[0][0]
+    expect(entry.status).toBeNull()
+    expect(entry.transport_error).toBe('connection refused')
+    expect(entry.response_body).toBeNull()
+  })
+
+  it('never logs anything for a request rejected before reaching upstream (unsupported method / no token)', async () => {
+    const fetchImpl = fakeUpstream(200, {})
+    const logImpl = vi.fn()
+    const handler = createSpectraProxyHandler({ token: undefined, fetchImpl, logImpl })
+    await handler({ method: 'GET', query: { path: 'health' } }, mockRes())
+    expect(logImpl).not.toHaveBeenCalled()
+  })
+})

@@ -6,6 +6,7 @@ import {
   createCustomer,
   createEmbeddedFieldsCheckoutSession,
   createHostedCheckoutSession,
+  createSubscription,
   executeDuePeriod,
   getCheckoutSession,
   getCustomer,
@@ -336,6 +337,47 @@ describe('listPaymentDocuments', () => {
     await listPaymentDocuments('pay-1')
     const [path] = fetchMock.mock.calls[0]
     expect(path).toBe(`/spectra-api/payments/pay-1/documents?project_id=${SPECTRA_PROJECT_ID}`)
+  })
+})
+
+describe('createSubscription', () => {
+  it('POSTs the initial payment/method/plan reference to /subscriptions', async () => {
+    const fetchMock = mockFetchOnce(200, {
+      id: 'sub-1',
+      status: 'active',
+      amount: '29.90',
+      currency: 'ILS',
+    })
+    const result = await createSubscription({
+      customerId: 'cust-1',
+      initialPaymentId: 'pay-1',
+      paymentMethodId: 'pm-1',
+      externalPlanReference: 'guided-plan-basic',
+      projectId: SPECTRA_PROJECT_ID,
+    })
+    const [path, init] = fetchMock.mock.calls[0]
+    expect(path).toBe('/spectra-api/subscriptions')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body as string)).toEqual({
+      project_id: SPECTRA_PROJECT_ID,
+      customer_id: 'cust-1',
+      initial_payment_id: 'pay-1',
+      payment_method_id: 'pm-1',
+      external_plan_reference: 'guided-plan-basic',
+    })
+    expect(result.status).toBe('active')
+  })
+
+  it('sends a null external_plan_reference when none is given', async () => {
+    const fetchMock = mockFetchOnce(200, { id: 'sub-1', status: 'active' })
+    await createSubscription({
+      customerId: 'cust-1',
+      initialPaymentId: 'pay-1',
+      paymentMethodId: 'pm-1',
+      projectId: SPECTRA_PROJECT_ID,
+    })
+    const [, init] = fetchMock.mock.calls[0]
+    expect(JSON.parse(init.body as string).external_plan_reference).toBeNull()
   })
 })
 

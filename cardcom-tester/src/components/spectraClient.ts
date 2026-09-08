@@ -105,6 +105,12 @@ export type SpectraVerifyResult = {
   checkout_session_status: string
   payment_id: string
   payment_status: string
+  // Set only when this verify call itself just created or matched a reusable
+  // PaymentMethod from a token (a SUCCEEDED attempt with a token present) --
+  // null on every other outcome (already-CLOSED session, no attempt yet,
+  // declined, unrecognized). The only way a caller can learn a freshly-created
+  // PaymentMethod's id: there is no GET /payment-methods list-by-customer route.
+  payment_method_id: string | null
 }
 
 export type SpectraPayment = {
@@ -321,6 +327,30 @@ export function listSubscriptions(
   if (opts.limit) params.limit = String(opts.limit)
   if (opts.cursor) params.cursor = opts.cursor
   return spectraFetch(`/subscriptions?${new URLSearchParams(params).toString()}`, profileId)
+}
+
+// Activation requires an already-SUCCEEDED Payment (the backend derives amount/
+// currency from it) and a payment_method_id -- both come from a checkout's own
+// createHostedCheckoutSession/verifyCheckoutSession pair. billing_interval is
+// always monthly (V1 supports nothing else, so it is never sent from here).
+export function createSubscription(input: {
+  customerId: string
+  initialPaymentId: string
+  paymentMethodId: string
+  externalPlanReference?: string
+  projectId?: string
+  profileId?: string
+}): Promise<SpectraSubscription> {
+  return spectraFetch('/subscriptions', input.profileId ?? DEFAULT_PROFILE_ID, {
+    method: 'POST',
+    body: JSON.stringify({
+      project_id: input.projectId ?? SPECTRA_PROJECT_ID,
+      customer_id: input.customerId,
+      initial_payment_id: input.initialPaymentId,
+      payment_method_id: input.paymentMethodId,
+      external_plan_reference: input.externalPlanReference ?? null,
+    }),
+  })
 }
 
 export function getSubscription(
